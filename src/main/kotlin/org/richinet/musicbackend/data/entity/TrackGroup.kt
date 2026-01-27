@@ -10,11 +10,11 @@ import java.sql.Timestamp
 class TrackGroup {
     @Id
     @Column(name = "TrackId")
-    var trackId: BigDecimal? = null
+    var trackId: Long? = null
 
     @Id
     @Column(name = "GroupId")
-    var groupId: BigDecimal? = null
+    var groupId: Long? = null
 
     @Column(name = "Sequence")
     var sequence: BigDecimal? = null

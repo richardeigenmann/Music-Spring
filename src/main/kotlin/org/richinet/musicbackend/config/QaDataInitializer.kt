@@ -6,6 +6,7 @@ import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.springframework.core.annotation.Order
 import java.math.BigDecimal
 
 @Configuration
@@ -13,18 +14,19 @@ import java.math.BigDecimal
 class QaDataInitializer {
 
     @Bean
+    @Order(1)
     fun initGroupTypes(repository: GroupTypeRepository): CommandLineRunner {
         return CommandLineRunner {
             val groupTypes = listOf(
-                createGroupType("1", "Media Name", "T"),
-                createGroupType("2", "Artist", "T"),
-                createGroupType("3", "Composer", "T"),
-                createGroupType("4", "Playlist", "S"),
-                createGroupType("5", "Richi Wertung", "S"),
-                createGroupType("6", "Music Style", "S"),
-                createGroupType("7", "Mood", "S"),
-                createGroupType("8", "Sandra Wertung", "S"),
-                createGroupType("9", "Original Artist", "T")
+                createGroupType("1.00", "Media Name", "T"),
+                createGroupType("2.00", "Artist", "T"),
+                createGroupType("3.00", "Composer", "T"),
+                createGroupType("4.00", "Playlist", "S"),
+                createGroupType("5.00", "Richi Wertung", "S"),
+                createGroupType("6.00", "Music Style", "S"),
+                createGroupType("7.00", "Mood", "S"),
+                createGroupType("8.00", "Sandra Wertung", "S"),
+                createGroupType("9.00", "Original Artist", "T")
             )
             repository.saveAll(groupTypes)
         }

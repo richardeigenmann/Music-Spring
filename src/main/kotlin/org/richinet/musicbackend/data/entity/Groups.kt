@@ -8,8 +8,9 @@ import java.sql.Timestamp
 @Table(name = "`Groups`")
 class Groups {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "GroupId")
-    var groupId: BigDecimal? = null
+    var groupId: Long? = null
 
     @Column(name = "GroupTypeId")
     var groupTypeId: BigDecimal? = null

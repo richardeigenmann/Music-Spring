@@ -8,11 +8,12 @@ import java.sql.Timestamp
 @Table(name = "TrackFile")
 class TrackFile {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "FileId")
-    var fileId: BigDecimal? = null
+    var fileId: Long? = null
 
     @Column(name = "TrackId")
-    var trackId: BigDecimal? = null
+    var trackId: Long? = null
 
     @Column(name = "FileName")
     var fileName: String? = null

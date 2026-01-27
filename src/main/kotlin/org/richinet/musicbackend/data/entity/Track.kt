@@ -7,8 +7,9 @@ import java.math.BigDecimal
 @Table(name = "Track")
 class Track {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TrackId")
-    var trackId: BigDecimal? = null
+    var trackId: Long? = null
 
     @Column(name = "TrackName")
     var trackName: String? = null
