@@ -1,5 +1,9 @@
 package org.richinet.musicbackend.controller
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.richinet.musicbackend.data.projection.PlaylistProjection
 import org.richinet.musicbackend.data.repository.GroupsRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
@@ -22,6 +26,7 @@ private val MUSIC_DIRECTORY = "/richi"
 
 @RestController
 @RequestMapping("/api")
+@Tag(name = "Music Library", description = "Endpoints for managing music tracks and playlists")
 class MusicDbController(
     private val trackRepository: TrackRepository,
     private val trackDataService: TrackDataService,
@@ -29,6 +34,9 @@ class MusicDbController(
     private val trackFileRepository: TrackFileRepository
 ) {
 
+    @Operation(summary = "Get track details", description = "Returns serialized track data including metadata.")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved track")
+    @ApiResponse(responseCode = "404", description = "Track not found")
     @GetMapping("/track/{id}")
     fun getTrack(@PathVariable id: Long): ResponseEntity<Map<String, Any?>> {
         val track = trackRepository.findById(id)
@@ -52,8 +60,12 @@ class MusicDbController(
         return ResponseEntity.ok(serializedTracks)
     }
 
+    @Operation(summary = "Stream audio file", description = "Serves the audio file for streaming.")
     @GetMapping("/trackFile/{id}")
-    fun getTrackFile(@PathVariable id: Long): ResponseEntity<Resource> {
+    fun getTrackFile(
+        @Parameter(description = "The TrackFile id of the file to stream")
+        @PathVariable id: Long
+    ): ResponseEntity<Resource> {
         val trackFile = trackFileRepository.findById(id)
         if (trackFile.isPresent) {
             val fileEntity = trackFile.get()
