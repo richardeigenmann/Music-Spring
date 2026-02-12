@@ -11,6 +11,7 @@ import org.richinet.musicbackend.data.projection.PlaylistProjection
 import org.richinet.musicbackend.data.repository.GroupsRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
 import org.richinet.musicbackend.data.repository.TrackRepository
+import org.richinet.musicbackend.service.MusicImportService
 import org.richinet.musicbackend.service.TrackDataService
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.ClassPathResource
@@ -19,10 +20,7 @@ import org.springframework.core.io.Resource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.io.File
 import java.math.BigDecimal
 import java.nio.file.Files
@@ -35,7 +33,8 @@ class MusicDbController(
     private val trackRepository: TrackRepository,
     private val trackDataService: TrackDataService,
     private val groupsRepository: GroupsRepository,
-    private val trackFileRepository: TrackFileRepository
+    private val trackFileRepository: TrackFileRepository,
+    private val musicImportService: MusicImportService
 ) {
 
     @Operation(summary = "Returns serialized track data including metadata.")
@@ -67,6 +66,36 @@ class MusicDbController(
         return if (track.isPresent) {
             ResponseEntity.ok(trackDataService.serializeTrack(track.get()))
         } else {
+            ResponseEntity.notFound().build()
+        }
+    }
+
+    @Operation(summary = "Update a track and its relationships")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Track updated successfully"),
+        ApiResponse(responseCode = "404", description = "Track not found")
+    ])
+    @PostMapping("/track/{id}")
+    fun updateTrack(@PathVariable id: Long, @RequestBody trackData: Map<String, Any?>): ResponseEntity<Void> {
+        return try {
+            musicImportService.updateTrack(id, trackData)
+            ResponseEntity.ok().build()
+        } catch (e: Exception) {
+            ResponseEntity.notFound().build()
+        }
+    }
+
+    @Operation(summary = "Delete a track and its relationships")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Track deleted successfully"),
+        ApiResponse(responseCode = "404", description = "Track not found")
+    ])
+    @DeleteMapping("/track/{id}")
+    fun deleteTrack(@PathVariable id: Long): ResponseEntity<Void> {
+        return try {
+            musicImportService.deleteTrack(id)
+            ResponseEntity.ok().build()
+        } catch (e: Exception) {
             ResponseEntity.notFound().build()
         }
     }

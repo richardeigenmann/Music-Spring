@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface TrackFileRepository : JpaRepository<TrackFile, Long>
+interface TrackFileRepository : JpaRepository<TrackFile, Long> {
+    fun deleteByTrackId(trackId: Long)
+}

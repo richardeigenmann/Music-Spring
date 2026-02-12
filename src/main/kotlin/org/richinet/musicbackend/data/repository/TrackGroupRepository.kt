@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface TrackGroupRepository : JpaRepository<TrackGroup, TrackGroupId>
+interface TrackGroupRepository : JpaRepository<TrackGroup, TrackGroupId> {
+    fun deleteByTrackId(trackId: Long)
+}

@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.doNothing
+import org.mockito.Mockito.doThrow
 import org.richinet.musicbackend.controller.MusicDbController
 import org.richinet.musicbackend.data.entity.Track
 import org.richinet.musicbackend.data.entity.TrackFile
@@ -11,13 +13,14 @@ import org.richinet.musicbackend.data.projection.PlaylistProjection
 import org.richinet.musicbackend.data.repository.GroupsRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
 import org.richinet.musicbackend.data.repository.TrackRepository
+import org.richinet.musicbackend.service.MusicImportService
 import org.richinet.musicbackend.service.TrackDataService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import java.math.BigDecimal
 import java.util.*
@@ -39,6 +42,9 @@ class MusicbackendApplicationTests {
 
     @MockBean
     private lateinit var trackFileRepository: TrackFileRepository
+
+    @MockBean
+    private lateinit var musicImportService: MusicImportService
 
     @Test
     fun `getTrack should return track data when found`() {
@@ -102,6 +108,52 @@ class MusicbackendApplicationTests {
         `when`(trackFileRepository.findById(fileId)).thenReturn(Optional.empty())
 
         mockMvc.perform(get("/api/trackFile/$fileId"))
+            .andExpect(status().isNotFound)
+    }
+
+    @Test
+    fun `updateTrack should return 200 when successful`() {
+        val trackId = 1L
+        val trackData = mapOf("TrackName" to "Updated Track")
+        
+        doNothing().`when`(musicImportService).updateTrack(trackId, trackData)
+
+        mockMvc.perform(post("/api/track/$trackId")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""{"TrackName": "Updated Track"}"""))
+            .andExpect(status().isOk)
+    }
+
+    @Test
+    fun `updateTrack should return 404 when track not found`() {
+        val trackId = 99L
+        val trackData = mapOf("TrackName" to "Updated Track")
+        
+        doThrow(RuntimeException("Track not found")).`when`(musicImportService).updateTrack(trackId, trackData)
+
+        mockMvc.perform(post("/api/track/$trackId")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""{"TrackName": "Updated Track"}"""))
+            .andExpect(status().isNotFound)
+    }
+
+    @Test
+    fun `deleteTrack should return 200 when successful`() {
+        val trackId = 1L
+        
+        doNothing().`when`(musicImportService).deleteTrack(trackId)
+
+        mockMvc.perform(delete("/api/track/$trackId"))
+            .andExpect(status().isOk)
+    }
+
+    @Test
+    fun `deleteTrack should return 404 when track not found`() {
+        val trackId = 99L
+        
+        doThrow(RuntimeException("Track not found")).`when`(musicImportService).deleteTrack(trackId)
+
+        mockMvc.perform(delete("/api/track/$trackId"))
             .andExpect(status().isNotFound)
     }
 }
