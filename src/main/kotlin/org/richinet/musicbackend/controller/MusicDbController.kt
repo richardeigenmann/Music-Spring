@@ -1,9 +1,10 @@
 package org.richinet.musicbackend.controller
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
-import io.swagger.v3.oas.annotations.tags.Tag
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.richinet.musicbackend.data.projection.PlaylistProjection
 import org.richinet.musicbackend.data.repository.GroupsRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
@@ -26,7 +27,6 @@ private val MUSIC_DIRECTORY = "/richi"
 
 @RestController
 @RequestMapping("/api")
-@Tag(name = "Music Library", description = "Endpoints for managing music tracks and playlists")
 class MusicDbController(
     private val trackRepository: TrackRepository,
     private val trackDataService: TrackDataService,
@@ -34,9 +34,12 @@ class MusicDbController(
     private val trackFileRepository: TrackFileRepository
 ) {
 
-    @Operation(summary = "Get track details", description = "Returns serialized track data including metadata.")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved track")
-    @ApiResponse(responseCode = "404", description = "Track not found")
+    @Operation(summary = "Returns serialized track data including metadata.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Found the track",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = Map::class))]),
+        ApiResponse(responseCode = "404", description = "Track not found", content = [Content()])
+    ])
     @GetMapping("/track/{id}")
     fun getTrack(@PathVariable id: Long): ResponseEntity<Map<String, Any?>> {
         val track = trackRepository.findById(id)
@@ -47,12 +50,22 @@ class MusicDbController(
         }
     }
 
+    @Operation(summary = "Get all playlists")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Found the playlists",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = PlaylistProjection::class))])
+    ])
     @GetMapping("/playlists")
     fun getPlaylists(): ResponseEntity<List<PlaylistProjection>> {
         val playlists = groupsRepository.findPlaylistsByTypeId(BigDecimal(4))
         return ResponseEntity.ok(playlists)
     }
 
+    @Operation(summary = "Get all tracks belonging to a group")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Found the tracks",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = List::class))])
+    ])
     @GetMapping("/tracksByGroup/{id}")
     fun getTracksByGroup(@PathVariable id: Long): ResponseEntity<List<Map<String, Any?>>> {
         val tracks = trackRepository.findTracksByGroupId(id)
@@ -60,12 +73,14 @@ class MusicDbController(
         return ResponseEntity.ok(serializedTracks)
     }
 
-    @Operation(summary = "Stream audio file", description = "Serves the audio file for streaming.")
+    @Operation(summary = "Stream audio file")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "File found and streaming",
+            content = [Content(mediaType = "audio/mpeg")]),
+        ApiResponse(responseCode = "404", description = "File not found", content = [Content()])
+    ])
     @GetMapping("/trackFile/{id}")
-    fun getTrackFile(
-        @Parameter(description = "The TrackFile id of the file to stream")
-        @PathVariable id: Long
-    ): ResponseEntity<Resource> {
+    fun getTrackFile(@PathVariable id: Long): ResponseEntity<Resource> {
         val trackFile = trackFileRepository.findById(id)
         if (trackFile.isPresent) {
             val fileEntity = trackFile.get()
