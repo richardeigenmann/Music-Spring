@@ -2,6 +2,7 @@ package org.richinet.musicbackend.controller
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -23,7 +24,7 @@ import java.io.File
 import java.math.BigDecimal
 import java.nio.file.Files
 
-private val MUSIC_DIRECTORY = "/richi"
+private const val MUSIC_DIRECTORY = "/richi"
 
 @RestController
 @RequestMapping("/api")
@@ -37,7 +38,24 @@ class MusicDbController(
     @Operation(summary = "Returns serialized track data including metadata.")
     @ApiResponses(value = [
         ApiResponse(responseCode = "200", description = "Found the track",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = Map::class))]),
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = Map::class), examples = [
+                ExampleObject(value = """
+                {
+                  "TrackName": "Song Title",
+                  "Artist": "Artist Name",
+                  "Album": "Album Name",
+                  "Files": [
+                    {
+                      "FileName": "song.mp3",
+                      "FileLocation": "/path/to/file/",
+                      "FileOnline": "Y",
+                      "Duration": 300,
+                      "BackupDate": "2023-01-01T12:00:00"
+                    }
+                  ]
+                }
+            """)
+            ])]),
         ApiResponse(responseCode = "404", description = "Track not found", content = [Content()])
     ])
     @GetMapping("/track/{id}")
@@ -64,7 +82,26 @@ class MusicDbController(
     @Operation(summary = "Get all tracks belonging to a group")
     @ApiResponses(value = [
         ApiResponse(responseCode = "200", description = "Found the tracks",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = List::class))])
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = List::class), examples = [
+                ExampleObject(value = """
+                [
+                  {
+                    "TrackName": "Song Title",
+                    "Artist": "Artist Name",
+                    "Album": "Album Name",
+                    "Files": [
+                      {
+                        "FileName": "song.mp3",
+                        "FileLocation": "/path/to/file/",
+                        "FileOnline": "Y",
+                        "Duration": 300,
+                        "BackupDate": "2023-01-01T12:00:00"
+                      }
+                    ]
+                  }
+                ]
+            """)
+            ])])
     ])
     @GetMapping("/tracksByGroup/{id}")
     fun getTracksByGroup(@PathVariable id: Long): ResponseEntity<List<Map<String, Any?>>> {
