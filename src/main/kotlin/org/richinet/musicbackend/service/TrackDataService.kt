@@ -9,6 +9,7 @@ class TrackDataService {
 
     fun serializeTrack(track: Track): Map<String, Any?> {
         val trackData = LinkedHashMap<String, Any?>()
+        trackData["TrackId"] = track.trackId
         trackData["TrackName"] = track.trackName
 
         track.trackGroups?.forEach { trackGroup ->
@@ -42,6 +43,7 @@ class TrackDataService {
             val filesData = ArrayList<Map<String, Any?>>()
             track.trackFiles?.forEach { file ->
                 val fileInfo = LinkedHashMap<String, Any?>()
+                fileInfo["FileId"] = file.fileId
                 fileInfo["FileName"] = file.fileName
                 fileInfo["FileLocation"] = file.fileLocation
                 fileInfo["FileOnline"] = file.fileOnline

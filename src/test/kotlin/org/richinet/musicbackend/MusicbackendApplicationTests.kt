@@ -50,7 +50,7 @@ class MusicbackendApplicationTests {
     fun `getTrack should return track data when found`() {
         val trackId = 1L
         val track = Track().apply { this.trackId = trackId }
-        val trackData = mapOf("TrackName" to "Test Track")
+        val trackData = mapOf("TrackId" to trackId, "TrackName" to "Test Track")
 
         `when`(trackRepository.findById(trackId)).thenReturn(Optional.of(track))
         `when`(trackDataService.serializeTrack(track)).thenReturn(trackData)
@@ -58,6 +58,7 @@ class MusicbackendApplicationTests {
         mockMvc.perform(get("/api/track/$trackId"))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.TrackId").value(trackId))
             .andExpect(jsonPath("$.TrackName").value("Test Track"))
     }
 
@@ -91,7 +92,7 @@ class MusicbackendApplicationTests {
     fun `getTracksByGroup should return list of tracks`() {
         val groupId = 10L
         val track = Track().apply { trackId = 1L }
-        val trackData = mapOf("TrackName" to "Group Track")
+        val trackData = mapOf("TrackId" to 1L, "TrackName" to "Group Track")
 
         `when`(trackRepository.findTracksByGroupId(groupId)).thenReturn(listOf(track))
         `when`(trackDataService.serializeTrack(track)).thenReturn(trackData)
@@ -155,5 +156,20 @@ class MusicbackendApplicationTests {
 
         mockMvc.perform(delete("/api/track/$trackId"))
             .andExpect(status().isNotFound)
+    }
+
+    @Test
+    fun `searchTracks should return matching tracks`() {
+        val query = "test"
+        val track = Track().apply { trackId = 1L; trackName = "Test Song" }
+        val trackData = mapOf("TrackId" to 1L, "TrackName" to "Test Song")
+
+        `when`(trackRepository.searchTracks(query)).thenReturn(listOf(track))
+        `when`(trackDataService.serializeTrack(track)).thenReturn(trackData)
+
+        mockMvc.perform(get("/api/trackSearch").param("query", query))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$[0].TrackName").value("Test Song"))
     }
 }

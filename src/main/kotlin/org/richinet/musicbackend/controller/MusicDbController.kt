@@ -142,6 +142,37 @@ class MusicDbController(
         return ResponseEntity.ok(serializedTracks)
     }
 
+    @Operation(summary = "Search for tracks by name or group name")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Found matching tracks",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = List::class), examples = [
+                ExampleObject(value = """
+                [
+                  {
+                    "TrackName": "Song Title",
+                    "Artist": "Artist Name",
+                    "Album": "Album Name",
+                    "Files": [
+                      {
+                        "FileName": "song.mp3",
+                        "FileLocation": "/path/to/file/",
+                        "FileOnline": "Y",
+                        "Duration": 300,
+                        "BackupDate": "2023-01-01T12:00:00"
+                      }
+                    ]
+                  }
+                ]
+            """)
+            ])])
+    ])
+    @GetMapping("/trackSearch")
+    fun searchTracks(@RequestParam query: String): ResponseEntity<List<Map<String, Any?>>> {
+        val tracks = trackRepository.searchTracks(query)
+        val serializedTracks = tracks.map { trackDataService.serializeTrack(it) }
+        return ResponseEntity.ok(serializedTracks)
+    }
+
     @Operation(summary = "Stream audio file")
     @ApiResponses(value = [
         ApiResponse(responseCode = "200", description = "File found and streaming",
