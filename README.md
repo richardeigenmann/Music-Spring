@@ -1,59 +1,54 @@
 # Musicfrontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.1.
+This is the frontend for Richards' Music Database.
 
-## Development server
+## Who is this repo for?
 
-To start a local development server, run:
+This repo currently is of use to it's developer only.
 
-```bash
-ng serve
-```
+## Setting up on a new computer
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Prerequisites: You need to have NodeJs and Angular 21 installed
 
 ```bash
-ng generate component component-name
+su -
+npm install -g @angular/cli
+npm install -g angular-cli-ghpages
+
+git clone https://github.com/richardeigenmann/<<add repo here>>
+cd Music-Spring/musicfrontend
+tree -I 'node_modules|coverage|dist' # to list the folder structure
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
 
-```bash
-ng generate --help
-```
+## How to run the unit tests
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
+Run `ng test` to execute the unit tests.
 
 ## Running end-to-end tests
 
-For end-to-end (e2e) testing, run:
-
 ```bash
-ng e2e
+ng serve -o # ensure that the application is running on localhost:4200
+npx cypress open
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Then click on "E2E Testing", pick a browser and "Start E2E Testing".
+Then look for the spec.cy.js hypelink and click on it. The tests should run.
 
-## Additional Resources
+## Upgrading
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```bash
+npm outdated
+ng update
+npm update
+npx npm-check-updates -u
+npm run updateBuildTimeStamp
+ng test
+npx cypress open
+```
+
+## Linting
+
+```bash
+ng lint
+```
