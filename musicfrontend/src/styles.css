@@ -1,1 +1,6 @@
-/* You can add global styles to this file, and also import other style files */
+body {
+	background: url('assets/music_bg.gif') black scroll top left repeat;
+	font-family: Helvetica,sans-serif;
+	font-size: small;
+	color: yellow;
+}
