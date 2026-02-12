@@ -34,4 +34,11 @@ class MusicDbController(
         val playlists = groupsRepository.findPlaylistsByTypeId(BigDecimal(4))
         return ResponseEntity.ok(playlists)
     }
+
+    @GetMapping("/tracksByGroup/{id}")
+    fun getTracksByGroup(@PathVariable id: Long): ResponseEntity<List<Map<String, Any?>>> {
+        val tracks = trackRepository.findTracksByGroupId(id)
+        val serializedTracks = tracks.map { trackDataService.serializeTrack(it) }
+        return ResponseEntity.ok(serializedTracks)
+    }
 }
