@@ -3,6 +3,7 @@ body {
 	font-family: Helvetica,sans-serif;
 	/* font-size: small; */
 	color: yellow;
+  text-shadow: 1px 1px 2px black;
 }
 
 a {
