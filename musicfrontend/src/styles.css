@@ -1,6 +1,10 @@
 body {
 	background: url('assets/music_bg.gif') black scroll top left repeat;
 	font-family: Helvetica,sans-serif;
-	font-size: small;
+	/* font-size: small; */
 	color: yellow;
+}
+
+a {
+  color: yellow;
 }

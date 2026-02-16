@@ -1,0 +1,8 @@
+<h1>Playlist Tracks</h1>
+<ul>
+  @for (entry of playlistEntries(); track entry.trackName) {
+    <li>
+      {{ entry.trackName }} - {{ entry.artist }}
+    </li>
+  }
+</ul>
