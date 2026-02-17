@@ -1,10 +1,11 @@
 import { Component, effect, inject, input } from '@angular/core';
 import { ApiService } from '../apiservice';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-tracks-by-group',
   standalone: true,
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './tracks-by-group.html',
   styleUrls: ['./tracks-by-group.css']
 })

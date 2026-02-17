@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, Signal, signal } from '@angular/core';
-import { tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 
 export interface PlaylistEntry {
   groupName: string,
@@ -8,7 +8,15 @@ export interface PlaylistEntry {
   groupId: number,
 }
 
+export interface Group {
+  groupTypeName: string;
+  groupTypeId: number;
+  groupName: string;
+  groupId: number;
+}
+
 export interface TrackFile {
+  FileId: number;
   FileName: string;
   FileLocation: string;
   FileOnline: string;
@@ -17,13 +25,14 @@ export interface TrackFile {
 }
 
 export interface Track {
+  TrackId: number;
   TrackName: string;
-  Artist: string;
-  Album: string;
+  [key: string]: any;
   Files: TrackFile[];
 }
 
 export interface TrackEntry {
+    trackId: number;
     trackName: string;
     artist: string;
     album: string;
@@ -71,9 +80,10 @@ export class ApiService {
         tap(data => {
           console.log('Playlist entries data loaded successfully.');
           this._playlistEntries.set(data.map(track => ({
+            trackId: track.TrackId,
             trackName: track.TrackName,
-            artist: track.Artist,
-            album: track.Album,
+            artist: track['Artist'],
+            album: track['Album'],
             duration: track.Files[0]?.Duration || 0
           })));
         })
@@ -81,5 +91,17 @@ export class ApiService {
       .subscribe({
         error: (error) => console.error('Failed to load playlist entries data', error)
       });
+  }
+
+  getTrack(id: number): Observable<Track> {
+    return this.http.get<Track>(`${this.API_URL}/api/track/${id}`);
+  }
+
+  getGroups(): Observable<Group[]> {
+    return this.http.get<Group[]>(`${this.API_URL}/api/groups`);
+  }
+
+  saveTrack(track: Track): Observable<Track> {
+    return this.http.post<Track>(`${this.API_URL}/api/track/${track.TrackId}`, track);
   }
 }

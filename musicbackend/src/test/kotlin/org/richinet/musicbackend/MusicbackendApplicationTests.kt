@@ -9,6 +9,7 @@ import org.mockito.Mockito.doThrow
 import org.richinet.musicbackend.controller.MusicDbController
 import org.richinet.musicbackend.data.entity.Track
 import org.richinet.musicbackend.data.entity.TrackFile
+import org.richinet.musicbackend.data.projection.GroupProjection
 import org.richinet.musicbackend.data.projection.PlaylistProjection
 import org.richinet.musicbackend.data.repository.GroupsRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
@@ -89,6 +90,24 @@ class MusicbackendApplicationTests {
     }
 
     @Test
+    fun `getGroups should return list of groups`() {
+        val projection = object : GroupProjection {
+            override fun getGroupTypeId(): BigDecimal = BigDecimal(1)
+            override fun getGroupTypeName(): String = "Genre"
+            override fun getGroupId(): Long = 100
+            override fun getGroupName(): String = "Rock"
+        }
+
+        `when`(groupsRepository.findAllEditableGroups()).thenReturn(listOf(projection))
+
+        mockMvc.perform(get("/api/groups"))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$[0].groupTypeName").value("Genre"))
+            .andExpect(jsonPath("$[0].groupName").value("Rock"))
+    }
+
+    @Test
     fun `getTracksByGroup should return list of tracks`() {
         val groupId = 10L
         val track = Track().apply { trackId = 1L }
@@ -116,7 +135,7 @@ class MusicbackendApplicationTests {
     fun `updateTrack should return 200 when successful`() {
         val trackId = 1L
         val trackData = mapOf("TrackName" to "Updated Track")
-        
+
         doNothing().`when`(musicImportService).updateTrack(trackId, trackData)
 
         mockMvc.perform(post("/api/track/$trackId")
@@ -129,7 +148,7 @@ class MusicbackendApplicationTests {
     fun `updateTrack should return 404 when track not found`() {
         val trackId = 99L
         val trackData = mapOf("TrackName" to "Updated Track")
-        
+
         doThrow(RuntimeException("Track not found")).`when`(musicImportService).updateTrack(trackId, trackData)
 
         mockMvc.perform(post("/api/track/$trackId")
@@ -141,7 +160,7 @@ class MusicbackendApplicationTests {
     @Test
     fun `deleteTrack should return 200 when successful`() {
         val trackId = 1L
-        
+
         doNothing().`when`(musicImportService).deleteTrack(trackId)
 
         mockMvc.perform(delete("/api/track/$trackId"))
@@ -151,7 +170,7 @@ class MusicbackendApplicationTests {
     @Test
     fun `deleteTrack should return 404 when track not found`() {
         val trackId = 99L
-        
+
         doThrow(RuntimeException("Track not found")).`when`(musicImportService).deleteTrack(trackId)
 
         mockMvc.perform(delete("/api/track/$trackId"))

@@ -2,7 +2,7 @@
 <ul>
   @for (entry of playlistEntries(); track entry.trackName) {
     <li>
-      {{ entry.trackName }} - {{ entry.artist }}
+      <a [routerLink]="['/track', entry.trackId]">{{ entry.trackName }} - {{ entry.artist }}</a>
     </li>
   }
 </ul>

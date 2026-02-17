@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import org.richinet.musicbackend.data.projection.GroupProjection
 import org.richinet.musicbackend.data.projection.PlaylistProjection
 import org.richinet.musicbackend.data.repository.GroupsRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
@@ -109,6 +110,17 @@ class MusicDbController(
     fun getPlaylists(): ResponseEntity<List<PlaylistProjection>> {
         val playlists = groupsRepository.findPlaylistsByTypeId(BigDecimal(4))
         return ResponseEntity.ok(playlists)
+    }
+
+    @Operation(summary = "Get all editable groups with their types")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Found the groups",
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupProjection::class))])
+    ])
+    @GetMapping("/groups")
+    fun getGroups(): ResponseEntity<List<GroupProjection>> {
+        val groups = groupsRepository.findAllEditableGroups()
+        return ResponseEntity.ok(groups)
     }
 
     @Operation(summary = "Get all tracks belonging to a group")
@@ -232,7 +244,7 @@ class MusicDbController(
                 }
             }
         }
-        
+
         // Return placeholder image
         val placeholder = ClassPathResource("static/images/placeholder.png")
         return if (placeholder.exists()) {
