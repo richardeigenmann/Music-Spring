@@ -4,6 +4,6 @@ import { TracksByGroup } from './tracks-by-group/tracks-by-group';
 
 export const routes: Routes = [
     { path: 'playlists', component: Playlists },
-    { path: 'group/:id', component: TracksByGroup },
+    { path: 'group/:groupId', component: TracksByGroup },
     { path: '', redirectTo: '/playlists', pathMatch: 'full' }
 ];

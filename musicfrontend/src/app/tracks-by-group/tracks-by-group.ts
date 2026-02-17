@@ -1,7 +1,5 @@
-import { Component, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { ApiService, TrackEntry } from '../apiservice';
-import { Signal } from '@angular/core';
+import { Component, effect, inject, input } from '@angular/core';
+import { ApiService } from '../apiservice';
 
 @Component({
   selector: 'app-tracks-by-group',
@@ -11,14 +9,18 @@ import { Signal } from '@angular/core';
   styleUrls: ['./tracks-by-group.css']
 })
 export class TracksByGroup {
-  private route = inject(ActivatedRoute);
+  groupId = input<string>();
   private apiService = inject(ApiService);
 
-  playlistEntries: Signal<TrackEntry[]>;
+  playlistEntries = this.apiService.playlistEntries;
 
   constructor() {
-    const groupId = Number(this.route.snapshot.paramMap.get('id'));
-    this.apiService.loadPlaylistEntries(groupId);
-    this.playlistEntries = this.apiService.playlistEntries;
+    effect(() => {
+      const id = this.groupId();
+      console.log("Handling effect: id is " + id )
+      if (id) {
+        this.apiService.loadPlaylistEntries(Number(id));
+      }
+    });
   }
 }
