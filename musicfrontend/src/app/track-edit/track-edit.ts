@@ -177,4 +177,84 @@ export class TrackEdit {
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
+
+  // New features for editable arrays
+  editableArrayFields = ['Artist', 'Composer', 'Media Name', 'Original Artist'];
+
+  getTrackFieldAsArray(field: string): string[] {
+    const track = this.track();
+    if (!track) {
+      return [];
+    }
+    const value = track[field];
+    if (Array.isArray(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      return [value];
+    }
+    return [];
+  }
+
+  addArrayItem(field: string) {
+    this.track.update(currentTrack => {
+      if (!currentTrack) {
+        return null;
+      }
+      const newTrack = { ...currentTrack };
+      const currentValue = newTrack[field];
+      if (Array.isArray(currentValue)) {
+        newTrack[field] = [...currentValue, ''];
+      } else if (typeof currentValue === 'string') {
+        newTrack[field] = [currentValue, ''];
+      } else {
+        newTrack[field] = [''];
+      }
+      return newTrack;
+    });
+  }
+
+  removeArrayItem(field: string, index: number) {
+    this.track.update(currentTrack => {
+      if (!currentTrack) {
+        return null;
+      }
+      const newTrack = { ...currentTrack };
+      const currentValue = newTrack[field];
+      if (Array.isArray(currentValue)) {
+        const newValues = currentValue.filter((_, i) => i !== index);
+        if (newValues.length === 0) {
+          delete newTrack[field];
+        } else if (newValues.length === 1) {
+          newTrack[field] = newValues[0];
+        } else {
+          newTrack[field] = newValues;
+        }
+      } else if (index === 0) {
+        // It was a single string, so just delete it
+        delete newTrack[field];
+      }
+      return newTrack;
+    });
+  }
+
+  updateArrayItem(field: string, index: number, event: Event) {
+    const target = event.target as HTMLInputElement;
+    const newValue = target.value;
+    this.track.update(currentTrack => {
+      if (!currentTrack) {
+        return null;
+      }
+      const newTrack = { ...currentTrack };
+      const currentValue = newTrack[field];
+      if (Array.isArray(currentValue)) {
+        const newValues = [...currentValue];
+        newValues[index] = newValue;
+        newTrack[field] = newValues;
+      } else if (index === 0) {
+        newTrack[field] = newValue;
+      }
+      return newTrack;
+    });
+  }
 }

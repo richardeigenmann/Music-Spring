@@ -3,15 +3,28 @@
     <h1>Edit Track: {{ track.TrackName }}</h1>
     <form (ngSubmit)="save()">
       <div class="form-group">
-        <label for="trackName">Track Name:</label>
-        <input type="text" id="trackName" [(ngModel)]="track.TrackName" name="trackName" class="form-control">
-      </div>
-
-      @for (groupType of objectKeys(availableGroups()); track groupType) {
-        <div class="group-section">
-          <hr>
-          <h3>{{ groupType }}</h3>
-          <div class="group-row">
+              <label for="trackName">Track Name:</label>
+              <input type="text" id="trackName" [(ngModel)]="track.TrackName" name="trackName" class="form-control">
+            </div>
+        
+            <!-- Editable Array Fields -->
+            @for(field of editableArrayFields; track field) {
+              <div class="form-group array-group">
+                <label>{{ field }}</label>
+                @for(item of getTrackFieldAsArray(field); track $index) {
+                  <div class="array-item">
+                    <input type="text" [value]="item" (input)="updateArrayItem(field, $index, $event)" class="form-control">
+                    <button type="button" (click)="removeArrayItem(field, $index)" class="btn-icon">🗑️</button>
+                  </div>
+                }
+                <button type="button" (click)="addArrayItem(field)" class="btn btn-secondary btn-add">➕ Add</button>
+              </div>
+            }
+        
+            @for (groupType of objectKeys(availableGroups()); track groupType) {
+                <div class="group-section">
+                  <hr>
+                  <h3>{{ groupType }}</h3>          <div class="group-row">
               <strong>Current:</strong>
               @if (!trackGroups()[groupType] || trackGroups()[groupType].length === 0) {
                 <span class="no-groups">

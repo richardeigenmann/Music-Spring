@@ -133,3 +133,33 @@ hr {
   width: 200%;
   margin-top: 10px;
 }
+
+.array-group {
+  margin-bottom: 1rem;
+}
+
+.array-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.5rem;
+}
+
+.array-item .form-control {
+  flex-grow: 1;
+}
+
+.array-item .btn-icon {
+  color: #dc3545; /* A red color for deletion */
+  flex-shrink: 0;
+}
+
+.btn-add {
+  margin-top: 0.5rem;
+}
+
+.btn-secondary {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
