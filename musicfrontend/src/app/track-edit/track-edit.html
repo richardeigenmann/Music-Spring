@@ -44,14 +44,14 @@
             @for (file of track.Files; track file.FileId) {
               <div class="file-item">
                 <img [src]="getImageUrl(file.FileId)" alt="Album Art for {{ file.FileName }}" class="album-art">
-                <div class="file-info">
-                  <div class="file-name">{{ file.FileName }}</div>
-                  <div class="file-duration">{{ formatDuration(file.Duration) }}</div>
-                </div>
-              </div>
-            }
-          </div>
-            
+                          <div class="file-info">
+                            <div class="file-name">{{ file.FileName }}</div>
+                            <div class="file-duration">{{ formatDuration(file.Duration) }}</div>
+                            <audio [src]="getAudioUrl(file.FileId)" controls class="audio-player"></audio>
+                          </div>
+                        </div>
+                      }
+                    </div>            
           <button type="submit" class="btn btn-primary">Save Changes</button>
         </form>
       </div>

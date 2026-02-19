@@ -125,6 +125,11 @@ hr {
   font-weight: bold;
 }
 
-.file-duration {
+/* .file-duration {
   color: #6c757d;
+} */
+
+.audio-player {
+  width: 200%;
+  margin-top: 10px;
 }

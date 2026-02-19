@@ -165,6 +165,10 @@ export class TrackEdit {
     return `${this.apiService.getApiUrl()}/api/trackFileImage/${fileId}`;
   }
 
+  getAudioUrl(fileId: number): string {
+    return `${this.apiService.getApiUrl()}/api/trackFile/${fileId}`;
+  }
+
   formatDuration(seconds: number): string {
     if (isNaN(seconds) || seconds < 0) {
       return '00:00';
