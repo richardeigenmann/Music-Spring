@@ -101,45 +101,53 @@ export class TrackEdit {
   });
 
   addGroup(group: Group) {
-    this.track.update(track => {
-      if (track) {
-        const groupType = group.groupTypeName;
-        const groupName = group.groupName;
-        if (track[groupType]) {
-          if (Array.isArray(track[groupType])) {
-            if (!track[groupType].includes(groupName)) {
-              track[groupType].push(groupName);
-            }
-          } else { // It's a string
-            if (track[groupType] !== groupName) {
-              track[groupType] = [track[groupType], groupName];
-            }
-          }
-        } else {
-          track[groupType] = [groupName];
-        }
+    this.track.update(currentTrack => {
+      if (!currentTrack) {
+        return null;
       }
-      return track;
+      const newTrack = {...currentTrack};
+      const groupType = group.groupTypeName;
+      const groupName = group.groupName;
+      const existingValue = newTrack[groupType];
+
+      if (Array.isArray(existingValue)) {
+        if (!existingValue.includes(groupName)) {
+          newTrack[groupType] = [...existingValue, groupName];
+        }
+      } else if (typeof existingValue === 'string') {
+        if (existingValue !== groupName) {
+          newTrack[groupType] = [existingValue, groupName];
+        }
+      } else {
+        newTrack[groupType] = [groupName];
+      }
+      return newTrack;
     });
   }
 
   removeGroup(group: Group) {
-    this.track.update(track => {
-      if (track) {
-        const groupType = group.groupTypeName;
-        const groupName = group.groupName;
-        if (track[groupType] && Array.isArray(track[groupType])) {
-          track[groupType] = track[groupType].filter((g: string) => g !== groupName);
-          if (track[groupType].length === 1) {
-            track[groupType] = track[groupType][0];
-          } else if (track[groupType].length === 0) {
-            delete track[groupType];
-          }
-        } else if (track[groupType] === groupName) {
-          delete track[groupType];
-        }
+    this.track.update(currentTrack => {
+      if (!currentTrack) {
+        return null;
       }
-      return track;
+      const newTrack = {...currentTrack};
+      const groupType = group.groupTypeName;
+      const groupName = group.groupName;
+      const existingValue = newTrack[groupType];
+
+      if (Array.isArray(existingValue)) {
+        const newValues = existingValue.filter((g: string) => g !== groupName);
+        if (newValues.length === 0) {
+          delete newTrack[groupType];
+        } else if (newValues.length === 1) {
+          newTrack[groupType] = newValues[0];
+        } else {
+          newTrack[groupType] = newValues;
+        }
+      } else if (existingValue === groupName) {
+        delete newTrack[groupType];
+      }
+      return newTrack;
     });
   }
 

@@ -1,35 +1,45 @@
-<div *ngIf="track() as track" class="container">
-  <h1>Edit Track: {{ track.TrackName }}</h1>
-  <form (ngSubmit)="save()">
-    <div class="form-group">
-      <label for="trackName">Track Name:</label>
-      <input type="text" id="trackName" [(ngModel)]="track.TrackName" name="trackName" class="form-control">
-    </div>
+@if (track(); as track) {
+  <div class="container">
+    <h1>Edit Track: {{ track.TrackName }}</h1>
+    <form (ngSubmit)="save()">
+      <div class="form-group">
+        <label for="trackName">Track Name:</label>
+        <input type="text" id="trackName" [(ngModel)]="track.TrackName" name="trackName" class="form-control">
+      </div>
 
-    <div *ngFor="let groupType of objectKeys(availableGroups())" class="group-section">
-        <hr>
-        <h3>{{ groupType }}</h3>
-        <div class="group-row">
-            <strong>Current:</strong>
-            <span *ngIf="!trackGroups()[groupType] || trackGroups()[groupType].length === 0" class="no-groups">
-                none
-            </span>
-            <span *ngFor="let group of trackGroups()[groupType]" class="group-label">
-                {{ group.groupName }}
-                <button type="button" (click)="removeGroup(group)" class="btn-icon">🗑️</button>
-            </span>
+      @for (groupType of objectKeys(availableGroups()); track groupType) {
+        <div class="group-section">
+          <hr>
+          <h3>{{ groupType }}</h3>
+          <div class="group-row">
+              <strong>Current:</strong>
+              @if (!trackGroups()[groupType] || trackGroups()[groupType].length === 0) {
+                <span class="no-groups">
+                  none
+                </span>
+              }
+              @for (group of trackGroups()[groupType]; track group.groupId) {
+                <span class="group-label">
+                  {{ group.groupName }}
+                  <button type="button" (click)="removeGroup(group)" class="btn-icon">🗑️</button>
+                </span>
+              }
+          </div>
+          <div class="group-row">
+              <strong>Available:</strong>
+              @for (group of availableGroups()[groupType]; track group.groupId) {
+                <span class="group-label add">
+                  {{ group.groupName }}
+                  <button type="button" (click)="addGroup(group)" class="btn-icon">➕</button>
+                </span>
+              }
+          </div>
         </div>
-        <div class="group-row">
-            <strong>Available:</strong>
-            <span *ngFor="let group of availableGroups()[groupType]" class="group-label add">
-                {{ group.groupName }}
-                <button type="button" (click)="addGroup(group)" class="btn-icon">➕</button>
-            </span>
-        </div>
-    </div>
-    
-    <hr>
-    
-    <button type="submit" class="btn btn-primary">Save Changes</button>
-  </form>
-</div>
+      }
+      
+      <hr>
+      
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+  </div>
+}
