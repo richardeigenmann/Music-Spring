@@ -44,11 +44,13 @@ class MusicDbController(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = Map::class), examples = [
                 ExampleObject(value = """
                 {
+                  "TrackId": 1,
                   "TrackName": "Song Title",
                   "Artist": "Artist Name",
                   "Album": "Album Name",
                   "Files": [
                     {
+                      "FileId": 101,
                       "FileName": "song.mp3",
                       "FileLocation": "/path/to/file/",
                       "FileOnline": "Y",
@@ -130,11 +132,13 @@ class MusicDbController(
                 ExampleObject(value = """
                 [
                   {
+                    "TrackId": 1,
                     "TrackName": "Song Title",
                     "Artist": "Artist Name",
                     "Album": "Album Name",
                     "Files": [
                       {
+                        "FileId": 101,
                         "FileName": "song.mp3",
                         "FileLocation": "/path/to/file/",
                         "FileOnline": "Y",
@@ -161,11 +165,13 @@ class MusicDbController(
                 ExampleObject(value = """
                 [
                   {
+                    "TrackId": 1,
                     "TrackName": "Song Title",
                     "Artist": "Artist Name",
                     "Album": "Album Name",
                     "Files": [
                       {
+                        "FileId": 101,
                         "FileName": "song.mp3",
                         "FileLocation": "/path/to/file/",
                         "FileOnline": "Y",

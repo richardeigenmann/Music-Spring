@@ -104,4 +104,8 @@ export class ApiService {
   saveTrack(track: Track): Observable<Track> {
     return this.http.post<Track>(`${this.API_URL}/api/track/${track.TrackId}`, track);
   }
+
+  getApiUrl(): string {
+    return this.API_URL;
+  }
 }
