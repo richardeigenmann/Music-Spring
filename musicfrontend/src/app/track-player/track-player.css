@@ -52,3 +52,30 @@
     height: 50px;
     object-fit: cover;
 }
+
+.group-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-left: 10px;
+}
+
+.group-pill-mini {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2em 0.5em;
+    font-size: 0.7rem;
+    font-weight: bold;
+    line-height: 1;
+    color: #fff;
+    background-color: #007bff;
+    border-radius: 0.2rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.group-pill-mini:hover {
+    background-color: #0056b3;
+    color: white;
+}

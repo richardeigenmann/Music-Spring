@@ -58,8 +58,8 @@ ng lint
 
 ## Functionality to Add
 
+- New Tracks should be added to a new tracks playlist
 - Maintenance functions from music.pl
-- Ability to combine groups to filter tracks
 - Build Containers
 - Deploy Containers on CRC Openshift
 

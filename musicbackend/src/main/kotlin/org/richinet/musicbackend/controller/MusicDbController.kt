@@ -222,4 +222,10 @@ class MusicDbController(
         val groups = musicImportService.createPlaylist(request.name, request.trackIds)
         return ResponseEntity.ok(mapOf("groupId" to groups.groupId, "groupName" to groups.groupName))
     }
+
+    @DeleteMapping("/group/{id}")
+    fun deleteGroup(@PathVariable id: Long): ResponseEntity<Void> {
+        musicImportService.deleteGroup(id)
+        return ResponseEntity.ok().build()
+    }
 }

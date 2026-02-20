@@ -1,10 +1,41 @@
-/* Add some styling for the track list */
-ul {
-  list-style-type: none;
-  padding: 0;
+.group-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
 }
 
-li {
-  padding: 8px;
-  border-bottom: 1px solid #ccc;
+.group-pill-mini {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25em 0.6em;
+  font-size: 75%;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  background-color: #007bff;
+  border-radius: 0.25rem;
+  margin: 2px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.group-pill-mini:hover {
+  background-color: #0056b3;
+  color: white;
+}
+
+.btn-delete {
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.btn-delete:hover {
+  background: #cc0000;
 }

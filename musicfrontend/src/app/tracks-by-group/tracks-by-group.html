@@ -1,10 +1,23 @@
-<h1>Playlist Tracks {{groupId()}}</h1>
-<button (click)="playAll()">Play All</button>
+<h1>Playlist Tracks {{ currentGroupName() }} (ID: {{groupId()}})</h1>
+<div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
+  <button (click)="playAll()">Play All</button>
+  <button (click)="deleteCurrentGroup()" class="btn-delete" title="Delete this group">🗑️</button>
+</div>
+
 <ul>
-  @for (entry of playlistEntries(); track entry.trackName) {
-    <li>
-      <a [routerLink]="['/track', entry.trackId]">{{ entry.artist }} - {{ entry.trackName }}</a>
-      <a [routerLink]="['/track', entry.trackId]" style="text-decoration: none; margin-left: 5px;">✏️</a>
+  @for (entry of playlistEntries(); track entry.trackId) {
+    <li style="margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <span>{{ entry.artist }} - {{ entry.trackName }}</span>
+      
+      <div class="group-pills">
+        @for (group of entry.groupDetails; track group.groupId) {
+          <span class="group-pill-mini" [routerLink]="['/group', group.groupId]" title="{{ group.groupTypeName }}">
+            {{ group.groupName }}
+          </span>
+        }
+      </div>
+
+      <a [routerLink]="['/track', entry.trackId]" style="text-decoration: none;">✏️</a>
     </li>
   }
 </ul>

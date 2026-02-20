@@ -276,4 +276,10 @@ class MusicImportService(
         }
         return saved
     }
+
+    @Transactional
+    fun deleteGroup(groupId: Long) {
+        trackGroupRepository.deleteByGroupId(groupId)
+        groupsRepository.deleteById(groupId)
+    }
 }

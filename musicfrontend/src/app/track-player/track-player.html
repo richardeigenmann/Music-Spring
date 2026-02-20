@@ -20,9 +20,20 @@
             <li *ngFor="let track of getPlaylist(); let i = index" 
                 [class.playing]="track === currentTrack"
                 (click)="playTrack(i)"
-                style="cursor: pointer;">
+                style="cursor: pointer; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <img [src]="getTrackImageUrl(track.fileId)" alt="Track Image">
                 <span>{{ track.artist }} - {{ track.title }}</span>
+                
+                <div class="group-pills">
+                  <span *ngFor="let group of track.groupDetails" 
+                        class="group-pill-mini" 
+                        [routerLink]="['/group', group.groupId]" 
+                        (click)="$event.stopPropagation()"
+                        title="{{ group.groupTypeName }}">
+                    {{ group.groupName }}
+                  </span>
+                </div>
+
                 <a [routerLink]="['/track', track.trackId]" (click)="$event.stopPropagation()" style="margin-left: auto; text-decoration: none;">✏️</a>
             </li>
         </ul>

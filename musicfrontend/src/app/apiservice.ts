@@ -39,6 +39,7 @@ export interface TrackEntry {
     album: string;
     duration: number;
     fileId: number;
+    groupDetails: { groupId: number, groupName: string, groupTypeName: string }[];
 }
 
 
@@ -104,14 +105,22 @@ export class ApiService {
   mapToTrackEntry(track: any): TrackEntry {
     const artistRaw = track['Artist'];
     const artist = Array.isArray(artistRaw) ? artistRaw.join(', ') : (artistRaw || '');
+    
+    const groupDetails = (track.GroupDetails || []).map((g: any) => ({
+      groupId: g.GroupId,
+      groupName: g.GroupName,
+      groupTypeName: g.GroupTypeName
+    }));
+
     return {
       trackId: track.TrackId,
       title: track.TrackName,
       trackName: track.TrackName,
       artist: artist,
       album: track['Album'],
-      duration: track.Files[0]?.Duration || 0,
-      fileId: track.Files[0]?.FileId ?? 0
+      duration: track.Files?.[0]?.Duration || 0,
+      fileId: track.Files?.[0]?.FileId ?? 0,
+      groupDetails: groupDetails
     };
   }
 
@@ -153,5 +162,9 @@ export class ApiService {
 
   createPlaylist(name: string, trackIds: number[]): Observable<{ groupId: number, groupName: string }> {
     return this.http.post<{ groupId: number, groupName: string }>(`${this.API_URL}/api/createPlaylist`, { name, trackIds });
+  }
+
+  deleteGroup(groupId: number): Observable<void> {
+    return this.http.delete<void>(`${this.API_URL}/api/group/${groupId}`);
   }
 }
