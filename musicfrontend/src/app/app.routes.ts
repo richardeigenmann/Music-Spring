@@ -5,6 +5,7 @@ import { TrackEdit } from './track-edit/track-edit';
 import { TrackPlayer } from './track-player/track-player';
 import { UnclassifiedTracks } from './unclassified-tracks/unclassified-tracks';
 import { TrackSearch } from './track-search/track-search';
+import { MixingBoard } from './mixing-board/mixing-board';
 
 export const routes: Routes = [
     { path: 'playlists', component: Playlists },
@@ -13,5 +14,6 @@ export const routes: Routes = [
     { path: 'player', component: TrackPlayer },
     { path: 'unclassified', component: UnclassifiedTracks },
     { path: 'search', component: TrackSearch },
+    { path: 'mixer', component: MixingBoard },
     { path: '', redirectTo: '/playlists', pathMatch: 'full' }
 ];

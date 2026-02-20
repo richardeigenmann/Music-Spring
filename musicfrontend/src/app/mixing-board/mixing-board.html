@@ -1,0 +1,128 @@
+<div class="mixer-container">
+  <!-- Left Side: The Group Rack -->
+  <div class="group-rack">
+    <h2>The Rack (Available Groups)</h2>
+    <div
+      cdkDropList
+      id="availableList"
+      #availableList="cdkDropList"
+      [cdkDropListData]="availableGroups()"
+      [cdkDropListConnectedTo]="['mustList', 'canList', 'notList']"
+      class="groups-list"
+      (cdkDropListDropped)="drop($event)">
+      @for (group of availableGroups(); track group.groupId) {
+        <div class="group-pill" cdkDrag>
+          <span class="type-tag">{{ group.groupTypeName }}</span>
+          {{ group.groupName }}
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Right Side: The Mixer Strips -->
+  <div class="mixer-strips">
+    <div class="strip-header">
+      <h1>Music Mixing Board</h1>
+      <div class="master-out">
+        <div class="volume-meter">
+          <div class="meter-label">Track Count</div>
+          <div class="meter-value">{{ filteredTracks().length }}</div>
+          <div class="led-strip">
+            <div class="led green" [class.on]="filteredTracks().length > 0"></div>
+            <div class="led green" [class.on]="filteredTracks().length > 10"></div>
+            <div class="led yellow" [class.on]="filteredTracks().length > 50"></div>
+            <div class="led red" [class.on]="filteredTracks().length > 100"></div>
+          </div>
+        </div>
+        <div class="save-controls">
+          <input type="text" [(ngModel)]="newPlaylistName" placeholder="New Playlist Name">
+          <div style="display: flex; gap: 5px;">
+            <button class="btn-save" (click)="$event.stopPropagation(); saveAsPlaylist()" [disabled]="filteredTracks().length === 0">Save Mix</button>
+            <button class="btn-play" (click)="playAll()" [disabled]="filteredTracks().length === 0">Play Mix</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="strips-container">
+      <!-- Channel 1: JOIN (AND) -->
+      <div class="mixer-strip must-have">
+        <div class="knob">INTERSECT</div>
+        <div class="strip-label">THE SWEET SPOT (MUST HAVE)</div>
+        <div
+          cdkDropList
+          id="mustList"
+          #mustList="cdkDropList"
+          [cdkDropListData]="mustHave()"
+          [cdkDropListConnectedTo]="['availableList']"
+          class="bucket-list"
+          (cdkDropListDropped)="drop($event)">
+          @for (group of mustHave(); track group.groupId) {
+            <div class="group-pill selected" cdkDrag>{{ group.groupName }}</div>
+          }
+          @if (mustHave().length === 0) {
+            <div class="placeholder">Drop Groups Here</div>
+          }
+        </div>
+      </div>
+
+      <!-- Channel 2: UNION (OR) -->
+      <div class="mixer-strip can-have">
+        <div class="knob">UNION</div>
+        <div class="strip-label">THE BIG BUCKET (CAN HAVE)</div>
+        <div
+          cdkDropList
+          id="canList"
+          #canList="cdkDropList"
+          [cdkDropListData]="canHave()"
+          [cdkDropListConnectedTo]="['availableList']"
+          class="bucket-list"
+          (cdkDropListDropped)="drop($event)">
+          @for (group of canHave(); track group.groupId) {
+            <div class="group-pill selected" cdkDrag>{{ group.groupName }}</div>
+          }
+          @if (canHave().length === 0) {
+            <div class="placeholder">Drop Groups Here</div>
+          }
+        </div>
+      </div>
+
+      <!-- Channel 3: EXCLUDE (NOT) -->
+      <div class="mixer-strip must-not">
+        <div class="knob">NOT</div>
+        <div class="strip-label">THE OUTSIDERS (EXCLUDE)</div>
+        <div
+          cdkDropList
+          id="notList"
+          #notList="cdkDropList"
+          [cdkDropListData]="mustNotHave()"
+          [cdkDropListConnectedTo]="['availableList']"
+          class="bucket-list"
+          (cdkDropListDropped)="drop($event)">
+          @for (group of mustNotHave(); track group.groupId) {
+            <div class="group-pill selected" cdkDrag>{{ group.groupName }}</div>
+          }
+          @if (mustNotHave().length === 0) {
+            <div class="placeholder">Drop Groups Here</div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Result Preview -->
+    <div class="mixer-results">
+      <h3>Mix Preview</h3>
+      <div class="preview-scroll">
+        <ul>
+          @for (track of filteredTracks(); track track.trackId) {
+            <li>
+              <img [src]="getTrackImageUrl(track.fileId)" class="small-art">
+              {{ track.artist }} - {{ track.title }}
+              <a [routerLink]="['/track', track.trackId]" class="btn-edit">✏️</a>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

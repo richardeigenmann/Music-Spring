@@ -43,11 +43,11 @@ class MusicImportService(
             val track = Track()
             track.trackName = trackData["TrackName"] as? String
             trackRepository.save(track)
-            
+
             processTrackData(track, trackData)
-            
+
             count++
-            if (count % 200 == 0) {
+            if (count % 50 == 0) {
                 logger.info("Imported $count tracks")
             }
         }
@@ -57,7 +57,7 @@ class MusicImportService(
     @Transactional
     fun updateTrack(trackId: Long, trackData: Map<String, Any?>) {
         val track = trackRepository.findById(trackId).orElseThrow { RuntimeException("Track not found") }
-        
+
         if (trackData.containsKey("TrackName")) {
             track.trackName = trackData["TrackName"] as? String
         }
@@ -81,7 +81,7 @@ class MusicImportService(
 
         for ((key, value) in trackData) {
             if (key == "TrackName" || key == "TrackId") continue
-            
+
             if (key == "Files") {
                 val filesList = value as? List<Map<String, Any?>>
                 filesList?.forEach { fileData ->
@@ -90,7 +90,7 @@ class MusicImportService(
                     trackFile.fileName = fileData["FileName"] as? String
                     trackFile.fileLocation = fileData["FileLocation"] as? String
                     trackFile.fileOnline = fileData["FileOnline"] as? String
-                    
+
                     val duration = fileData["Duration"]
                     if (duration is Int) {
                          trackFile.duration = BigDecimal(duration)
@@ -108,7 +108,7 @@ class MusicImportService(
                              // ignore
                          }
                     }
-                    
+
                     trackFileRepository.save(trackFile)
                 }
                 continue
@@ -145,7 +145,7 @@ class MusicImportService(
 
     fun startMp3Scan() {
         if (!scanProgress.get().isDone) return
-        
+
         val mp3Dir = File(MUSIC_DIRECTORY, "mp3")
         if (!mp3Dir.exists() || !mp3Dir.isDirectory) {
             logger.error("MP3 directory not found at $mp3Dir")
@@ -182,7 +182,7 @@ class MusicImportService(
         val relPath = fullPath.substringAfter(MUSIC_DIRECTORY)
         val fileName = file.name
         val fileLocation = relPath.substringBeforeLast(fileName)
-        
+
         // Normalize fileLocation to start and end with /
         val normalizedLocation = if (fileLocation.startsWith("/")) fileLocation else "/$fileLocation"
         val finalLocation = if (normalizedLocation.endsWith("/")) normalizedLocation else "$normalizedLocation/"
@@ -214,16 +214,15 @@ class MusicImportService(
             album = tag.album ?: ""
             genre = tag.genreDescription ?: ""
         }
-        
+
         if (title.isBlank()) {
             title = fileName.substringBeforeLast(".")
         }
         duration = BigDecimal(mp3file.lengthInSeconds)
 
         // Try to find a track by artist and title
-        // In this simplified version, we just search for tracks that have this artist and title
         val existingTracks = trackRepository.searchTracks(title)
-        var track = existingTracks.find { t -> 
+        var track = existingTracks.find { t ->
             val serialized = trackDataService.serializeTrack(t)
             val artists = serialized["Artist"]
             val artistList = if (artists is List<*>) artists as List<String> else listOf(artists as? String ?: "")
@@ -234,7 +233,7 @@ class MusicImportService(
             track = Track()
             track.trackName = title
             trackRepository.save(track)
-            
+
             // Link metadata
             if (artist.isNotBlank()) {
                 linkTrackToGroup(track.trackId!!, artist, BigDecimal("2.00")) // Artist
@@ -255,7 +254,26 @@ class MusicImportService(
         trackFile.duration = duration
         trackFile.backupDate = Timestamp(System.currentTimeMillis())
         trackFileRepository.save(trackFile)
-        
+
         scanProgress.updateAndGet { it.copy(added = it.added + 1) }
+    }
+
+    @Transactional
+    fun createPlaylist(name: String, trackIds: List<Long>): Groups {
+        val playlistGroup = Groups()
+        playlistGroup.groupName = name
+        playlistGroup.groupTypeId = BigDecimal("4.00")
+        playlistGroup.lastModification = Timestamp(System.currentTimeMillis())
+        val saved = groupsRepository.save(playlistGroup)
+
+        trackIds.forEachIndexed { index, trackId ->
+            val tg = TrackGroup()
+            tg.trackId = trackId
+            tg.groupId = saved.groupId
+            tg.sequence = BigDecimal(index)
+            tg.lastModification = Timestamp(System.currentTimeMillis())
+            trackGroupRepository.save(tg)
+        }
+        return saved
     }
 }

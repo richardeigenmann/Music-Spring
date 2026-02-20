@@ -146,4 +146,12 @@ export class ApiService {
   searchTracks(query: string): Observable<Track[]> {
     return this.http.get<Track[]>(`${this.API_URL}/api/trackSearch?query=${encodeURIComponent(query)}`);
   }
+
+  filterTracks(mustHaveIds: number[], canHaveIds: number[], mustNotHaveIds: number[]): Observable<Track[]> {
+    return this.http.post<Track[]>(`${this.API_URL}/api/filterTracks`, { mustHaveIds, canHaveIds, mustNotHaveIds });
+  }
+
+  createPlaylist(name: string, trackIds: number[]): Observable<{ groupId: number, groupName: string }> {
+    return this.http.post<{ groupId: number, groupName: string }>(`${this.API_URL}/api/createPlaylist`, { name, trackIds });
+  }
 }
