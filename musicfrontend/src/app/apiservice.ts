@@ -33,6 +33,7 @@ export interface Track {
 
 export interface TrackEntry {
     trackId: number;
+    title: string;
     trackName: string;
     artist: string;
     album: string;
@@ -81,6 +82,7 @@ export class ApiService {
           console.log('Playlist entries data loaded successfully.');
           this._playlistEntries.set(data.map(track => ({
             trackId: track.TrackId,
+            title: track.TrackName,
             trackName: track.TrackName,
             artist: track['Artist'],
             album: track['Album'],

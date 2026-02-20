@@ -52,3 +52,13 @@ npx cypress open
 ```bash
 ng lint
 ```
+
+## Functionality to Add
+
+- Playlist player
+- Show unclassified tracks
+- Search screen with ability to picks the available groups
+- Add new tracks
+- Maintenance functions from music.pl
+- Ability to combine groups to filter tracks
+

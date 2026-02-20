@@ -1,0 +1,26 @@
+<div class="player-container">
+    <div class="player">
+        <img class="current-track-image" [src]="currentTrack ? getTrackImageUrl(currentTrack.trackId) : ''" alt="Current Track">
+        <audio class="audio-player" [src]="currentTrack ? getTrackUrl(currentTrack.trackId) : ''" controls autoplay></audio>
+        <div class="player-controls">
+            <button class="prev-button" (click)="playPreviousTrack()" [disabled]="currentIndex === 0">
+                Prev: {{ (currentIndex > 0 ? getPlaylist()[currentIndex - 1].title : '') }}
+            </button>
+            <button class="shuffle-button" (click)="toggleShuffle()">
+                {{ isShuffled ? 'Disable Shuffle' : 'Enable Shuffle' }}
+            </button>
+            <button class="next-button" (click)="playNextTrack()" [disabled]="currentIndex === getPlaylist().length - 1">
+                Next: {{ (currentIndex < getPlaylist().length - 1 ? getPlaylist()[currentIndex + 1].title : '') }}
+            </button>
+        </div>
+    </div>
+    <div class="playlist">
+        <h2>Playlist</h2>
+        <ul class="playlist-tracks">
+            <li *ngFor="let track of getPlaylist(); let i = index" [class.playing]="track === currentTrack">
+                <img [src]="getTrackImageUrl(track.trackId)" alt="Track Image">
+                <span>{{ track.title }}</span>
+            </li>
+        </ul>
+    </div>
+</div>

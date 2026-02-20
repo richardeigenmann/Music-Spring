@@ -1,0 +1,54 @@
+.player-container {
+    display: flex;
+    gap: 20px;
+}
+
+.player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.current-track-image {
+    width: 300px;
+    height: 300px;
+    object-fit: cover;
+}
+
+.audio-player {
+    width: 100%;
+}
+
+.player-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.playlist {
+    flex-grow: 1;
+}
+
+.playlist-tracks {
+    list-style: none;
+    padding: 0;
+}
+
+.playlist-tracks li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px;
+    border-bottom: 1px solid #ccc;
+}
+
+.playlist-tracks li.playing {
+    background-color: #eee;
+    font-weight: bold;
+}
+
+.playlist-tracks li img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+}

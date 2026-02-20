@@ -1,6 +1,6 @@
 import { Component, effect, inject, input } from '@angular/core';
 import { ApiService } from '../apiservice';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-tracks-by-group',
@@ -12,6 +12,7 @@ import { RouterLink } from '@angular/router';
 export class TracksByGroup {
   groupId = input<string>();
   private apiService = inject(ApiService);
+  private router = inject(Router);
 
   playlistEntries = this.apiService.playlistEntries;
 
@@ -23,5 +24,10 @@ export class TracksByGroup {
         this.apiService.loadPlaylistEntries(Number(id));
       }
     });
+  }
+
+  playAll(): void {
+    const playlist = this.playlistEntries();
+    this.router.navigate(['/player'], { state: { playlist } });
   }
 }

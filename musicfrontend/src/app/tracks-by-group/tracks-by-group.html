@@ -1,4 +1,5 @@
 <h1>Playlist Tracks {{groupId()}}</h1>
+<button (click)="playAll()">Play All</button>
 <ul>
   @for (entry of playlistEntries(); track entry.trackName) {
     <li>
