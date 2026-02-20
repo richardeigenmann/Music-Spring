@@ -24,4 +24,17 @@ interface TrackRepository : JpaRepository<Track, Long> {
         nativeQuery = true
     )
     fun searchTracks(@Param("query") query: String): List<Track>
+
+    @Query(
+        value = """
+        SELECT * FROM Track t WHERE t.Track_Id NOT IN (
+            SELECT tg.Track_Id FROM Track_Group tg
+            JOIN "groups" g ON tg.Group_Id = g.Group_Id
+            JOIN Group_Type gt ON g.Group_Type_Id = gt.Group_Type_Id
+            WHERE gt.Group_Type_Edit = 'S'
+        )
+        """,
+        nativeQuery = true
+    )
+    fun findUnclassifiedTracks(): List<Track>
 }

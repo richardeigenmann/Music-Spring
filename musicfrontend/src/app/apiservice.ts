@@ -51,14 +51,25 @@ export class ApiService {
   private readonly _playlistEntries = signal<TrackEntry[]>([]);
   private readonly _activePlaylist = signal<TrackEntry[]>([]);
   private readonly _activePlaylistName = signal<string>('');
+  private readonly _totalTrackCount = signal<number>(0);
 
   readonly playlists: Signal<PlaylistEntry[]> = this._playlists.asReadonly();
   readonly playlistEntries: Signal<TrackEntry[]> = this._playlistEntries.asReadonly();
   readonly activePlaylist: Signal<TrackEntry[]> = this._activePlaylist.asReadonly();
   readonly activePlaylistName: Signal<string> = this._activePlaylistName.asReadonly();
+  readonly totalTrackCount: Signal<number> = this._totalTrackCount.asReadonly();
 
   constructor(private http: HttpClient) {
     this.loadPlaylists();
+    this.loadTotalTrackCount();
+  }
+
+  loadTotalTrackCount(): void {
+    this.http.get<{ count: number }>(`${this.API_URL}/api/totalTrackCount`)
+      .subscribe({
+        next: (data) => this._totalTrackCount.set(data.count),
+        error: (error) => console.error('Failed to load total track count', error)
+      });
   }
 
   setActivePlaylist(playlist: TrackEntry[], name: string = 'Playlist'): void {
@@ -82,24 +93,26 @@ export class ApiService {
     this.http.get<Track[]>(`${this.API_URL}/api/tracksByGroup/${playlistId}`)
       .pipe(
         tap(data => {
-          this._playlistEntries.set(data.map(track => {
-            const artistRaw = track['Artist'];
-            const artist = Array.isArray(artistRaw) ? artistRaw.join(', ') : (artistRaw || '');
-            return {
-              trackId: track.TrackId,
-              title: track.TrackName,
-              trackName: track.TrackName,
-              artist: artist,
-              album: track['Album'],
-              duration: track.Files[0]?.Duration || 0,
-              fileId: track.Files[0]?.FileId ?? 0
-            };
-          }));
+          this._playlistEntries.set(data.map(track => this.mapToTrackEntry(track)));
         })
       )
       .subscribe({
         error: (error) => console.error('Failed to load playlist entries data', error)
       });
+  }
+
+  mapToTrackEntry(track: any): TrackEntry {
+    const artistRaw = track['Artist'];
+    const artist = Array.isArray(artistRaw) ? artistRaw.join(', ') : (artistRaw || '');
+    return {
+      trackId: track.TrackId,
+      title: track.TrackName,
+      trackName: track.TrackName,
+      artist: artist,
+      album: track['Album'],
+      duration: track.Files[0]?.Duration || 0,
+      fileId: track.Files[0]?.FileId ?? 0
+    };
   }
 
   getTrack(id: number): Observable<Track> {
@@ -116,5 +129,17 @@ export class ApiService {
 
   getApiUrl(): string {
     return this.API_URL;
+  }
+
+  scanTracks(): Observable<void> {
+    return this.http.post<void>(`${this.API_URL}/api/scanTracks`, {});
+  }
+
+  getScanProgress(): Observable<{ checked: number, added: number, totalEstimated: number, isDone: boolean, currentFile: string }> {
+    return this.http.get<{ checked: number, added: number, totalEstimated: number, isDone: boolean, currentFile: string }>(`${this.API_URL}/api/scanProgress`);
+  }
+
+  getUnclassifiedTracks(): Observable<Track[]> {
+    return this.http.get<Track[]>(`${this.API_URL}/api/unclassifiedTracks`);
   }
 }

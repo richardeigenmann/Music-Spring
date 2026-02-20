@@ -1,3 +1,22 @@
-<img src="assets/music_logo.gif" height="148" width="155" (click)="goHome()">
-<img src="assets/music_title.gif" height="87" width="592" (click)="goHome()">
+<img src="assets/music_logo.gif" height="148" width="155" (click)="goHome()" style="cursor: pointer;">
+<img src="assets/music_title.gif" height="87" width="592" (click)="goHome()" style="cursor: pointer;">
+<div style="float: right; text-align: right; margin-top: 20px;">
+  <span style="font-size: 24px; display: block;">{{ totalTracks() }} tracks</span>
+  <div style="margin-top: 10px;">
+    <img src="assets/music_addmp3.gif" (click)="startScan()" style="cursor: pointer;" title="Add new tracks">
+    <button (click)="goUnclassified()" style="margin-left: 10px; vertical-align: top; height: 32px;">Unclassified Tracks</button>
+  </div>
+  @if (scanProgress(); as progress) {
+    @if (!progress.isDone) {
+      <div style="margin-top: 10px; width: 300px; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
+        <div>Scanning: {{ progress.currentFile }}</div>
+        <div>Progress: {{ progress.checked }} / {{ progress.totalEstimated }} files</div>
+        <div>Added: {{ progress.added }} new tracks</div>
+        <div style="width: 100%; height: 10px; background: #eee; border: 1px solid #999; margin-top: 5px;">
+          <div [style.width.%]="(progress.checked / (progress.totalEstimated || 1)) * 100" style="height: 100%; background: #4CAF50;"></div>
+        </div>
+      </div>
+    }
+  }
+</div>
 <router-outlet></router-outlet>

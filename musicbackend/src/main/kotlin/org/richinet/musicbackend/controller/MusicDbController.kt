@@ -13,6 +13,7 @@ import org.richinet.musicbackend.data.repository.GroupsRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
 import org.richinet.musicbackend.data.repository.TrackRepository
 import org.richinet.musicbackend.service.MusicImportService
+import org.richinet.musicbackend.service.ScanProgress
 import org.richinet.musicbackend.service.TrackDataService
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.ClassPathResource
@@ -30,6 +31,7 @@ private const val MUSIC_DIRECTORY = "/richi"
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin
 class MusicDbController(
     private val trackRepository: TrackRepository,
     private val trackDataService: TrackDataService,
@@ -261,5 +263,36 @@ class MusicDbController(
             // Fallback if placeholder is missing (e.g. return 404 or empty)
              ResponseEntity.notFound().build()
         }
+    }
+
+    @Operation(summary = "Get total number of tracks")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Total track count returned")
+    ])
+    @GetMapping("/totalTrackCount")
+    fun getTotalTrackCount(): ResponseEntity<Map<String, Long>> {
+        val count = trackRepository.count()
+        return ResponseEntity.ok(mapOf("count" to count))
+    }
+
+    @Operation(summary = "Start scanning MP3 directory for new files")
+    @PostMapping("/scanTracks")
+    fun scanTracks(): ResponseEntity<Void> {
+        musicImportService.startMp3Scan()
+        return ResponseEntity.ok().build()
+    }
+
+    @Operation(summary = "Get current MP3 scan progress")
+    @GetMapping("/scanProgress")
+    fun getScanProgress(): ResponseEntity<ScanProgress> {
+        return ResponseEntity.ok(musicImportService.getScanProgress())
+    }
+
+    @Operation(summary = "Get tracks not yet classified into a major group type")
+    @GetMapping("/unclassifiedTracks")
+    fun getUnclassifiedTracks(): ResponseEntity<List<Map<String, Any?>>> {
+        val tracks = trackRepository.findUnclassifiedTracks()
+        val serializedTracks = tracks.map { trackDataService.serializeTrack(it) }
+        return ResponseEntity.ok(serializedTracks)
     }
 }

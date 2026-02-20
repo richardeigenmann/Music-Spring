@@ -1,0 +1,12 @@
+<h1>Unclassified Tracks</h1>
+<button (click)="playAll()" [disabled]="tracks().length === 0">Play All</button>
+@if (tracks().length === 0) {
+  <p>No unclassified tracks found or still loading...</p>
+}
+<ul>
+  @for (entry of tracks(); track entry.trackId) {
+    <li>
+      <a [routerLink]="['/track', entry.trackId]">{{ entry.artist }} - {{ entry.trackName }}</a>
+    </li>
+  }
+</ul>

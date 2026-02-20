@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository
 @Repository
 interface TrackFileRepository : JpaRepository<TrackFile, Long> {
     fun deleteByTrackId(trackId: Long)
+    fun findByFileNameAndFileLocation(fileName: String, fileLocation: String): List<TrackFile>
+    fun findByFileName(fileName: String): List<TrackFile>
 }
