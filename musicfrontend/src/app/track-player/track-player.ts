@@ -81,6 +81,11 @@ export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
     this.startPlayback();
   }
 
+  playTrack(index: number): void {
+    this.currentIndex = index;
+    this.startPlayback();
+  }
+
   getPlaylist(): TrackEntry[] {
     return this.isShuffled ? this.shuffledPlaylist : this.playlist;
   }

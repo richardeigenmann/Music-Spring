@@ -17,7 +17,10 @@
     <div class="playlist">
         <h2>Playlist</h2>
         <ul class="playlist-tracks">
-            <li *ngFor="let track of getPlaylist(); let i = index" [class.playing]="track === currentTrack">
+            <li *ngFor="let track of getPlaylist(); let i = index" 
+                [class.playing]="track === currentTrack"
+                (click)="playTrack(i)"
+                style="cursor: pointer;">
                 <img [src]="getTrackImageUrl(track.fileId)" alt="Track Image">
                 <span>{{ track.title }}</span>
             </li>
