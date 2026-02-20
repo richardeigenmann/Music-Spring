@@ -82,15 +82,19 @@ export class ApiService {
     this.http.get<Track[]>(`${this.API_URL}/api/tracksByGroup/${playlistId}`)
       .pipe(
         tap(data => {
-          this._playlistEntries.set(data.map(track => ({
-            trackId: track.TrackId,
-            title: track.TrackName,
-            trackName: track.TrackName,
-            artist: track['Artist'],
-            album: track['Album'],
-            duration: track.Files[0]?.Duration || 0,
-            fileId: track.Files[0]?.FileId ?? 0
-          })));
+          this._playlistEntries.set(data.map(track => {
+            const artistRaw = track['Artist'];
+            const artist = Array.isArray(artistRaw) ? artistRaw.join(', ') : (artistRaw || '');
+            return {
+              trackId: track.TrackId,
+              title: track.TrackName,
+              trackName: track.TrackName,
+              artist: artist,
+              album: track['Album'],
+              duration: track.Files[0]?.Duration || 0,
+              fileId: track.Files[0]?.FileId ?? 0
+            };
+          }));
         })
       )
       .subscribe({

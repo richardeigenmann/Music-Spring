@@ -58,12 +58,15 @@ ng lint
 
 ## Functionality to Add
 
-- Playlist player
 - Show unclassified tracks
 - Search screen with ability to picks the available groups
 - Add new tracks
 - Maintenance functions from music.pl
 - Ability to combine groups to filter tracks
+- Build Containers
+- Deploy Containers on CRC Openshift
+
+
 ## Build
 
 Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.

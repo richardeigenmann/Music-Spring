@@ -4,13 +4,13 @@
         <audio #audioPlayer class="audio-player" controls autoplay></audio>
         <div class="player-controls">
             <button class="prev-button" (click)="playPreviousTrack()" [disabled]="currentIndex === 0">
-                Prev: {{ (currentIndex > 0 ? getPlaylist()[currentIndex - 1].title : '') }}
+                Prev: {{ (currentIndex > 0 ? getPlaylist()[currentIndex - 1].artist + ' - ' + getPlaylist()[currentIndex - 1].title : '') }}
             </button>
             <button class="shuffle-button" (click)="toggleShuffle()">
                 {{ isShuffled ? 'Disable Shuffle' : 'Enable Shuffle' }}
             </button>
             <button class="next-button" (click)="playNextTrack()" [disabled]="currentIndex === getPlaylist().length - 1">
-                Next: {{ (currentIndex < getPlaylist().length - 1 ? getPlaylist()[currentIndex + 1].title : '') }}
+                Next: {{ (currentIndex < getPlaylist().length - 1 ? getPlaylist()[currentIndex + 1].artist + ' - ' + getPlaylist()[currentIndex + 1].title : '') }}
             </button>
         </div>
     </div>
@@ -22,7 +22,7 @@
                 (click)="playTrack(i)"
                 style="cursor: pointer;">
                 <img [src]="getTrackImageUrl(track.fileId)" alt="Track Image">
-                <span>{{ track.title }}</span>
+                <span>{{ track.artist }} - {{ track.title }}</span>
             </li>
         </ul>
     </div>
