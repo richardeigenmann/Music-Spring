@@ -4,6 +4,7 @@
   @for (entry of playlistEntries(); track entry.trackName) {
     <li>
       <a [routerLink]="['/track', entry.trackId]">{{ entry.trackName }} - {{ entry.artist }}</a>
+      <a [routerLink]="['/track', entry.trackId]" style="text-decoration: none; margin-left: 5px;">✏️</a>
     </li>
   }
 </ul>

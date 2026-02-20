@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService, TrackEntry } from '../apiservice';
 
 /**
@@ -9,7 +9,7 @@ import { ApiService, TrackEntry } from '../apiservice';
 @Component({
   selector: 'app-track-player',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './track-player.html',
   styleUrls: ['./track-player.css']
 })

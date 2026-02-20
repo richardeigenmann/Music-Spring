@@ -7,6 +7,7 @@
   @for (entry of tracks(); track entry.trackId) {
     <li>
       <a [routerLink]="['/track', entry.trackId]">{{ entry.artist }} - {{ entry.trackName }}</a>
+      <a [routerLink]="['/track', entry.trackId]" style="text-decoration: none; margin-left: 5px;">✏️</a>
     </li>
   }
 </ul>

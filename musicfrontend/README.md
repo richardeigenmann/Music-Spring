@@ -58,9 +58,7 @@ ng lint
 
 ## Functionality to Add
 
-- Show unclassified tracks
 - Search screen with ability to picks the available groups
-- Add new tracks
 - Maintenance functions from music.pl
 - Ability to combine groups to filter tracks
 - Build Containers

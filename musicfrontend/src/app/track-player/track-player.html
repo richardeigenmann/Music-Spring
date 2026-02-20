@@ -23,6 +23,7 @@
                 style="cursor: pointer;">
                 <img [src]="getTrackImageUrl(track.fileId)" alt="Track Image">
                 <span>{{ track.artist }} - {{ track.title }}</span>
+                <a [routerLink]="['/track', track.trackId]" (click)="$event.stopPropagation()" style="margin-left: auto; text-decoration: none;">✏️</a>
             </li>
         </ul>
     </div>
