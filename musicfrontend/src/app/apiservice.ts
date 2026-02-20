@@ -142,4 +142,8 @@ export class ApiService {
   getUnclassifiedTracks(): Observable<Track[]> {
     return this.http.get<Track[]>(`${this.API_URL}/api/unclassifiedTracks`);
   }
+
+  searchTracks(query: string): Observable<Track[]> {
+    return this.http.get<Track[]>(`${this.API_URL}/api/trackSearch?query=${encodeURIComponent(query)}`);
+  }
 }

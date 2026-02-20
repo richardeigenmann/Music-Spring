@@ -1,0 +1,13 @@
+<h1>Search Results for '{{ query() }}'</h1>
+<button (click)="playAll()" [disabled]="tracks().length === 0">Play All</button>
+@if (tracks().length === 0) {
+  <p>No tracks found matching your search.</p>
+}
+<ul>
+  @for (entry of tracks(); track entry.trackId) {
+    <li>
+      <a [routerLink]="['/track', entry.trackId]">{{ entry.artist }} - {{ entry.trackName }}</a>
+      <a [routerLink]="['/track', entry.trackId]" style="text-decoration: none; margin-left: 5px;">✏️</a>
+    </li>
+  }
+</ul>

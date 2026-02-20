@@ -35,6 +35,15 @@ export class App implements OnDestroy {
     this.router.navigate(['/unclassified']);
   }
 
+  performSearch(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const q = input.value;
+    if (q) {
+      this.router.navigate(['/search'], { queryParams: { q } });
+      input.value = ''; // Clear input after search
+    }
+  }
+
   startScan(): void {
     this.apiService.scanTracks().subscribe(() => {
       this.pollProgress();

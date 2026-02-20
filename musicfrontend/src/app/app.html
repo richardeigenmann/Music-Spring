@@ -3,6 +3,7 @@
 <div style="float: right; text-align: right; margin-top: 20px;">
   <span style="font-size: 24px; display: block;">{{ totalTracks() }} tracks</span>
   <div style="margin-top: 10px;">
+    <input type="text" placeholder="Search tracks..." (keyup.enter)="performSearch($event)" style="margin-right: 10px; padding: 5px; height: 22px;">
     <img src="assets/music_addmp3.gif" (click)="startScan()" style="cursor: pointer;" title="Add new tracks">
     <button (click)="goUnclassified()" style="margin-left: 10px; vertical-align: top; height: 32px;">Unclassified Tracks</button>
   </div>
