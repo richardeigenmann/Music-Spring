@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TrackEntry } from '../apiservice';
+import { ApiService, TrackEntry } from '../apiservice';
 
 /**
  * Component for playing a playlist of tracks.
@@ -14,6 +14,7 @@ import { TrackEntry } from '../apiservice';
   styleUrls: ['./track-player.css']
 })
 export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
+  private apiService = inject(ApiService);
   playlist: TrackEntry[] = [];
   shuffledPlaylist: TrackEntry[] = [];
   currentTrack: TrackEntry | undefined;
@@ -23,25 +24,26 @@ export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('audioPlayer') audioPlayer!: ElementRef<HTMLAudioElement>;
 
   constructor(private router: Router, private route: ActivatedRoute) {
-    const navigation = this.router.getCurrentNavigation();
-    if (navigation?.extras?.state?.['playlist']) {
-      this.playlist = navigation.extras.state['playlist'];
-    }
+    this.playlist = this.apiService.activePlaylist();
+    console.log('Playlist received from ApiService:', this.playlist);
   }
 
   ngOnInit(): void {
+    console.log('ngOnInit, playlist length:', this.playlist.length);
+  }
+
+  ngAfterViewInit(): void {
+    this.audioPlayer.nativeElement.addEventListener('ended', this.playNextTrack.bind(this));
     if (this.playlist.length > 0) {
       this.startPlayback();
     }
   }
 
-  ngAfterViewInit(): void {
-    this.audioPlayer.nativeElement.addEventListener('ended', this.playNextTrack.bind(this));
-  }
-
   ngOnDestroy(): void {
-    this.audioPlayer.nativeElement.removeEventListener('ended', this.playNextTrack.bind(this));
-    this.audioPlayer.nativeElement.pause();
+    if (this.audioPlayer) {
+      this.audioPlayer.nativeElement.removeEventListener('ended', this.playNextTrack.bind(this));
+      this.audioPlayer.nativeElement.pause();
+    }
   }
 
   startPlayback(): void {
@@ -51,7 +53,8 @@ export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
     } else {
       this.currentTrack = this.playlist[this.currentIndex];
     }
-    if (this.currentTrack) {
+    if (this.currentTrack && this.audioPlayer) {
+      console.log('Starting playback for track:', this.currentTrack);
       this.audioPlayer.nativeElement.src = this.getTrackUrl(this.currentTrack.fileId);
       this.audioPlayer.nativeElement.load();
       this.audioPlayer.nativeElement.play();
@@ -83,11 +86,11 @@ export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getTrackUrl(fileId: number): string {
-    return `/api/trackFile/${fileId}`;
+    return `${this.apiService.getApiUrl()}/api/trackFile/${fileId}`;
   }
 
-  getTrackImageUrl(trackId: number): string {
-    return `/api/music/db/track/${trackId}/image`;
+  getTrackImageUrl(fileId: number): string {
+    return `${this.apiService.getApiUrl()}/api/trackFileImage/${fileId}`;
   }
 
   /**

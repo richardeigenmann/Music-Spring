@@ -49,12 +49,18 @@ export class ApiService {
   private readonly API_URL = 'http://localhost:8002';
   private readonly _playlists = signal<PlaylistEntry[]>([]);
   private readonly _playlistEntries = signal<TrackEntry[]>([]);
+  private readonly _activePlaylist = signal<TrackEntry[]>([]);
 
   readonly playlists: Signal<PlaylistEntry[]> = this._playlists.asReadonly();
   readonly playlistEntries: Signal<TrackEntry[]> = this._playlistEntries.asReadonly();
+  readonly activePlaylist: Signal<TrackEntry[]> = this._activePlaylist.asReadonly();
 
   constructor(private http: HttpClient) {
     this.loadPlaylists();
+  }
+
+  setActivePlaylist(playlist: TrackEntry[]): void {
+    this._activePlaylist.set(playlist);
   }
 
   loadPlaylists(): void {

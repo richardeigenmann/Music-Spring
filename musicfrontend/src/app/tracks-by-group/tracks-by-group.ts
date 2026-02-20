@@ -30,6 +30,8 @@ export class TracksByGroup {
 
   playAll(): void {
     const playlist = this.playlistEntries();
-    this.router.navigate(['/player'], { state: { playlist } });
+    console.log('Setting active playlist:', playlist);
+    this.apiService.setActivePlaylist(playlist);
+    this.router.navigate(['/player']);
   }
 }

@@ -1,6 +1,6 @@
 <div class="player-container">
     <div class="player">
-        <img class="current-track-image" [src]="currentTrack ? getTrackImageUrl(currentTrack.trackId) : ''" alt="Current Track">
+        <img class="current-track-image" [src]="currentTrack ? getTrackImageUrl(currentTrack.fileId) : ''" alt="Current Track">
         <audio #audioPlayer class="audio-player" controls autoplay></audio>
         <div class="player-controls">
             <button class="prev-button" (click)="playPreviousTrack()" [disabled]="currentIndex === 0">
@@ -18,7 +18,7 @@
         <h2>Playlist</h2>
         <ul class="playlist-tracks">
             <li *ngFor="let track of getPlaylist(); let i = index" [class.playing]="track === currentTrack">
-                <img [src]="getTrackImageUrl(track.trackId)" alt="Track Image">
+                <img [src]="getTrackImageUrl(track.fileId)" alt="Track Image">
                 <span>{{ track.title }}</span>
             </li>
         </ul>
