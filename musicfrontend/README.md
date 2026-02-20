@@ -1,7 +1,10 @@
-# Musicfrontend
+# Music Frontend
 
-This is the frontend for Richards' Music Database.
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli).
 
+## Development server
+
+Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 ## Who is this repo for?
 
 This repo currently is of use to it's developer only.
@@ -61,4 +64,6 @@ ng lint
 - Add new tracks
 - Maintenance functions from music.pl
 - Ability to combine groups to filter tracks
+## Build
 
+Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.

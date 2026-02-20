@@ -4,6 +4,9 @@ import { ApiService, Group, Track } from '../apiservice';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
+/**
+ * Component for editing a track.
+ */
 @Component({
   selector: 'app-track-edit',
   standalone: true,

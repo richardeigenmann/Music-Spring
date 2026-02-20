@@ -2,6 +2,9 @@ import { Component, effect, inject, input } from '@angular/core';
 import { ApiService } from '../apiservice';
 import { Router, RouterLink } from '@angular/router';
 
+/**
+ * Component for displaying tracks by a group.
+ */
 @Component({
   selector: 'app-tracks-by-group',
   standalone: true,
@@ -19,7 +22,6 @@ export class TracksByGroup {
   constructor() {
     effect(() => {
       const id = this.groupId();
-      console.log("Handling effect: id is " + id )
       if (id) {
         this.apiService.loadPlaylistEntries(Number(id));
       }

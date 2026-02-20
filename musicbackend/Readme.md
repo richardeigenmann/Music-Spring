@@ -1,8 +1,16 @@
 # Music Backend
 
-This is a Spring Boot backend application written in Kotlin for managing and streaming
-a music collection.
+This is a Spring Boot application built with Kotlin and Gradle.
 
+## Running the application
+
+You can run the application using the Gradle wrapper included in the project.
+
+```bash
+./gradlew bootRun
+```
+
+The application will start on port 8002 by default.
 ## CORS Configuration
 
 When you deploy, you can override this property without changing the code. 

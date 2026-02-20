@@ -2,6 +2,9 @@ import { Component, inject } from '@angular/core';
 import { ApiService } from '../apiservice';
 import { RouterLink } from '@angular/router';
 
+/**
+ * Component for displaying a list of playlists.
+ */
 @Component({
   selector: 'app-playlists',
   standalone: true,

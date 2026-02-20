@@ -1,7 +1,7 @@
 <div class="player-container">
     <div class="player">
         <img class="current-track-image" [src]="currentTrack ? getTrackImageUrl(currentTrack.trackId) : ''" alt="Current Track">
-        <audio class="audio-player" [src]="currentTrack ? getTrackUrl(currentTrack.trackId) : ''" controls autoplay></audio>
+        <audio #audioPlayer class="audio-player" controls autoplay></audio>
         <div class="player-controls">
             <button class="prev-button" (click)="playPreviousTrack()" [disabled]="currentIndex === 0">
                 Prev: {{ (currentIndex > 0 ? getPlaylist()[currentIndex - 1].title : '') }}

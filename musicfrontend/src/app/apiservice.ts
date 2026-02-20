@@ -38,6 +38,7 @@ export interface TrackEntry {
     artist: string;
     album: string;
     duration: number;
+    fileId: number;
 }
 
 
@@ -49,7 +50,6 @@ export class ApiService {
   private readonly _playlists = signal<PlaylistEntry[]>([]);
   private readonly _playlistEntries = signal<TrackEntry[]>([]);
 
-  // Expose the signal as read-only for use in components
   readonly playlists: Signal<PlaylistEntry[]> = this._playlists.asReadonly();
   readonly playlistEntries: Signal<TrackEntry[]> = this._playlistEntries.asReadonly();
 
@@ -57,15 +57,10 @@ export class ApiService {
     this.loadPlaylists();
   }
 
-    /**
-   * Fetches the playlists from the remote URL and updates the signal.
-   */
   loadPlaylists(): void {
-    console.log('Fetching playlists data from URL...');
     this.http.get<PlaylistEntry[]>(this.API_URL+'/api/playlists')
       .pipe(
         tap(data => {
-          console.log('Playlists data loaded successfully.');
           this._playlists.set(data);
         })
       )
@@ -75,18 +70,17 @@ export class ApiService {
   }
 
   loadPlaylistEntries(playlistId: number): void {
-    console.log('Fetching playlist entries from URL...');
     this.http.get<Track[]>(`${this.API_URL}/api/tracksByGroup/${playlistId}`)
       .pipe(
         tap(data => {
-          console.log('Playlist entries data loaded successfully.');
           this._playlistEntries.set(data.map(track => ({
             trackId: track.TrackId,
             title: track.TrackName,
             trackName: track.TrackName,
             artist: track['Artist'],
             album: track['Album'],
-            duration: track.Files[0]?.Duration || 0
+            duration: track.Files[0]?.Duration || 0,
+            fileId: track.Files[0]?.FileId ?? 0
           })));
         })
       )
