@@ -16,6 +16,7 @@ import { ApiService, TrackEntry } from '../apiservice';
 export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
   private apiService = inject(ApiService);
   playlist: TrackEntry[] = [];
+  playlistName = '';
   shuffledPlaylist: TrackEntry[] = [];
   currentTrack: TrackEntry | undefined;
   currentIndex = 0;
@@ -25,7 +26,8 @@ export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
 
   constructor(private router: Router, private route: ActivatedRoute) {
     this.playlist = this.apiService.activePlaylist();
-    console.log('Playlist received from ApiService:', this.playlist);
+    this.playlistName = this.apiService.activePlaylistName();
+    console.log('Playlist received from ApiService:', this.playlistName, this.playlist);
   }
 
   ngOnInit(): void {

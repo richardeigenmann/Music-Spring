@@ -30,8 +30,12 @@ export class TracksByGroup {
 
   playAll(): void {
     const playlist = this.playlistEntries();
-    console.log('Setting active playlist:', playlist);
-    this.apiService.setActivePlaylist(playlist);
+    const id = Number(this.groupId());
+    const playlistInfo = this.apiService.playlists().find(p => p.groupId === id);
+    const name = playlistInfo ? playlistInfo.groupName : 'Playlist';
+    
+    console.log('Setting active playlist:', name, playlist);
+    this.apiService.setActivePlaylist(playlist, name);
     this.router.navigate(['/player']);
   }
 }

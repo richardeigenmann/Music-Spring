@@ -15,7 +15,7 @@
         </div>
     </div>
     <div class="playlist">
-        <h2>Playlist</h2>
+        <h2>{{ playlistName }}</h2>
         <ul class="playlist-tracks">
             <li *ngFor="let track of getPlaylist(); let i = index" 
                 [class.playing]="track === currentTrack"
