@@ -58,7 +58,6 @@ ng lint
 
 ## Functionality to Add
 
-- Search screen with ability to picks the available groups
 - Maintenance functions from music.pl
 - Ability to combine groups to filter tracks
 - Build Containers

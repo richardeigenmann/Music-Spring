@@ -4,9 +4,33 @@
   <span style="font-size: 24px; display: block;">{{ totalTracks() }} tracks</span>
   <div style="margin-top: 10px;">
     <input type="text" placeholder="Search tracks..." (keyup.enter)="performSearch($event)" style="margin-right: 10px; padding: 5px; height: 22px;">
+    <button (click)="toggleGroupsModal()" style="margin-right: 10px; vertical-align: top; height: 32px;">Browse Groups</button>
     <img src="assets/music_addmp3.gif" (click)="startScan()" style="cursor: pointer;" title="Add new tracks">
     <button (click)="goUnclassified()" style="margin-left: 10px; vertical-align: top; height: 32px;">Unclassified Tracks</button>
   </div>
+
+  @if (showGroupsModal()) {
+    <div class="modal-overlay" (click)="toggleGroupsModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <h2>Select a Group</h2>
+        <div class="groups-container">
+          @for (groupType of objectKeys(groupedGroups()); track groupType) {
+            <div class="group-type-section">
+              <h3>{{ groupType }}</h3>
+              <div class="groups-list">
+                @for (group of groupedGroups()[groupType]; track group.groupId) {
+                  <span class="group-pill" (click)="selectGroup(group.groupId)">
+                    {{ group.groupName }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <button class="close-button" (click)="toggleGroupsModal()">Close</button>
+      </div>
+    </div>
+  }
   @if (scanProgress(); as progress) {
     @if (!progress.isDone) {
       <div style="margin-top: 10px; width: 300px; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
