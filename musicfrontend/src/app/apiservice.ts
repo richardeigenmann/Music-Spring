@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, Signal, signal } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, firstValueFrom } from 'rxjs';
 
 export interface PlaylistEntry {
   groupName: string,
@@ -47,7 +47,10 @@ export interface TrackEntry {
   providedIn: 'root',
 })
 export class ApiService {
-  private readonly API_URL = 'http://localhost:8002';
+  private API_URL = 'http://localhost:8002'; // Fallback
+  private initialized = false;
+  private initPromise: Promise<void>;
+
   private readonly _playlists = signal<PlaylistEntry[]>([]);
   private readonly _playlistEntries = signal<TrackEntry[]>([]);
   private readonly _activePlaylist = signal<TrackEntry[]>([]);
@@ -61,11 +64,27 @@ export class ApiService {
   readonly totalTrackCount: Signal<number> = this._totalTrackCount.asReadonly();
 
   constructor(private http: HttpClient) {
-    this.loadPlaylists();
-    this.loadTotalTrackCount();
+    this.initPromise = this.loadConfig().then(() => {
+      this.loadPlaylists();
+      this.loadTotalTrackCount();
+    });
+  }
+
+  private async loadConfig(): Promise<void> {
+    try {
+      // Fetch from our local Express server
+      const config = await firstValueFrom(this.http.get<{ apiUrl: string }>('/config'));
+      this.API_URL = config.apiUrl;
+      console.log('API URL initialized to:', this.API_URL);
+      this.initialized = true;
+    } catch (e) {
+      console.warn('Could not load dynamic config, falling back to default:', this.API_URL);
+      this.initialized = true;
+    }
   }
 
   loadTotalTrackCount(): void {
+    if (!this.initialized) { this.initPromise.then(() => this.loadTotalTrackCount()); return; }
     this.http.get<{ count: number }>(`${this.API_URL}/api/totalTrackCount`)
       .subscribe({
         next: (data) => this._totalTrackCount.set(data.count),
@@ -79,6 +98,7 @@ export class ApiService {
   }
 
   loadPlaylists(): void {
+    if (!this.initialized) { this.initPromise.then(() => this.loadPlaylists()); return; }
     this.http.get<PlaylistEntry[]>(this.API_URL+'/api/playlists')
       .pipe(
         tap(data => {
@@ -91,6 +111,7 @@ export class ApiService {
   }
 
   loadPlaylistEntries(playlistId: number): void {
+    if (!this.initialized) { this.initPromise.then(() => this.loadPlaylistEntries(playlistId)); return; }
     this.http.get<Track[]>(`${this.API_URL}/api/tracksByGroup/${playlistId}`)
       .pipe(
         tap(data => {
@@ -125,15 +146,27 @@ export class ApiService {
   }
 
   getTrack(id: number): Observable<Track> {
-    return this.http.get<Track>(`${this.API_URL}/api/track/${id}`);
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.get<Track>(`${this.API_URL}/api/track/${id}`).subscribe(observer);
+      });
+    });
   }
 
   getGroups(): Observable<Group[]> {
-    return this.http.get<Group[]>(`${this.API_URL}/api/groups`);
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.get<Group[]>(`${this.API_URL}/api/groups`).subscribe(observer);
+      });
+    });
   }
 
   saveTrack(track: Track): Observable<Track> {
-    return this.http.post<Track>(`${this.API_URL}/api/track/${track.TrackId}`, track);
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.post<Track>(`${this.API_URL}/api/track/${track.TrackId}`, track).subscribe(observer);
+      });
+    });
   }
 
   getApiUrl(): string {
@@ -141,30 +174,58 @@ export class ApiService {
   }
 
   scanTracks(): Observable<void> {
-    return this.http.post<void>(`${this.API_URL}/api/scanTracks`, {});
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.post<void>(`${this.API_URL}/api/scanTracks`, {}).subscribe(observer);
+      });
+    });
   }
 
   getScanProgress(): Observable<{ checked: number, added: number, totalEstimated: number, isDone: boolean, currentFile: string }> {
-    return this.http.get<{ checked: number, added: number, totalEstimated: number, isDone: boolean, currentFile: string }>(`${this.API_URL}/api/scanProgress`);
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.get<{ checked: number, added: number, totalEstimated: number, isDone: boolean, currentFile: string }>(`${this.API_URL}/api/scanProgress`).subscribe(observer);
+      });
+    });
   }
 
   getUnclassifiedTracks(): Observable<Track[]> {
-    return this.http.get<Track[]>(`${this.API_URL}/api/unclassifiedTracks`);
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.get<Track[]>(`${this.API_URL}/api/unclassifiedTracks`).subscribe(observer);
+      });
+    });
   }
 
   searchTracks(query: string): Observable<Track[]> {
-    return this.http.get<Track[]>(`${this.API_URL}/api/trackSearch?query=${encodeURIComponent(query)}`);
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.get<Track[]>(`${this.API_URL}/api/trackSearch?query=${encodeURIComponent(query)}`).subscribe(observer);
+      });
+    });
   }
 
   filterTracks(mustHaveIds: number[], canHaveIds: number[], mustNotHaveIds: number[]): Observable<Track[]> {
-    return this.http.post<Track[]>(`${this.API_URL}/api/filterTracks`, { mustHaveIds, canHaveIds, mustNotHaveIds });
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.post<Track[]>(`${this.API_URL}/api/filterTracks`, { mustHaveIds, canHaveIds, mustNotHaveIds }).subscribe(observer);
+      });
+    });
   }
 
   createPlaylist(name: string, trackIds: number[]): Observable<{ groupId: number, groupName: string }> {
-    return this.http.post<{ groupId: number, groupName: string }>(`${this.API_URL}/api/createPlaylist`, { name, trackIds });
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.post<{ groupId: number, groupName: string }>(`${this.API_URL}/api/createPlaylist`, { name, trackIds }).subscribe(observer);
+      });
+    });
   }
 
   deleteGroup(groupId: number): Observable<void> {
-    return this.http.delete<void>(`${this.API_URL}/api/group/${groupId}`);
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.delete<void>(`${this.API_URL}/api/group/${groupId}`).subscribe(observer);
+      });
+    });
   }
 }

@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test --watch=false --browsers=ChromeHeadless"
+    "test": "ng test --watch=false --browsers=ChromeHeadless",
+    "container:build": "docker build -t musicfrontend ."
   },
   "prettier": {
     "printWidth": 100,
@@ -29,6 +30,7 @@
     "@angular/forms": "^21.1.4",
     "@angular/platform-browser": "^21.1.4",
     "@angular/router": "^21.1.4",
+    "express": "^5.2.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

@@ -60,10 +60,28 @@ ng lint
 
 - New Tracks should be added to a new tracks playlist
 - Maintenance functions from music.pl
-- Build Containers
-- Deploy Containers on CRC Openshift
-
+- Zap DB endpoint
 
 ## Build
 
 Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+
+## Container
+npm run container:build
+docker tag musicfrontend richardeigenmann/musicfrontend:0.0.1
+docker login
+docker push richardeigenmann/musicfrontend:0.0.1
+
+oc expose svc/music-frontend --port=80
+
+oc get svc music-frontend
+
+# pull a fresh copy
+oc patch deployment music-frontend -p '{"spec":{"template":{"spec":{"containers":[{"name":"music-frontend","imagePullPolicy":"Always"}]}}}}'
+
+oc new-app --docker-image=docker.io/richardeigenmann/musicfrontend:0.0.1 \
+    --name=music-frontend \
+    -e BACKEND_URL=http://music-backend.default.svc.cluster.local:8002/
+
+http://music-frontend-default.apps-crc.testing/
+
