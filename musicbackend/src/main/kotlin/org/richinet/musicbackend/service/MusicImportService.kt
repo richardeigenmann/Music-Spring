@@ -1,7 +1,10 @@
 package org.richinet.musicbackend.service
 
 import com.mpatric.mp3agic.Mp3File
-import org.richinet.musicbackend.data.entity.*
+import org.richinet.musicbackend.data.entity.Groups
+import org.richinet.musicbackend.data.entity.Track
+import org.richinet.musicbackend.data.entity.TrackFile
+import org.richinet.musicbackend.data.entity.TrackGroup
 import org.richinet.musicbackend.data.repository.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -10,7 +13,6 @@ import java.io.File
 import java.math.BigDecimal
 import java.sql.Timestamp
 import java.time.Instant
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 data class ScanProgress(
@@ -199,9 +201,9 @@ class MusicImportService(
         var title = ""
         var album = ""
         var genre = ""
-        var duration = BigDecimal.ZERO
+        var duration: BigDecimal
 
-        if (mp3file.hasId3v2Tag()) {
+      if (mp3file.hasId3v2Tag()) {
             val tag = mp3file.id3v2Tag
             artist = tag.artist ?: ""
             title = tag.title ?: ""
