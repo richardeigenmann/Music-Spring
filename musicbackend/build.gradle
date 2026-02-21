@@ -60,3 +60,7 @@ tasks.register("printJvmVersion") {
         println "----------------------------------------"
     }
 }
+
+springBoot {
+    buildInfo()
+}
