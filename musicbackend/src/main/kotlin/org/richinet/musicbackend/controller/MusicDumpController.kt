@@ -9,12 +9,15 @@ import org.richinet.musicbackend.data.repository.TrackRepository
 import org.richinet.musicbackend.service.DatabaseMaintenanceService
 import org.richinet.musicbackend.service.MusicImportService
 import org.richinet.musicbackend.service.TrackDataService
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.io.File
 
 private const val DB_DUMP_FILE = "/richi/ToDo/music_db.sql"
 private const val DB_JSON_FILE = "/richi/ToDo/music.json"
+
+private val logger = LoggerFactory.getLogger(MusicDumpController::class.java)
 
 @RestController
 @RequestMapping("/api")
@@ -67,6 +70,7 @@ class MusicDumpController(
   @PostMapping("/sync-db")
   fun syncDatabase(): String {
     databaseMaintenanceService.restoreDatabase(DB_DUMP_FILE)
+    logger.info ("Database restored from $DB_DUMP_FILE")
     return "Database restored from $DB_DUMP_FILE"
   }
 

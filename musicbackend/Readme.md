@@ -31,3 +31,21 @@ The `@Value` annotation injects this into the `allowedOrigins: Array<String>`, a
 
 By default, the application uses an H2 in-memory database. You can access 
 the H2 console at `/h2-console` when running with the `qa` profile.
+
+## Starting the container
+
+```bash
+docker run -p 8002:8002 \
+  -v /richi/mp3:/richi/mp3 \
+  -v /richi/ToDo:/richi/ToDo \
+  -d musicbackend:0.0.1-SNAPSHOT
+  
+  
+# to check on permission problems
+docker run --rm -it \
+  -u 1002:1000 \
+  -v /richi/mp3:/richi/mp3 \
+  -v /richi/ToDo:/richi/ToDo \
+  busybox sh
+
+```
