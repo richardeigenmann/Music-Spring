@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'org.richinet'
-version = '0.0.1-SNAPSHOT'
+version = '0.1.1-SNAPSHOT'
 description = 'musicbackend'
 
 java {
@@ -63,4 +63,9 @@ tasks.register("printJvmVersion") {
 
 springBoot {
     buildInfo()
+}
+
+bootBuildImage {
+    builder = "paketobuildpacks/builder-jammy-base"
+    runImage = "paketobuildpacks/run-jammy-base"
 }

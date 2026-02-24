@@ -74,6 +74,22 @@ class MusicDumpController(
     return "Database restored from $DB_DUMP_FILE"
   }
 
+  @Operation(
+    summary = "Clear all tables in the Music database except for GroupType",
+    description = "Clears all user-related tables (TrackGroup, TrackFile, Track, Groups) while leaving GroupType intact."
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "Database cleared successfully"),
+    ]
+  )
+  @PostMapping("/clear-db")
+  fun clearDatabase(): String {
+    databaseMaintenanceService.clearDatabase()
+    logger.info("Database cleared (except GroupType)")
+    return "Database cleared (except GroupType)"
+  }
+
   @Operation(summary = "Import music data from request body")
   @ApiResponses(
     value = [

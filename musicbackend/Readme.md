@@ -29,8 +29,16 @@ The `@Value` annotation injects this into the `allowedOrigins: Array<String>`, a
 
 ## Database
 
-By default, the application uses an H2 in-memory database. You can access 
-the H2 console at `/h2-console` when running with the `qa` profile.
+By default, the application uses an H2 in-memory database. 
+
+**Security Warning:** In production or public-facing deployments, the H2 console should be disabled to prevent unauthorized database access.
+
+### Disabling H2 Console
+To disable the H2 console, set the following property in your `application.properties` or as an environment variable:
+
+`SPRING_H2_CONSOLE_ENABLED=false`
+
+In the provided `application.properties`, this is currently set to `false` by default.
 
 ## Starting the container
 
@@ -48,32 +56,53 @@ docker run --rm -it \
   -v /richi/ToDo:/richi/ToDo \
   busybox sh
 
-docker tag musicbackend:0.0.1-SNAPSHOT richardeigenmann/musicbackend:0.0.1-SNAPSHOT
+docker tag musicbackend:0.1.0-SNAPSHOT richardeigenmann/musicbackend:0.1.0-SNAPSHOT
 docker login
-docker push richardeigenmann/musicbackend:0.0.1-SNAPSHOT
+docker push richardeigenmann/musicbackend:0.1.0-SNAPSHOT
 
 docker run -p 8002:8002 \
   -u 1002:1000 \
   -v /richi/mp3:/richi/mp3 \
   -v /richi/ToDo:/richi/ToDo \
-  -d richardeigenmann/musicbackend:0.0.1-SNAPSHOT
+  -d richardeigenmann/musicbackend:0.1.0-SNAPSHOT
 
-
+crc console --credentials
 crc oc-env
-oc login -u developer -p developer https://api.crc.testing:6443
+oc login -u developer -p developer https://api.crc.testing:6443 --insecure-skip-tls-verify=true
 
 # Create a new namespace/project
 oc new-project music-backend
+oc new-project music-backend-v2
 
 # Deploy the image from Docker Hub
 oc create service clusterip music-backend --tcp=8002:8002
-oc new-app --name=music-backend --docker-image=docker.io/richardeigenmann/musicbackend:0.0.1-SNAPSHOT
-# oc set image deployment/music-backend music-backend=docker.io/richardeigenmann/musicbackend:0.0.1-SNAPSHOT
+oc new-app --name=music-backend --image=docker.io/richardeigenmann/musicbackend:0.1.0-SNAPSHOT
+
+oc set volume deployment/music-backend --add \
+    --name=music-storage \
+    --type=pvc \
+    --claim-name=music-data-pvc \
+    --mount-path=/richi
+oc set env deployment/music-backend \
+    APP_CORS_ALLOWED_ORIGINS="http://music-frontend-default.apps-crc.testing"
+
+
 oc expose deployment/music-backend --port=8002 --target-port=8002
-oc expose svc/music-backend
-oc patch svc/music-backend -p '{"spec":{"ports":[{"port":8002,"targetPort":8002}]}}'
+oc expose svc/music-backend --hostname=music-backend-v2.apps-crc.testing
 
 curl music-backend-default.apps-crc.testing:8002/api/version
+curl music-backend-default.apps-crc.testing/api/version
+curl music-backend-default.apps-crc.testing:8002/api/totalTrackCount
+curl music-backend-v2.apps-crc.testing/api/version
+
+# Update to new version:
+oc set image deployment/music-backend music-backend=docker.io/richardeigenmann/music-backend:0.1.0-SNAPSHOT
+# Then, force a fresh pull just in case:
+oc patch deployment music-backend -p '{"spec":{"template":{"metadata":{"annotations":{"update-date":"'$(date +%s)'"}}}}}'
+
+## Maintenance Endpoints
+
+- `POST /api/clear-db`: Clears all music data tables (TrackGroup, TrackFile, Track, Groups) while preserving GroupTypes.
 curl music-backend-default.apps-crc.testing:8002/api/totalTrackCount
 
 # Describe Volume Mounts
