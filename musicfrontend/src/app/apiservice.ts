@@ -48,6 +48,7 @@ export interface TrackEntry {
 })
 export class ApiService {
   private API_URL = 'http://localhost:8002'; // Fallback
+  private CONTAINER_NAME = 'unknown';
   private initialized = false;
   private initPromise: Promise<void>;
 
@@ -73,8 +74,9 @@ export class ApiService {
   private async loadConfig(): Promise<void> {
     try {
       // Fetch from our local Express server
-      const config = await firstValueFrom(this.http.get<{ apiUrl: string }>('/config'));
+      const config = await firstValueFrom(this.http.get<{ apiUrl: string, containerName: string }>('/config'));
       this.API_URL = config.apiUrl;
+      this.CONTAINER_NAME = config.containerName;
       console.log('API URL initialized to:', this.API_URL);
       this.initialized = true;
     } catch (e) {
@@ -225,6 +227,22 @@ export class ApiService {
     return new Observable(observer => {
       this.initPromise.then(() => {
         this.http.delete<void>(`${this.API_URL}/api/group/${groupId}`).subscribe(observer);
+      });
+    });
+  }
+
+  getContainerName(): string {
+    return this.CONTAINER_NAME;
+  }
+
+  getFrontendUrl(): string {
+    return window.location.origin;
+  }
+
+  getVersion(): Observable<any> {
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.get<any>(`${this.API_URL}/api/version`).subscribe(observer);
       });
     });
   }

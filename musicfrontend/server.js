@@ -13,7 +13,10 @@ app.use(express.static(path.join(__dirname, 'dist/musicfrontend/browser')));
 
 // Endpoint for the frontend to get its configuration
 app.get('/config', (req, res) => {
-  res.json({ apiUrl: BACKEND_URL });
+  res.json({ 
+    apiUrl: BACKEND_URL,
+    containerName: process.env.HOSTNAME || 'unknown'
+  });
 });
 
 // For all other routes, serve the index.html (SPA routing)
