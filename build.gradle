@@ -1,0 +1,51 @@
+plugins {
+    id "com.github.node-gradle.node" version "7.0.2" apply false
+}
+
+subprojects {
+    apply plugin: 'base'
+    version = rootProject.version
+    group = rootProject.group
+}
+
+project(':musicfrontend') {
+    apply plugin: "com.github.node-gradle.node"
+
+    node {
+        download = false
+        nodeProjectDir = file("${project.projectDir}")
+    }
+
+    task generateVersionFile {
+        doLast {
+            def versionFile = file("${project.projectDir}/src/app/version.ts")
+            versionFile.text = """
+export const VERSION = '${version}';
+export const BUILD_DATE = '${new Date().toLocaleString()}';
+"""
+        }
+    }
+
+    task buildDocker(type: Exec) {
+        dependsOn 'generateVersionFile'
+        dependsOn 'npmInstall'
+        group = 'docker'
+        workingDir project.projectDir
+        commandLine 'docker', 'build', '-t', "${dockerHubUsername}/musicfrontend:${version}", '.'
+    }
+
+    task pushDocker(type: Exec) {
+        dependsOn 'buildDocker'
+        group = 'docker'
+        commandLine 'docker', 'push', "${dockerHubUsername}/musicfrontend:${version}"
+    }
+}
+
+task pushFrontendDocker {
+    dependsOn ':musicfrontend:pushDocker'
+    group = 'docker'
+}
+
+project(':musicbackend') {
+    // Backend specific configurations if needed beyond its own build.gradle
+}

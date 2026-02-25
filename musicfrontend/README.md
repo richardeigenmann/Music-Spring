@@ -72,6 +72,15 @@ docker tag musicfrontend richardeigenmann/musicfrontend:0.0.1
 docker login
 docker push richardeigenmann/musicfrontend:0.0.1
 
+./gradlew :musicfrontend:pushDocker.
+
+ To build and push everything, you can now simply run:
+   1 ./gradlew buildDocker  # For frontend
+   2 ./gradlew :musicbackend:bootBuildImage # For backend (if using Spring Boot's builder)
+  Or use the pushDocker task I added for the frontend. This structure makes the entire deployment process much more predictable and easier to automate.
+
+
+
 oc expose svc/music-frontend --port=80
 
 oc get svc music-frontend

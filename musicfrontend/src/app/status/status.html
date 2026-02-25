@@ -1,30 +1,43 @@
 <div class="status-container">
-  <h1>System Status</h1>
-  
+  <h1>Frontend:</h1>
+
   <div class="status-item">
     <strong>Frontend URL:</strong> {{ frontendUrl() }}
   </div>
-  
-  <div class="status-item">
-    <strong>Backend URL:</strong> {{ backendUrl() }}
-  </div>
-  
+
   <div class="status-item">
     <strong>Frontend Container Name:</strong> {{ containerName() }}
   </div>
 
-  @if (versionInfo(); as info) {
-    <div class="status-section">
-      <h2>Backend Version Information</h2>
-      <pre>{{ info | json }}</pre>
-    </div>
-  } @else {
-    <div class="status-section">
+  <div class="status-item">
+    <strong>Project Version:</strong> {{ projectVersion }}
+  </div>
+
+  <div class="status-item">
+    <strong>Angular Version:</strong> {{ angularVersion }}
+  </div>
+
+  <div class="status-item">
+    <strong>Frontend Build Date:</strong> {{ buildDate }}
+  </div>
+
+    <h1>Backend:</h1>
+    @if (versionInfo(); as info) {
+      <div class="status-item">
+        <strong>Container:</strong> {{ info.version }}
+      </div>
+      <div class="status-item">
+        <strong>Build time:</strong> {{ info.time | date:'medium' }}
+      </div>
+    } @else {
       <p>Loading backend version info...</p>
-    </div>
-  }
+    }
+
+  <div class="status-item">
+    <strong>Backend URL:</strong> {{ backendUrl() }}
+  </div>
 
   <div style="margin-top: 20px;">
-    <button (click)="goBack()">Back</button>
+    <button (click)="goBack()" class="musicdb-button">Back</button>
   </div>
 </div>

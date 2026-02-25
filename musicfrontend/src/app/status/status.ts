@@ -1,13 +1,15 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ViewEncapsulation, VERSION as ANGULAR_VERSION } from '@angular/core';
 import { ApiService } from '../apiservice';
 import { CommonModule } from '@angular/common';
+import { VERSION as PROJECT_VERSION, BUILD_DATE } from '../version';
 
 @Component({
   selector: 'app-status',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './status.html',
-  styleUrl: './status.css'
+  styleUrl: './status.css',
+  encapsulation: ViewEncapsulation.None
 })
 export class Status implements OnInit {
   private apiService = inject(ApiService);
@@ -16,6 +18,9 @@ export class Status implements OnInit {
   backendUrl = signal<string>('');
   containerName = signal<string>('');
   versionInfo = signal<any>(null);
+  angularVersion = ANGULAR_VERSION.full;
+  projectVersion = PROJECT_VERSION;
+  buildDate = BUILD_DATE;
 
   ngOnInit() {
     this.frontendUrl.set(this.apiService.getFrontendUrl());

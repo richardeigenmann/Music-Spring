@@ -6,8 +6,6 @@ plugins {
     id 'org.graalvm.buildtools.native' version '0.10.2'
 }
 
-group = 'org.richinet'
-version = '0.1.1-SNAPSHOT'
 description = 'musicbackend'
 
 java {
