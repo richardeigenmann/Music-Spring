@@ -21,6 +21,7 @@ export class App implements OnDestroy {
 
   // Groups Modal logic
   showGroupsModal = signal(false);
+  showHamburgerMenu = signal(false);
   allGroups = signal<Group[]>([]);
   objectKeys = Object.keys;
 
@@ -46,6 +47,10 @@ export class App implements OnDestroy {
     if (this.pollInterval) {
       clearInterval(this.pollInterval);
     }
+  }
+
+  toggleHamburgerMenu(): void {
+    this.showHamburgerMenu.update(v => !v);
   }
 
   goHome(): void {

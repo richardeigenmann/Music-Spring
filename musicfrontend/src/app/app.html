@@ -1,49 +1,69 @@
-<img src="assets/music_logo.gif" height="148" width="155" (click)="goHome()" style="cursor: pointer;">
-<img src="assets/music_title.gif" height="87" width="592" (click)="goHome()" style="cursor: pointer;">
-<div style="float: right; text-align: right; margin-top: 20px;">
-  <span style="font-size: 24px; display: block;">{{ totalTracks() }} tracks</span>
-  <div style="margin-top: 10px;">
-    <input type="text" placeholder="Search tracks..." (keyup.enter)="performSearch($event)" style="margin-right: 10px; padding: 5px; height: 22px;">
-    <button (click)="toggleGroupsModal()" style="margin-right: 10px; vertical-align: top; height: 32px;">Browse Groups</button>
-    <button routerLink="/mixer" style="margin-right: 10px; vertical-align: top; height: 32px; background: #333; color: #fff;">Mixing Board</button>
-    <button routerLink="/status" style="margin-right: 10px; vertical-align: top; height: 32px;">Status</button>
-    <img src="assets/music_addmp3.gif" (click)="startScan()" style="cursor: pointer;" title="Add new tracks">
-    <button (click)="goUnclassified()" style="margin-left: 10px; vertical-align: top; height: 32px;">Unclassified Tracks</button>
+<div class="header-container">
+  <div class="logo-section">
+    <img src="assets/music_logo.gif" height="148" width="155" (click)="goHome()" style="cursor: pointer; vertical-align: top;">
   </div>
+  <div class="content-section">
+    <div class="title-row">
+      <img src="assets/music_title.gif" height="87" width="592" (click)="goHome()" style="cursor: pointer; vertical-align: top;">
+    </div>
+    <div class="control-rectangle">
+      <div class="search-and-groups">
+        <input type="text" placeholder="Search" (keyup.enter)="performSearch($event)" class="search-input">
+        <button (click)="toggleGroupsModal()" class="musicdb-button">Pick</button>
+        <span class="tracks-count">{{ totalTracks() }} Tracks</span>
 
-  @if (showGroupsModal()) {
-    <div class="modal-overlay" (click)="toggleGroupsModal()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <h2>Select a Group</h2>
-        <div class="groups-container">
-          @for (groupType of objectKeys(groupedGroups()); track groupType) {
-            <div class="group-type-section">
-              <h3>{{ groupType }}</h3>
-              <div class="groups-list">
-                @for (group of groupedGroups()[groupType]; track group.groupId) {
-                  <span class="group-pill" (click)="selectGroup(group.groupId)">
-                    {{ group.groupName }}
-                  </span>
-                }
+        <div class="hamburger-menu">
+          <button (click)="toggleHamburgerMenu()" class="musicdb-button">☰ Menu</button>
+          @if (showHamburgerMenu()) {
+            <div class="menu-dropdown">
+              <button routerLink="/mixer" (click)="toggleHamburgerMenu()" class="menu-item">Mixing Board</button>
+              <button (click)="goUnclassified(); toggleHamburgerMenu()" class="menu-item">Unclassified Tracks</button>
+              <button routerLink="/status" (click)="toggleHamburgerMenu()" class="menu-item">Status</button>
+              <div class="menu-item" (click)="startScan(); toggleHamburgerMenu()">
+                <img src="assets/music_addmp3.gif" style="cursor: pointer; vertical-align: middle;" title="Add new tracks"> Add Mp3
               </div>
             </div>
           }
         </div>
-        <button class="close-button" (click)="toggleGroupsModal()">Close</button>
       </div>
     </div>
-  }
+  </div>
+
   @if (scanProgress(); as progress) {
     @if (!progress.isDone) {
-      <div style="margin-top: 10px; width: 300px; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
+      <div class="scan-progress-box">
         <div>Scanning: {{ progress.currentFile }}</div>
         <div>Progress: {{ progress.checked }} / {{ progress.totalEstimated }} files</div>
         <div>Added: {{ progress.added }} new tracks</div>
-        <div style="width: 100%; height: 10px; background: #eee; border: 1px solid #999; margin-top: 5px;">
-          <div [style.width.%]="(progress.checked / (progress.totalEstimated || 1)) * 100" style="height: 100%; background: #4CAF50;"></div>
+        <div class="progress-bar-container">
+          <div [style.width.%]="(progress.checked / (progress.totalEstimated || 1)) * 100" class="progress-bar"></div>
         </div>
       </div>
     }
   }
 </div>
+
+@if (showGroupsModal()) {
+  <div class="modal-overlay" (click)="toggleGroupsModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Select a Group</h2>
+      <div class="groups-container">
+        @for (groupType of objectKeys(groupedGroups()); track groupType) {
+          <div class="group-type-section">
+            <h3>{{ groupType }}</h3>
+            <div class="groups-list">
+              @for (group of groupedGroups()[groupType]; track group.groupId) {
+                <span class="group-pill" (click)="selectGroup(group.groupId)">
+                  {{ group.groupName }}
+                </span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <button class="close-button" (click)="toggleGroupsModal()">Close</button>
+    </div>
+  </div>
+}
+
 <router-outlet></router-outlet>

@@ -1,3 +1,126 @@
+.header-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.logo-section {
+  flex-shrink: 0;
+}
+
+.content-section {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.title-row {
+  line-height: 0;
+}
+
+.control-rectangle {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tracks-count {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.search-and-groups {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-input {
+  padding: 5px 10px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #ff0;
+  color: #ff0;
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 0, 0.7);
+}
+
+.hamburger-menu {
+  position: relative;
+  margin-left: auto;
+}
+
+.musicdb-button {
+  height: 36px;
+  padding: 0 15px;
+  cursor: pointer;
+  background: #333;
+  color: #ff0;
+  border: 1px solid #ff0;
+  font-weight: bold;
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #222;
+  border: 1px solid #ff0;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+}
+
+.menu-item {
+  padding: 12px 15px;
+  background: none;
+  border: none;
+  color: #ff0;
+  text-align: left;
+  cursor: pointer;
+  border-bottom: 1px solid #333;
+  width: 100%;
+}
+
+.menu-item:hover {
+  background: #333;
+}
+
+.scan-progress-box {
+  position: absolute;
+  top: 155px;
+  left: 0;
+  width: 300px;
+  border: 1px solid #ff0;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  font-size: 0.9em;
+  z-index: 900;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 10px;
+  background: #333;
+  border: 1px solid #666;
+  margin-top: 5px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #4CAF50;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -8,24 +131,25 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 .modal-content {
-  background: white;
+  background: #222;
   padding: 20px;
   border-radius: 8px;
   max-width: 80%;
   max-height: 80%;
   overflow-y: auto;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
   position: relative;
-  color: #333;
+  color: #ff0;
+  border: 1px solid #ff0;
 }
 
 .modal-content h2 {
   margin-top: 0;
-  border-bottom: 2px solid #eee;
+  border-bottom: 1px solid #ff0;
   padding-bottom: 10px;
 }
 
@@ -40,7 +164,7 @@
 .group-type-section h3 {
   margin: 10px 0;
   font-size: 1.2em;
-  color: #555;
+  color: #ccc;
 }
 
 .groups-list {
@@ -50,26 +174,28 @@
 }
 
 .group-pill {
-  background: #e0e0e0;
+  background: #333;
   padding: 5px 12px;
   border-radius: 15px;
   cursor: pointer;
   font-size: 0.9em;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s;
+  border: 1px solid #555;
+  color: #ff0;
 }
 
 .group-pill:hover {
-  background: #4CAF50;
-  color: white;
+  background: #ff0;
+  color: #000;
 }
 
 .close-button {
   display: block;
   margin: 0 auto;
   padding: 10px 20px;
-  background: #666;
-  color: white;
-  border: none;
+  background: #333;
+  color: #ff0;
+  border: 1px solid #ff0;
   border-radius: 4px;
   cursor: pointer;
 }
