@@ -16,12 +16,10 @@
           <button (click)="toggleHamburgerMenu()" class="musicdb-button">☰ Menu</button>
           @if (showHamburgerMenu()) {
             <div class="menu-dropdown">
-              <button routerLink="/mixer" (click)="toggleHamburgerMenu()" class="menu-item">Mixing Board</button>
-              <button (click)="goUnclassified(); toggleHamburgerMenu()" class="menu-item">Unclassified Tracks</button>
-              <button routerLink="/status" (click)="toggleHamburgerMenu()" class="menu-item">Status</button>
-              <div class="menu-item" (click)="startScan(); toggleHamburgerMenu()">
-                <img src="assets/music_addmp3.gif" style="cursor: pointer; vertical-align: middle;" title="Add new tracks"> Add Mp3
-              </div>
+              <button routerLink="/mixer" (click)="closeHamburgerMenu()" class="menu-item">Mixing Board</button>
+              <button (click)="goUnclassified(); closeHamburgerMenu()" class="menu-item">Unclassified Tracks</button>
+              <button routerLink="/status" (click)="closeHamburgerMenu()" class="menu-item">Status</button>
+              <button (click)="startScan(); closeHamburgerMenu()" class="menu-item">Scan mp3 directory</button>
             </div>
           }
         </div>

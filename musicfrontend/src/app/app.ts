@@ -53,6 +53,10 @@ export class App implements OnDestroy {
     this.showHamburgerMenu.update(v => !v);
   }
 
+  closeHamburgerMenu(): void {
+    this.showHamburgerMenu.set(false);
+  }
+
   goHome(): void {
     this.router.navigate(['/playlists']);
   }
