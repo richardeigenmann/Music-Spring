@@ -13,9 +13,8 @@ app.use(express.static(path.join(__dirname, 'dist/musicfrontend/browser')));
 
 // Endpoint for the frontend to get its configuration
 app.get('/config', (req, res) => {
-  res.json({ 
+  res.json({
     apiUrl: BACKEND_URL,
-    containerName: process.env.HOSTNAME || 'unknown'
   });
 });
 

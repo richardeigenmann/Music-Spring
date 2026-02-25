@@ -13,10 +13,9 @@ import { VERSION as PROJECT_VERSION, BUILD_DATE } from '../version';
 })
 export class Status implements OnInit {
   private apiService = inject(ApiService);
-  
+
   frontendUrl = signal<string>('');
   backendUrl = signal<string>('');
-  containerName = signal<string>('');
   versionInfo = signal<any>(null);
   angularVersion = ANGULAR_VERSION.full;
   projectVersion = PROJECT_VERSION;
@@ -24,13 +23,12 @@ export class Status implements OnInit {
 
   ngOnInit() {
     this.frontendUrl.set(this.apiService.getFrontendUrl());
-    
+
     // We might need to wait for ApiService to be initialized for backendUrl and containerName
     this.apiService.getVersion().subscribe(info => {
       this.versionInfo.set(info);
       // Once version is fetched, we know ApiService is initialized
       this.backendUrl.set(this.apiService.getApiUrl());
-      this.containerName.set(this.apiService.getContainerName());
     });
   }
 
