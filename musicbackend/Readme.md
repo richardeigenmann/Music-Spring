@@ -162,5 +162,51 @@ oc delete pod rsync-helper --force --grace-period=0
 # Now hit
 # http://music-app-music-backend.apps-crc.testing:8002
 
+export JAVA_HOME=/usr/lib/jvm/zulu21.30.15-ca-jdk21.0.1-linux_x64│ cd musicbackend && export JAVA_HOME=/usr/lib/jvm/zulu21.30.15-ca-jdk21.0.1-linux_x64 && export PATH=$JAVA_HOME/bin:$PATH &&                                      │
+│ ~/.sdkman/candidates/gradle/current/bin/gradle bootBuildImage -Pnative       
+
+
+
+To build the GraalVM native image yourself using the same environment and configuration I used, follow these exact steps.
+
+
+  1. Set the Environment
+  You must use JDK 21 and Gradle 8.12 (not the version 9.0.0 wrapper) to avoid compatibility errors with Spring Boot 3.3.0.
+
+
+   1 # Set Java to Zulu 21
+   2 export JAVA_HOME=/usr/lib/jvm/zulu21.30.15-ca-jdk21.0.1-linux_x64
+   3 export PATH=$JAVA_HOME/bin:$PATH
+   4
+   5 # Use the host's Gradle 8.12 (installed via sdkman)
+   6 GRADLE_BIN=~/.sdkman/candidates/gradle/current/bin/gradle
+
+
+  2. Run the Build
+  Navigate to the musicbackend directory and run the Spring Boot bootBuildImage task with the native profile. This command uses Cloud Native Buildpacks, which
+  handles the GraalVM native-image compilation inside a container so you don't need native-image installed on your host.
+
+
+   1 cd musicbackend
+   2 $GRADLE_BIN bootBuildImage -Pnative
+
+  3. Tag and Push
+  Once the build finishes successfully, it will create a local image named musicbackend:0.1.2-SNAPSHOT. Tag it for your Docker Hub repository and push it:
+
+
+   1 # Tag for your repository
+   2 docker tag musicbackend:0.1.2-SNAPSHOT richardeigenmann/musicbackend:latest-native
+   3
+   4 # Push to Docker Hub
+   5 docker push richardeigenmann/musicbackend:latest-native
+
+  4. Deploy
+  Finally, restart your stack to pull the new image:
+
+
+   1 cd ..
+   2 docker compose up -d
+
+
 
 ```

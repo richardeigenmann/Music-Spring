@@ -21,17 +21,27 @@ class StartupSyncHandler(
 
     override fun run(vararg args: String) {
         val sqlFile = File(sqlDumpPath)
+        var sqlRestoreSuccess = false
         if (sqlFile.exists()) {
             println("Found SQL dump file, attempting to sync database from $sqlDumpPath")
-            databaseMaintenanceService.restoreDatabase(sqlDumpPath)
-        } else {
-            println("SQL dump file not found. Falling back to JSON import from $jsonDumpPath")
+            try {
+                databaseMaintenanceService.restoreDatabase(sqlDumpPath)
+                sqlRestoreSuccess = true
+            } catch (e: Exception) {
+                println("SQL restore failed (likely incompatible database): ${e.message}")
+            }
+        }
+
+        if (!sqlRestoreSuccess) {
+            println("SQL sync not performed or failed. Falling back to JSON import check from $jsonDumpPath")
             val jsonFile = File(jsonDumpPath)
             if (jsonFile.exists()) {
                 try {
                     val data = objectMapper.readValue(jsonFile, List::class.java) as List<Map<String, Any>>
                     musicImportService.importMusicData(data)
+                    println("JSON import successful from $jsonDumpPath")
                 } catch (e: Exception) {
+                    println("JSON import failed: ${e.message}")
                     e.printStackTrace()
                 }
             } else {

@@ -24,19 +24,28 @@ class DatabaseMaintenanceService(
       targetFile.delete()
       logger.info("Deleted existing dump file at $path")
     }
-    val sql = "SCRIPT TO '$path'"
-    jdbcTemplate.execute(sql)
-    logger.info("Database dumped to $path")
+    try {
+      val sql = "SCRIPT TO '$path'"
+      jdbcTemplate.execute(sql)
+      logger.info("Database dumped to $path")
+    } catch (e: Exception) {
+      logger.error("Failed to dump database (likely not H2): ${e.message}")
+    }
   }
 
   fun restoreDatabase(path: String) {
     val file = File(path)
     if (file.exists()) {
-      // Drop all objects to ensure a clean state before restoring
-      jdbcTemplate.execute("DROP ALL OBJECTS")
-      val sql = "RUNSCRIPT FROM '$path'"
-      jdbcTemplate.execute(sql)
-      logger.info("Database restored from $path")
+      try {
+        // Drop all objects to ensure a clean state before restoring (H2 specific)
+        jdbcTemplate.execute("DROP ALL OBJECTS")
+        val sql = "RUNSCRIPT FROM '$path'"
+        jdbcTemplate.execute(sql)
+        logger.info("Database restored from $path")
+      } catch (e: Exception) {
+        logger.error("Failed to restore database from SQL dump (likely not H2 or syntax error): ${e.message}")
+        throw e // Re-throw to let the caller handle it if needed
+      }
     } else {
       println("Dump file not found at $path")
     }
