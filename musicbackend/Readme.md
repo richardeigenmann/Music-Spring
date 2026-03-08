@@ -40,6 +40,22 @@ To disable the H2 console, set the following property in your `application.prope
 
 In the provided `application.properties`, this is currently set to `false` by default.
 
+## Building the backend container
+
+```bash
+# Note: The Build Version number should be incremented and it comes from ./gradle.properties
+
+# to build the graalvm native image
+cd musicbackend 
+./gradlew bootBuildImage -Pnative
+
+# to build a faster standard JVM container
+cd musicbackend
+./gradlew bootBuildImage
+```
+
+
+
 ## Starting the container
 
 ```bash
@@ -206,7 +222,6 @@ To build the GraalVM native image yourself using the same environment and config
 
    1 cd ..
    2 docker compose up -d
-
-
-
 ```
+
+
