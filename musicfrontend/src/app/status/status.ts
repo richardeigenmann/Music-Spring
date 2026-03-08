@@ -16,6 +16,9 @@ export class Status implements OnInit {
 
   frontendUrl = signal<string>('');
   backendUrl = signal<string>('');
+  actuatorUrl = signal<string>('');
+  healthUrl = signal<string>('');
+  infoUrl = signal<string>('');
   versionInfo = signal<any>(null);
   angularVersion = ANGULAR_VERSION.full;
   projectVersion = PROJECT_VERSION;
@@ -29,6 +32,9 @@ export class Status implements OnInit {
       this.versionInfo.set(info);
       // Once version is fetched, we know ApiService is initialized
       this.backendUrl.set(this.apiService.getApiUrl());
+      this.actuatorUrl.set(this.apiService.getActuatorUrl());
+      this.healthUrl.set(this.apiService.getHealthUrl());
+      this.infoUrl.set(this.apiService.getInfoUrl());
     });
   }
 

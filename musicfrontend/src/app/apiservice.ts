@@ -173,6 +173,18 @@ export class ApiService {
     return this.API_URL;
   }
 
+  getActuatorUrl(): string {
+    return this.API_URL + '/actuator';
+  }
+
+  getHealthUrl(): string {
+    return this.API_URL + '/actuator/health';
+  }
+
+  getInfoUrl(): string {
+    return this.API_URL + '/actuator/info';
+  }
+
   scanTracks(): Observable<void> {
     return new Observable(observer => {
       this.initPromise.then(() => {

@@ -6,6 +6,7 @@ import org.richinet.musicbackend.service.MusicImportService
 import org.springframework.boot.CommandLineRunner
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
+import org.springframework.core.env.Environment
 import java.io.File
 
 @Component
@@ -13,13 +14,20 @@ import java.io.File
 class StartupSyncHandler(
     private val databaseMaintenanceService: DatabaseMaintenanceService,
     private val musicImportService: MusicImportService,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val environment: Environment
 ) : CommandLineRunner {
 
     private val sqlDumpPath = "/richi/ToDo/music_db.sql"
     private val jsonDumpPath = "/richi/ToDo/music.json"
 
     override fun run(vararg args: String) {
+        val jdbcUrl = environment.getProperty("spring.datasource.url") ?: ""
+        if (!jdbcUrl.contains("jdbc:h2:", ignoreCase = true)) {
+            println("Not using H2 database (URL: $jdbcUrl). Skipping startup sync.")
+            return
+        }
+
         val sqlFile = File(sqlDumpPath)
         var sqlRestoreSuccess = false
         if (sqlFile.exists()) {
