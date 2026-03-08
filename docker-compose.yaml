@@ -28,11 +28,6 @@ services:
     volumes:
       - /richi/mp3:/richi/mp3
       - /richi/ToDo:/richi/ToDo
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8002/actuator/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     depends_on:
       db:
         condition: service_healthy
@@ -46,8 +41,7 @@ services:
       - BACKEND_URL=http://octan:8011
       - PORT=8010
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
 
 volumes:
   music_db_data:
