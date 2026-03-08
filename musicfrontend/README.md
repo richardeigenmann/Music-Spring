@@ -71,6 +71,8 @@ npm run container:build
 docker tag musicfrontend richardeigenmann/musicfrontend:0.0.1
 docker login
 docker push richardeigenmann/musicfrontend:0.0.1
+docker tag musicfrontend richardeigenmann/musicfrontend:latest
+docker push richardeigenmann/musicfrontend:latest
 
 ./gradlew :musicfrontend:pushDocker.
 
@@ -94,3 +96,4 @@ oc new-app --docker-image=docker.io/richardeigenmann/musicfrontend:0.0.1 \
 
 http://music-frontend-default.apps-crc.testing/
 
+docker compose up -d
