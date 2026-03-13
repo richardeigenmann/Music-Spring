@@ -1,0 +1,132 @@
+.queue-container {
+    padding: 20px;
+    padding-bottom: 100px; /* Space for bottom player */
+    color: white;
+}
+
+.queue-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.queue-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.queue-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.nav-btn, .shuffle-btn {
+    padding: 8px 15px;
+    background: #333;
+    color: #ff0;
+    border: 1px solid #ff0;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.nav-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+    border-color: #555;
+    color: #aaa;
+}
+
+.track-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.track-list li {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.track-list li:hover {
+    background: #222;
+}
+
+.track-list li.playing {
+    background: #2a2a2a;
+    border-left: 4px solid #ff0;
+}
+
+.list-cover {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.track-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.track-title {
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.track-artist {
+    color: #bbb;
+    font-size: 0.9rem;
+}
+
+.group-pills {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    max-width: 30%;
+    justify-content: flex-end;
+}
+
+.group-pill {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    background: #444;
+    border-radius: 10px;
+    color: #eee;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.group-pill:hover {
+    background: #666;
+    color: white;
+}
+
+.empty-message {
+    padding: 20px;
+    text-align: center;
+    color: #aaa;
+    font-style: italic;
+}
+
+@media (max-width: 600px) {
+    .queue-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .group-pills {
+        display: none; /* Hide pills on mobile to save space */
+    }
+}

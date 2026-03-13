@@ -1,41 +1,27 @@
-<div class="player-container">
-    <div class="player">
-        <img class="current-track-image" [src]="currentTrack ? getTrackImageUrl(currentTrack.fileId) : ''" alt="Current Track">
-        <audio #audioPlayer class="audio-player" controls autoplay></audio>
-        <div class="player-controls">
-            <button class="prev-button" (click)="playPreviousTrack()" [disabled]="currentIndex === 0">
-                Prev: {{ (currentIndex > 0 ? getPlaylist()[currentIndex - 1].artist + ' - ' + getPlaylist()[currentIndex - 1].title : '') }}
-            </button>
-            <button class="shuffle-button" (click)="toggleShuffle()">
-                {{ isShuffled ? 'Disable Shuffle' : 'Enable Shuffle' }}
-            </button>
-            <button class="next-button" (click)="playNextTrack()" [disabled]="currentIndex === getPlaylist().length - 1">
-                Next: {{ (currentIndex < getPlaylist().length - 1 ? getPlaylist()[currentIndex + 1].artist + ' - ' + getPlaylist()[currentIndex + 1].title : '') }}
-            </button>
-        </div>
+@if (currentTrack(); as track) {
+  <div class="player-bar">
+    <div class="track-info">
+      <img [src]="getTrackImageUrl(track.fileId)" alt="Cover" class="cover-art" (click)="openQueue()">
+      <div class="track-details">
+        <div class="track-title" [title]="track.title">{{ track.title }}</div>
+        <div class="track-artist" [title]="track.artist">{{ track.artist }}</div>
+      </div>
     </div>
-    <div class="playlist">
-        <h2>{{ playlistName }}</h2>
-        <ul class="playlist-tracks">
-            <li *ngFor="let track of getPlaylist(); let i = index" 
-                [class.playing]="track === currentTrack"
-                (click)="playTrack(i)"
-                style="cursor: pointer; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <img [src]="getTrackImageUrl(track.fileId)" alt="Track Image">
-                <span>{{ track.artist }} - {{ track.title }}</span>
-                
-                <div class="group-pills">
-                  <span *ngFor="let group of track.groupDetails" 
-                        class="group-pill-mini" 
-                        [routerLink]="['/group', group.groupId]" 
-                        (click)="$event.stopPropagation()"
-                        title="{{ group.groupTypeName }}">
-                    {{ group.groupName }}
-                  </span>
-                </div>
 
-                <a [routerLink]="['/track', track.trackId]" (click)="$event.stopPropagation()" style="margin-left: auto; text-decoration: none;">✏️</a>
-            </li>
-        </ul>
+    <div class="controls">
+      <button class="control-btn" (click)="playbackService.previousTrack()" [disabled]="!hasPrevious()" title="Previous Track">
+        ⏮
+      </button>
+
+      <audio #audioPlayer controls autoplay class="audio-element"></audio>
+
+      <button class="control-btn" (click)="playbackService.nextTrack()" [disabled]="!hasNext()" title="Next Track">
+        ⏭
+      </button>
     </div>
-</div>
+
+    <div class="extra-controls">
+      <button class="queue-btn" (click)="openQueue()">Queue</button>
+    </div>
+  </div>
+}

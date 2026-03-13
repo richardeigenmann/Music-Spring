@@ -2,11 +2,12 @@ import { Component, OnDestroy, inject, signal, computed } from '@angular/core';
 import { Router, RouterOutlet, RouterLink } from '@angular/router';
 import { ApiService, Group } from './apiservice';
 import { CommonModule } from '@angular/common';
+import { TrackPlayer } from './track-player/track-player';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, CommonModule],
+  imports: [RouterOutlet, RouterLink, CommonModule, TrackPlayer],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

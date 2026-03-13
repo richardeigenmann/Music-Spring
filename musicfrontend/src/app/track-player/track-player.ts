@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ApiService, TrackEntry } from '../apiservice';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, effect, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { ApiService } from '../apiservice';
+import { PlaybackService } from '../playback.service';
 
 /**
- * Component for playing a playlist of tracks.
+ * Always-on bottom player component.
  */
 @Component({
   selector: 'app-track-player',
@@ -15,81 +16,53 @@ import { ApiService, TrackEntry } from '../apiservice';
 })
 export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
   private apiService = inject(ApiService);
-  playlist: TrackEntry[] = [];
-  playlistName = '';
-  shuffledPlaylist: TrackEntry[] = [];
-  currentTrack: TrackEntry | undefined;
-  currentIndex = 0;
-  isShuffled = false;
+  playbackService = inject(PlaybackService);
+  private router = inject(Router);
 
   @ViewChild('audioPlayer') audioPlayer!: ElementRef<HTMLAudioElement>;
 
-  constructor(private router: Router, private route: ActivatedRoute) {
-    this.playlist = this.apiService.activePlaylist();
-    this.playlistName = this.apiService.activePlaylistName();
-    console.log('Playlist received from ApiService:', this.playlistName, this.playlist);
+  currentTrack = this.playbackService.currentTrack;
+  playlistName = this.playbackService.playlistName;
+  hasNext = this.playbackService.hasNext;
+  hasPrevious = this.playbackService.hasPrevious;
+
+  constructor() {
+    // React to track changes to update audio source
+    effect(() => {
+      const track = this.currentTrack();
+      if (track && this.audioPlayer) {
+        const audio = this.audioPlayer.nativeElement;
+        const newSrc = this.getTrackUrl(track.fileId);
+        
+        // Only reload if the source actually changed to prevent stutter on other state updates
+        if (audio.src !== newSrc) {
+            audio.src = newSrc;
+            audio.load();
+            audio.play().catch(e => console.warn('Autoplay prevented:', e));
+        }
+      }
+    });
   }
 
-  ngOnInit(): void {
-    console.log('ngOnInit, playlist length:', this.playlist.length);
-  }
+  ngOnInit(): void {}
 
   ngAfterViewInit(): void {
-    this.audioPlayer.nativeElement.addEventListener('ended', this.playNextTrack.bind(this));
-    if (this.playlist.length > 0) {
-      this.startPlayback();
+    if (this.audioPlayer) {
+        this.audioPlayer.nativeElement.addEventListener('ended', () => this.playbackService.nextTrack());
+        // Initialize with current track if exists (e.g. from persistence)
+        const track = this.currentTrack();
+        if (track) {
+            this.audioPlayer.nativeElement.src = this.getTrackUrl(track.fileId);
+            // Don't auto-play on page load from persistence, user might not want that
+        }
     }
   }
 
   ngOnDestroy(): void {
+    // Component is intended to be always-on, but good practice to clean up
     if (this.audioPlayer) {
-      this.audioPlayer.nativeElement.removeEventListener('ended', this.playNextTrack.bind(this));
-      this.audioPlayer.nativeElement.pause();
+      this.audioPlayer.nativeElement.removeEventListener('ended', () => this.playbackService.nextTrack());
     }
-  }
-
-  startPlayback(): void {
-    if (this.isShuffled) {
-      this.shuffledPlaylist = this.shuffleArray([...this.playlist]);
-      this.currentTrack = this.shuffledPlaylist[this.currentIndex];
-    } else {
-      this.currentTrack = this.playlist[this.currentIndex];
-    }
-    if (this.currentTrack && this.audioPlayer) {
-      console.log('Starting playback for track:', this.currentTrack);
-      this.audioPlayer.nativeElement.src = this.getTrackUrl(this.currentTrack.fileId);
-      this.audioPlayer.nativeElement.load();
-      this.audioPlayer.nativeElement.play();
-    }
-  }
-
-  playNextTrack(): void {
-    if (this.currentIndex < this.getPlaylist().length - 1) {
-      this.currentIndex++;
-      this.startPlayback();
-    }
-  }
-
-  playPreviousTrack(): void {
-    if (this.currentIndex > 0) {
-      this.currentIndex--;
-      this.startPlayback();
-    }
-  }
-
-  toggleShuffle(): void {
-    this.isShuffled = !this.isShuffled;
-    this.currentIndex = 0;
-    this.startPlayback();
-  }
-
-  playTrack(index: number): void {
-    this.currentIndex = index;
-    this.startPlayback();
-  }
-
-  getPlaylist(): TrackEntry[] {
-    return this.isShuffled ? this.shuffledPlaylist : this.playlist;
   }
 
   getTrackUrl(fileId: number): string {
@@ -99,18 +72,9 @@ export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
   getTrackImageUrl(fileId: number): string {
     return `${this.apiService.getApiUrl()}/api/trackFileImage/${fileId}`;
   }
-
-  /**
-   * Shuffles an array using the Fisher-Yates algorithm.
-   * @param array The array to shuffle.
-   * @returns The shuffled array.
-   */
-  private shuffleArray<T>(array: T[]): T[] {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
+  
+  openQueue() {
+      this.router.navigate(['/queue']);
   }
 }
 

@@ -1,0 +1,41 @@
+<div class="queue-container">
+    <div class="queue-header">
+        <h1>{{ playlistName() }}</h1>
+        <div class="queue-controls">
+            <button class="nav-btn" (click)="playbackService.goBackHistory()" [disabled]="!canGoBack()">
+                History Back
+            </button>
+            <button class="nav-btn" (click)="playbackService.goForwardHistory()" [disabled]="!canGoForward()">
+                History Forward
+            </button>
+            <button class="shuffle-btn" (click)="playbackService.toggleShuffle()">
+                {{ isShuffled() ? 'Shuffle: ON' : 'Shuffle: OFF' }}
+            </button>
+        </div>
+    </div>
+
+    <ul class="track-list">
+        @for (track of currentPlaylist(); track track.trackId; let i = $index) {
+            <li [class.playing]="track === currentTrack()" (click)="playTrack(i)">
+                <img [src]="getTrackImageUrl(track.fileId)" alt="Cover" class="list-cover">
+                <div class="track-info">
+                    <span class="track-title">{{ track.title }}</span>
+                    <span class="track-artist">{{ track.artist }}</span>
+                </div>
+                
+                <div class="group-pills">
+                    @for (group of track.groupDetails; track group.groupId) {
+                        <span class="group-pill" 
+                              [routerLink]="['/group', group.groupId]" 
+                              (click)="$event.stopPropagation()"
+                              title="{{ group.groupTypeName }}">
+                            {{ group.groupName }}
+                        </span>
+                    }
+                </div>
+            </li>
+        } @empty {
+            <li class="empty-message">No tracks in queue. Pick a playlist!</li>
+        }
+    </ul>
+</div>

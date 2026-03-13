@@ -2,6 +2,7 @@ import { Component, effect, inject, input, computed } from '@angular/core';
 import { ApiService } from '../apiservice';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { PlaybackService } from '../playback.service';
 
 /**
  * Component for displaying tracks by a group.
@@ -16,6 +17,7 @@ import { CommonModule } from '@angular/common';
 export class TracksByGroup {
   groupId = input<string>();
   private apiService = inject(ApiService);
+  private playbackService = inject(PlaybackService);
   private router = inject(Router);
 
   playlistEntries = this.apiService.playlistEntries;
@@ -39,9 +41,9 @@ export class TracksByGroup {
     const playlist = this.playlistEntries();
     const name = this.currentGroupName() || 'Playlist';
     
-    console.log('Setting active playlist:', name, playlist);
-    this.apiService.setActivePlaylist(playlist, name);
-    this.router.navigate(['/player']);
+    console.log('Playing playlist:', name, playlist);
+    this.playbackService.playPlaylist(playlist, name);
+    // No navigation needed, player is always on
   }
 
   deleteCurrentGroup(): void {

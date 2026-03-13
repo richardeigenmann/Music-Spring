@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ApiService, TrackEntry } from '../apiservice';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { PlaybackService } from '../playback.service';
 
 @Component({
   selector: 'app-track-search',
@@ -12,6 +13,7 @@ import { CommonModule } from '@angular/common';
 })
 export class TrackSearch implements OnInit {
   private apiService = inject(ApiService);
+  private playbackService = inject(PlaybackService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   tracks = signal<TrackEntry[]>([]);
@@ -37,7 +39,6 @@ export class TrackSearch implements OnInit {
 
   playAll(): void {
     const playlist = this.tracks();
-    this.apiService.setActivePlaylist(playlist, 'Search Results: ' + this.query());
-    this.router.navigate(['/player']);
+    this.playbackService.playPlaylist(playlist, 'Search Results: ' + this.query());
   }
 }

@@ -1,3 +1,9 @@
+:host {
+    display: block;
+    padding-bottom: 90px; /* Space for the bottom player */
+}
+
+/* ... existing styles ... */
 .header-container {
   display: flex;
   align-items: flex-start;

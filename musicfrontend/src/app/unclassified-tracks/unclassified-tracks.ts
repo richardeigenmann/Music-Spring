@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ApiService, TrackEntry } from '../apiservice';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { PlaybackService } from '../playback.service';
 
 @Component({
   selector: 'app-unclassified-tracks',
@@ -12,6 +13,7 @@ import { CommonModule } from '@angular/common';
 })
 export class UnclassifiedTracks implements OnInit {
   private apiService = inject(ApiService);
+  private playbackService = inject(PlaybackService);
   private router = inject(Router);
   tracks = signal<TrackEntry[]>([]);
 
@@ -46,7 +48,6 @@ export class UnclassifiedTracks implements OnInit {
 
   playAll(): void {
     const playlist = this.tracks();
-    this.apiService.setActivePlaylist(playlist, 'Unclassified Tracks');
-    this.router.navigate(['/player']);
+    this.playbackService.playPlaylist(playlist, 'Unclassified Tracks');
   }
 }

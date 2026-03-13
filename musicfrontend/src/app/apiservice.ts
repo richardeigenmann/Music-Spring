@@ -53,14 +53,10 @@ export class ApiService {
 
   private readonly _playlists = signal<PlaylistEntry[]>([]);
   private readonly _playlistEntries = signal<TrackEntry[]>([]);
-  private readonly _activePlaylist = signal<TrackEntry[]>([]);
-  private readonly _activePlaylistName = signal<string>('');
   private readonly _totalTrackCount = signal<number>(0);
 
   readonly playlists: Signal<PlaylistEntry[]> = this._playlists.asReadonly();
   readonly playlistEntries: Signal<TrackEntry[]> = this._playlistEntries.asReadonly();
-  readonly activePlaylist: Signal<TrackEntry[]> = this._activePlaylist.asReadonly();
-  readonly activePlaylistName: Signal<string> = this._activePlaylistName.asReadonly();
   readonly totalTrackCount: Signal<number> = this._totalTrackCount.asReadonly();
 
   constructor(private http: HttpClient) {
@@ -90,11 +86,6 @@ export class ApiService {
         next: (data) => this._totalTrackCount.set(data.count),
         error: (error) => console.error('Failed to load total track count', error)
       });
-  }
-
-  setActivePlaylist(playlist: TrackEntry[], name: string = 'Playlist'): void {
-    this._activePlaylist.set(playlist);
-    this._activePlaylistName.set(name);
   }
 
   loadPlaylists(): void {

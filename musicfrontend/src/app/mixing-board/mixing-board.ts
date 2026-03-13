@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { PlaybackService } from '../playback.service';
 
 @Component({
   selector: 'app-mixing-board',
@@ -14,6 +15,7 @@ import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from 
 })
 export class MixingBoard implements OnInit {
   private apiService = inject(ApiService);
+  private playbackService = inject(PlaybackService);
   private router = inject(Router);
 
   // Group lists for drag and drop
@@ -109,8 +111,9 @@ export class MixingBoard implements OnInit {
 
   playAll(): void {
     const playlist = this.filteredTracks();
-    this.apiService.setActivePlaylist(playlist, 'Mixer Result');
-    this.router.navigate(['/player']);
+    if (playlist.length > 0) {
+      this.playbackService.playPlaylist(playlist, 'Mixer Result');
+    }
   }
 
   getTrackImageUrl(fileId: number): string {
