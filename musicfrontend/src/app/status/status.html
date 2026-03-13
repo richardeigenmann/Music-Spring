@@ -17,17 +17,7 @@
     <strong>Frontend Build Date:</strong> {{ buildDate }}
   </div>
 
-    <h1>Backend:</h1>
-    @if (versionInfo(); as info) {
-      <div class="status-item">
-        <strong>Container:</strong> {{ info.version }}
-      </div>
-      <div class="status-item">
-        <strong>Build time:</strong> {{ info.time | date:'medium' }}
-      </div>
-    } @else {
-      <p>Loading backend version info...</p>
-    }
+  <h1>Backend:</h1>
 
   <div class="status-item">
     <strong>Backend URL:</strong> <a href="{{ backendUrl() }}" target="_blank">{{ backendUrl() }}</a>
@@ -38,6 +28,18 @@
     <br>
     <strong>Info:</strong> <a href="{{ infoUrl() }}" target="_blank">{{ backendUrl() }}</a>
   </div>
+
+    @if (versionInfo(); as info) {
+      <div class="status-item">
+        <strong>Backend Version:</strong> {{ info.version }}
+      </div>
+      <div class="status-item">
+        <strong>Build time:</strong> {{ info.time | date:'medium' }}
+      </div>
+    } @else {
+      <p>Loading backend version info...</p>
+    }
+
 
   <div style="margin-top: 20px;">
     <button (click)="goBack()" class="musicdb-button">Back</button>

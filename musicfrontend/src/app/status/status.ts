@@ -27,15 +27,27 @@ export class Status implements OnInit {
   ngOnInit() {
     this.frontendUrl.set(this.apiService.getFrontendUrl());
 
-    // We might need to wait for ApiService to be initialized for backendUrl and containerName
-    this.apiService.getVersion().subscribe(info => {
-      this.versionInfo.set(info);
-      // Once version is fetched, we know ApiService is initialized
-      this.backendUrl.set(this.apiService.getApiUrl());
-      this.actuatorUrl.set(this.apiService.getActuatorUrl());
-      this.healthUrl.set(this.apiService.getHealthUrl());
-      this.infoUrl.set(this.apiService.getInfoUrl());
+    // Immediately set URLs from current config (might be defaults)
+    this.updateUrls();
+
+    this.apiService.getVersion().subscribe({
+      next: (info) => {
+        this.versionInfo.set(info);
+        // Refresh URLs in case config loading finished
+        this.updateUrls();
+      },
+      error: (err) => {
+        console.warn('Backend version check failed, but updating URLs anyway.');
+        this.updateUrls();
+      }
     });
+  }
+
+  private updateUrls() {
+    this.backendUrl.set(this.apiService.getApiUrl());
+    this.actuatorUrl.set(this.apiService.getActuatorUrl());
+    this.healthUrl.set(this.apiService.getHealthUrl());
+    this.infoUrl.set(this.apiService.getInfoUrl());
   }
 
   goBack() {
