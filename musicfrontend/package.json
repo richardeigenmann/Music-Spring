@@ -2,6 +2,8 @@
   "name": "musicfrontend",
   "version": "0.1.2-SNAPSHOT",
   "scripts": {
+    "prestart": "node update-version.js",
+    "prebuild": "node update-version.js",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
