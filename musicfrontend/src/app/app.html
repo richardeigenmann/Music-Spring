@@ -9,7 +9,6 @@
     <div class="control-rectangle">
       <div class="search-and-groups">
         <input type="text" placeholder="Search" (keyup.enter)="performSearch($event)" class="search-input">
-        <button (click)="toggleGroupsModal()" class="musicdb-button">Pick</button>
         <span class="tracks-count">{{ totalTracks() }} Tracks</span>
 
         <div class="hamburger-menu">
@@ -40,29 +39,6 @@
     }
   }
 </div>
-
-@if (showGroupsModal()) {
-  <div class="modal-overlay" (click)="toggleGroupsModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <h2>Select a Group</h2>
-      <div class="groups-container">
-        @for (groupType of sortedGroupTypes(); track groupType) {
-          <div class="group-type-section">
-            <h3>{{ groupType }}</h3>
-            <div class="groups-list">
-              @for (group of groupedGroups()[groupType]; track group.groupId) {
-                <span class="group-pill" (click)="selectGroup(group.groupId)">
-                  {{ group.groupName }}
-                </span>
-              }
-            </div>
-          </div>
-        }
-      </div>
-      <button class="close-button" (click)="toggleGroupsModal()">Close</button>
-    </div>
-  </div>
-}
 
 <router-outlet></router-outlet>
 <app-track-player></app-track-player>

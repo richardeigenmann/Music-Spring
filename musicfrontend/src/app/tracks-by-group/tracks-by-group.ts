@@ -69,7 +69,7 @@ export class TracksByGroup {
       this.apiService.deleteGroup(id).subscribe({
         next: () => {
           this.apiService.loadPlaylists(); // Refresh global list
-          this.router.navigate(['/playlists']);
+          this.router.navigate(['/groups']);
         },
         error: (err) => {
           console.error(err);

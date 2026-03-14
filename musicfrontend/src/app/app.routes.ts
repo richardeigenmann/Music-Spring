@@ -8,9 +8,11 @@ import { TrackSearch } from './track-search/track-search';
 import { MixingBoard } from './mixing-board/mixing-board';
 import { Status } from './status/status';
 import { Queue } from './queue/queue';
+import { Groups } from './groups/groups';
 
 export const routes: Routes = [
     { path: 'status', component: Status },
+    { path: 'groups', component: Groups },
     { path: 'playlists', component: Playlists },
     { path: 'group/:groupId', component: TracksByGroup },
     { path: 'track/:id', component: TrackEdit },
@@ -19,5 +21,5 @@ export const routes: Routes = [
     { path: 'unclassified', component: UnclassifiedTracks },
     { path: 'search', component: TrackSearch },
     { path: 'mixer', component: MixingBoard },
-    { path: '', redirectTo: '/playlists', pathMatch: 'full' }
+    { path: '', redirectTo: '/groups', pathMatch: 'full' }
 ];

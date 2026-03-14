@@ -18,45 +18,10 @@ export class App implements OnDestroy {
   totalTracks = this.apiService.totalTrackCount;
   
   scanProgress = signal<{ checked: number, added: number, totalEstimated: number, isDone: boolean, currentFile: string } | null>(null);
-  private pollInterval: any;
-
-  // Groups Modal logic
-  showGroupsModal = signal(false);
   showHamburgerMenu = signal(false);
-  allGroups = signal<Group[]>([]);
-  objectKeys = Object.keys;
+  private pollInterval: any = null;
 
-  groupedGroups = computed(() => {
-    const groups = this.allGroups();
-    const grouped: { [key: string]: Group[] } = {};
-    
-    // 1. Group the groups
-    for (const group of groups) {
-      const type = group.groupTypeName || 'Other';
-      if (!grouped[type]) {
-        grouped[type] = [];
-      }
-      grouped[type].push(group);
-    }
-    
-    // 2. Sort groups within each type
-    for (const type in grouped) {
-      grouped[type].sort((a, b) => a.groupName.localeCompare(b.groupName));
-    }
-    
-    return grouped;
-  });
-
-  // Helper to get sorted keys for consistent display
-  sortedGroupTypes = computed(() => {
-    return Object.keys(this.groupedGroups()).sort();
-  });
-
-  constructor() {
-    this.apiService.getGroups().subscribe(groups => {
-      this.allGroups.set(groups);
-    });
-  }
+  constructor() {}
 
   ngOnDestroy(): void {
     if (this.pollInterval) {
@@ -73,20 +38,11 @@ export class App implements OnDestroy {
   }
 
   goHome(): void {
-    this.router.navigate(['/playlists']);
+    this.router.navigate(['/groups']);
   }
 
   goUnclassified(): void {
     this.router.navigate(['/unclassified']);
-  }
-
-  toggleGroupsModal(): void {
-    this.showGroupsModal.update(v => !v);
-  }
-
-  selectGroup(groupId: number): void {
-    this.showGroupsModal.set(false);
-    this.router.navigate(['/group', groupId]);
   }
 
   performSearch(event: Event): void {
