@@ -15,9 +15,14 @@ export interface PlaybackState {
 export class PlaybackService {
   private readonly STORAGE_KEY = 'music_playback_state';
   private readonly HISTORY_KEY = 'music_playback_history';
+  private readonly HISTORY_INDEX_KEY = 'music_playback_history_index';
   private readonly HISTORY_LIMIT = 10;
 
-  // Current State Signals
+  // History is the main source of truth
+  private history = signal<PlaybackState[]>([]);
+  private historyIndex = signal<number>(-1);
+
+  // Current State Signal (synchronized with history[historyIndex])
   private state = signal<PlaybackState>({
     playlist: [],
     playlistName: '',
@@ -26,14 +31,11 @@ export class PlaybackService {
     shuffledPlaylist: []
   });
 
-  // History Management
-  private history = signal<PlaybackState[]>([]);
-  private historyIndex = signal<number>(-1);
-
   // Computed Values
   readonly currentTrack = computed(() => {
     const s = this.state();
     const list = s.isShuffled ? s.shuffledPlaylist : s.playlist;
+    if (list.length === 0) return null;
     return list[s.currentIndex];
   });
 
@@ -53,67 +55,62 @@ export class PlaybackService {
   constructor() {
     this.loadState();
 
-    // Auto-save state on change
+    // Auto-save everything on change
     effect(() => {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.state()));
-    });
-    
-    // Auto-save history on change
-    effect(() => {
-       localStorage.setItem(this.HISTORY_KEY, JSON.stringify(this.history()));
+      localStorage.setItem(this.HISTORY_KEY, JSON.stringify(this.history()));
+      localStorage.setItem(this.HISTORY_INDEX_KEY, this.historyIndex().toString());
     });
   }
 
   playPlaylist(playlist: TrackEntry[], name: string = 'Playlist') {
-    // 1. Save current state to history before switching (if not empty)
-    if (this.state().playlist.length > 0) {
-        this.pushToHistory(this.state());
-    }
-
-    // 2. Prepare new state
+    // 1. Prepare new state
     const shuffled = this.shuffleArray([...playlist]);
     const newState: PlaybackState = {
       playlist: playlist,
       playlistName: name,
       currentIndex: 0,
-      isShuffled: true, // Default to shuffled as requested
+      isShuffled: true, // Default to shuffled
       shuffledPlaylist: shuffled
     };
 
-    // 3. Set new state
-    this.state.set(newState);
+    // 2. Update history: truncate future and append new state
+    const currentHist = this.history();
+    const truncatedHist = currentHist.slice(0, this.historyIndex() + 1);
+    const newHist = [...truncatedHist, JSON.parse(JSON.stringify(newState))];
     
-    // 4. Reset history pointer to the end (new "future")
-    // Actually, simple history implies a linear timeline.
-    // If we play a new playlist, we might want to clear "forward" history 
-    // or just append this as a new entry.
-    // For simplicity, let's treat "Back" as "Go to previous playlist context"
+    if (newHist.length > this.HISTORY_LIMIT) {
+        newHist.shift();
+    }
+
+    this.history.set(newHist);
+    this.historyIndex.set(newHist.length - 1);
+    this.state.set(newState);
   }
 
   nextTrack() {
     if (this.hasNext()) {
-      this.state.update(s => ({ ...s, currentIndex: s.currentIndex + 1 }));
+      this.updateCurrentState(s => ({ ...s, currentIndex: s.currentIndex + 1 }));
     }
   }
 
   previousTrack() {
     if (this.hasPrevious()) {
-      this.state.update(s => ({ ...s, currentIndex: s.currentIndex - 1 }));
+      this.updateCurrentState(s => ({ ...s, currentIndex: s.currentIndex - 1 }));
     }
   }
 
   jumpToTrack(index: number) {
     if (index >= 0 && index < this.currentPlaylist().length) {
-      this.state.update(s => ({ ...s, currentIndex: index }));
+      this.updateCurrentState(s => ({ ...s, currentIndex: index }));
     }
   }
 
   toggleShuffle() {
-    this.state.update(s => {
+    this.updateCurrentState(s => {
       const newShuffleState = !s.isShuffled;
       let newIndex = s.currentIndex;
       
-      // If switching modes, try to keep the current track playing
       if (s.playlist.length > 0) {
           const currentTrack = (s.isShuffled ? s.shuffledPlaylist : s.playlist)[s.currentIndex];
           const targetList = newShuffleState ? s.shuffledPlaylist : s.playlist;
@@ -129,48 +126,61 @@ export class PlaybackService {
 
   goBackHistory() {
     if (this.canGoBack()) {
-      this.historyIndex.update(i => i - 1);
-      this.state.set(this.history()[this.historyIndex()]);
+      const newIdx = this.historyIndex() - 1;
+      this.historyIndex.set(newIdx);
+      this.state.set(JSON.parse(JSON.stringify(this.history()[newIdx])));
     }
   }
 
   goForwardHistory() {
       if (this.canGoForward()) {
-          this.historyIndex.update(i => i + 1);
-          this.state.set(this.history()[this.historyIndex()]);
+          const newIdx = this.historyIndex() + 1;
+          this.historyIndex.set(newIdx);
+          this.state.set(JSON.parse(JSON.stringify(this.history()[newIdx])));
       }
   }
 
-  private pushToHistory(state: PlaybackState) {
-      const currentHist = this.history();
-      // If we are in the middle of history, discard the "future"
-      const truncatedHist = currentHist.slice(0, this.historyIndex() + 1);
+  // Helper to keep state and history in sync
+  private updateCurrentState(updater: (s: PlaybackState) => PlaybackState) {
+      const newState = updater(this.state());
+      this.state.set(newState);
       
-      const newHist = [...truncatedHist, JSON.parse(JSON.stringify(state))]; // Deep copy
-      if (newHist.length > this.HISTORY_LIMIT) {
-          newHist.shift(); // Remove oldest
+      // Also update history at the current index so it's remembered
+      const idx = this.historyIndex();
+      if (idx >= 0) {
+          this.history.update(h => {
+              const newH = [...h];
+              newH[idx] = JSON.parse(JSON.stringify(newState));
+              return newH;
+          });
       }
-      
-      this.history.set(newHist);
-      this.historyIndex.set(newHist.length - 1);
   }
 
   // --- Internals ---
 
   private loadState() {
     try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      if (stored) {
-        this.state.set(JSON.parse(stored));
-      }
-      
       const storedHist = localStorage.getItem(this.HISTORY_KEY);
-      if (storedHist) {
+      const storedIdx = localStorage.getItem(this.HISTORY_INDEX_KEY);
+      
+      if (storedHist && storedIdx) {
           const hist = JSON.parse(storedHist);
+          const idx = parseInt(storedIdx, 10);
           this.history.set(hist);
-          // If we loaded a state, try to find where we are in history
-          // Or just append the loaded state as the "latest"
-          this.historyIndex.set(hist.length - 1);
+          this.historyIndex.set(idx);
+          
+          if (idx >= 0 && idx < hist.length) {
+              this.state.set(JSON.parse(JSON.stringify(hist[idx])));
+          }
+      } else {
+          // Fallback to old storage key if exists
+          const stored = localStorage.getItem(this.STORAGE_KEY);
+          if (stored) {
+            const s = JSON.parse(stored);
+            this.state.set(s);
+            this.history.set([s]);
+            this.historyIndex.set(0);
+          }
       }
     } catch (e) {
       console.warn('Failed to load playback state', e);
