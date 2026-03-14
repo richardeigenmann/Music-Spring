@@ -48,6 +48,6 @@ export class UnclassifiedTracks implements OnInit {
 
   playAll(): void {
     const playlist = this.tracks();
-    this.playbackService.playPlaylist(playlist, 'Unclassified Tracks');
+    this.playbackService.playPlaylist(playlist, 'Status: Unclassified');
   }
 }

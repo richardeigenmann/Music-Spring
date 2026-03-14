@@ -2,52 +2,60 @@ import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { TrackEntry } from './apiservice';
 
 export interface PlaybackState {
-  playlist: TrackEntry[];
+  playlistIds: number[];
   playlistName: string;
   currentIndex: number;
   isShuffled: boolean;
-  shuffledPlaylist: TrackEntry[];
+  shuffledIds: number[];
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class PlaybackService {
-  private readonly STORAGE_KEY = 'music_playback_state';
-  private readonly HISTORY_KEY = 'music_playback_history';
-  private readonly HISTORY_INDEX_KEY = 'music_playback_history_index';
+  private readonly TRACKS_KEY = 'music_track_registry';
+  private readonly HISTORY_KEY = 'music_playback_history_v2';
+  private readonly HISTORY_INDEX_KEY = 'music_playback_history_index_v2';
   private readonly HISTORY_LIMIT = 10;
 
-  // History is the main source of truth
+  // Track Registry (ID -> TrackEntry) to avoid duplication in storage
+  private trackRegistry = new Map<number, TrackEntry>();
+
+  // History of states (using IDs)
   private history = signal<PlaybackState[]>([]);
   private historyIndex = signal<number>(-1);
 
   // Current State Signal (synchronized with history[historyIndex])
   private state = signal<PlaybackState>({
-    playlist: [],
+    playlistIds: [],
     playlistName: '',
     currentIndex: 0,
     isShuffled: true,
-    shuffledPlaylist: []
+    shuffledIds: []
   });
 
   // Computed Values
   readonly currentTrack = computed(() => {
     const s = this.state();
-    const list = s.isShuffled ? s.shuffledPlaylist : s.playlist;
-    if (list.length === 0) return null;
-    return list[s.currentIndex];
+    const ids = s.isShuffled ? s.shuffledIds : s.playlistIds;
+    if (ids.length === 0) return null;
+    return this.trackRegistry.get(ids[s.currentIndex]) || null;
   });
 
   readonly currentPlaylist = computed(() => {
     const s = this.state();
-    return s.isShuffled ? s.shuffledPlaylist : s.playlist;
+    const ids = s.isShuffled ? s.shuffledIds : s.playlistIds;
+    return ids.map(id => this.trackRegistry.get(id)).filter(t => !!t) as TrackEntry[];
   });
 
   readonly isShuffled = computed(() => this.state().isShuffled);
   readonly playlistName = computed(() => this.state().playlistName);
   readonly hasPrevious = computed(() => this.state().currentIndex > 0);
-  readonly hasNext = computed(() => this.state().currentIndex < this.currentPlaylist().length - 1);
+  readonly hasNext = computed(() => {
+      const s = this.state();
+      const list = s.isShuffled ? s.shuffledIds : s.playlistIds;
+      return s.currentIndex < list.length - 1;
+  });
   
   readonly canGoBack = computed(() => this.historyIndex() > 0);
   readonly canGoForward = computed(() => this.historyIndex() < this.history().length - 1);
@@ -57,27 +65,44 @@ export class PlaybackService {
 
     // Auto-save everything on change
     effect(() => {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.state()));
-      localStorage.setItem(this.HISTORY_KEY, JSON.stringify(this.history()));
-      localStorage.setItem(this.HISTORY_INDEX_KEY, this.historyIndex().toString());
+      try {
+          // 1. Save Registry
+          const registryObj = Object.fromEntries(this.trackRegistry);
+          localStorage.setItem(this.TRACKS_KEY, JSON.stringify(registryObj));
+          
+          // 2. Save History
+          localStorage.setItem(this.HISTORY_KEY, JSON.stringify(this.history()));
+          
+          // 3. Save Index
+          localStorage.setItem(this.HISTORY_INDEX_KEY, this.historyIndex().toString());
+      } catch (e) {
+          console.error('Failed to persist playback state. Storage might be full.', e);
+          // If quota exceeded, we prune the registry to only what is in history
+          this.pruneRegistry();
+      }
     });
   }
 
   playPlaylist(playlist: TrackEntry[], name: string = 'Playlist') {
-    // 1. Prepare new state
-    const shuffled = this.shuffleArray([...playlist]);
+    // 1. Register tracks
+    playlist.forEach(t => this.trackRegistry.set(t.trackId, t));
+
+    // 2. Prepare new state
+    const playlistIds = playlist.map(t => t.trackId);
+    const shuffledIds = this.shuffleArray([...playlistIds]);
+    
     const newState: PlaybackState = {
-      playlist: playlist,
+      playlistIds,
       playlistName: name,
       currentIndex: 0,
-      isShuffled: true, // Default to shuffled
-      shuffledPlaylist: shuffled
+      isShuffled: true,
+      shuffledIds
     };
 
-    // 2. Update history: truncate future and append new state
+    // 3. Update history: truncate future and append new state
     const currentHist = this.history();
     const truncatedHist = currentHist.slice(0, this.historyIndex() + 1);
-    const newHist = [...truncatedHist, JSON.parse(JSON.stringify(newState))];
+    const newHist = [...truncatedHist, newState];
     
     if (newHist.length > this.HISTORY_LIMIT) {
         newHist.shift();
@@ -101,7 +126,8 @@ export class PlaybackService {
   }
 
   jumpToTrack(index: number) {
-    if (index >= 0 && index < this.currentPlaylist().length) {
+    const list = this.state().isShuffled ? this.state().shuffledIds : this.state().playlistIds;
+    if (index >= 0 && index < list.length) {
       this.updateCurrentState(s => ({ ...s, currentIndex: index }));
     }
   }
@@ -111,10 +137,10 @@ export class PlaybackService {
       const newShuffleState = !s.isShuffled;
       let newIndex = s.currentIndex;
       
-      if (s.playlist.length > 0) {
-          const currentTrack = (s.isShuffled ? s.shuffledPlaylist : s.playlist)[s.currentIndex];
-          const targetList = newShuffleState ? s.shuffledPlaylist : s.playlist;
-          const foundIndex = targetList.findIndex(t => t.trackId === currentTrack.trackId);
+      if (s.playlistIds.length > 0) {
+          const currentId = (s.isShuffled ? s.shuffledIds : s.playlistIds)[s.currentIndex];
+          const targetIds = newShuffleState ? s.shuffledIds : s.playlistIds;
+          const foundIndex = targetIds.indexOf(currentId);
           if (foundIndex !== -1) newIndex = foundIndex;
       }
 
@@ -128,7 +154,7 @@ export class PlaybackService {
     if (this.canGoBack()) {
       const newIdx = this.historyIndex() - 1;
       this.historyIndex.set(newIdx);
-      this.state.set(JSON.parse(JSON.stringify(this.history()[newIdx])));
+      this.state.set(this.history()[newIdx]);
     }
   }
 
@@ -136,30 +162,54 @@ export class PlaybackService {
       if (this.canGoForward()) {
           const newIdx = this.historyIndex() + 1;
           this.historyIndex.set(newIdx);
-          this.state.set(JSON.parse(JSON.stringify(this.history()[newIdx])));
+          this.state.set(this.history()[newIdx]);
       }
   }
 
-  // Helper to keep state and history in sync
+  clearHistory() {
+      const currentState = { ...this.state() };
+      this.history.set([currentState]);
+      this.historyIndex.set(0);
+      this.pruneRegistry();
+  }
+
+  private pruneRegistry() {
+      const currentIds = new Set<number>();
+      this.history().forEach(state => {
+          state.playlistIds.forEach(id => currentIds.add(id));
+      });
+      
+      for (const id of this.trackRegistry.keys()) {
+          if (!currentIds.has(id)) {
+              this.trackRegistry.delete(id);
+          }
+      }
+  }
+
   private updateCurrentState(updater: (s: PlaybackState) => PlaybackState) {
       const newState = updater(this.state());
       this.state.set(newState);
       
-      // Also update history at the current index so it's remembered
       const idx = this.historyIndex();
       if (idx >= 0) {
           this.history.update(h => {
               const newH = [...h];
-              newH[idx] = JSON.parse(JSON.stringify(newState));
+              newH[idx] = newState;
               return newH;
           });
       }
   }
 
-  // --- Internals ---
-
   private loadState() {
     try {
+      // Load registry
+      const storedRegistry = localStorage.getItem(this.TRACKS_KEY);
+      if (storedRegistry) {
+          const registryObj = JSON.parse(storedRegistry);
+          this.trackRegistry = new Map(Object.entries(registryObj).map(([k, v]) => [Number(k), v as TrackEntry]));
+      }
+
+      // Load History
       const storedHist = localStorage.getItem(this.HISTORY_KEY);
       const storedIdx = localStorage.getItem(this.HISTORY_INDEX_KEY);
       
@@ -170,16 +220,7 @@ export class PlaybackService {
           this.historyIndex.set(idx);
           
           if (idx >= 0 && idx < hist.length) {
-              this.state.set(JSON.parse(JSON.stringify(hist[idx])));
-          }
-      } else {
-          // Fallback to old storage key if exists
-          const stored = localStorage.getItem(this.STORAGE_KEY);
-          if (stored) {
-            const s = JSON.parse(stored);
-            this.state.set(s);
-            this.history.set([s]);
-            this.historyIndex.set(0);
+              this.state.set(hist[idx]);
           }
       }
     } catch (e) {

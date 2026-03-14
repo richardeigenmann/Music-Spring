@@ -30,15 +30,27 @@ export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
     // React to track changes to update audio source
     effect(() => {
       const track = this.currentTrack();
-      if (track && this.audioPlayer) {
-        const audio = this.audioPlayer.nativeElement;
+      const audio = this.audioPlayer?.nativeElement;
+      
+      if (track && audio) {
         const newSrc = this.getTrackUrl(track.fileId);
         
-        // Only reload if the source actually changed to prevent stutter on other state updates
+        // Check current source to avoid redundant loads
+        // We also check if it's the first time or a track skip
         if (audio.src !== newSrc) {
+            console.log('Switching track source to:', newSrc);
             audio.src = newSrc;
             audio.load();
-            audio.play().catch(e => console.warn('Autoplay prevented:', e));
+            
+            // Only autoplay if the audio element is ready and not already playing something else
+            // Use a slight timeout to ensure the DOM has updated and let previous requests settle
+            setTimeout(() => {
+                audio.play().catch(e => {
+                    if (e.name !== 'AbortError') {
+                        console.warn('Playback error:', e);
+                    }
+                });
+            }, 50);
         }
       }
     });
@@ -49,12 +61,6 @@ export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
   ngAfterViewInit(): void {
     if (this.audioPlayer) {
         this.audioPlayer.nativeElement.addEventListener('ended', () => this.playbackService.nextTrack());
-        // Initialize with current track if exists (e.g. from persistence)
-        const track = this.currentTrack();
-        if (track) {
-            this.audioPlayer.nativeElement.src = this.getTrackUrl(track.fileId);
-            // Don't auto-play on page load from persistence, user might not want that
-        }
     }
   }
 

@@ -112,7 +112,7 @@ export class MixingBoard implements OnInit {
   playAll(): void {
     const playlist = this.filteredTracks();
     if (playlist.length > 0) {
-      this.playbackService.playPlaylist(playlist, 'Mixer Result');
+      this.playbackService.playPlaylist(playlist, 'Mixer: Result');
     }
   }
 

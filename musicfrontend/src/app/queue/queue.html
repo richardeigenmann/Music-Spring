@@ -8,6 +8,9 @@
             <button class="nav-btn" (click)="playbackService.goForwardHistory()" [disabled]="!canGoForward()">
                 History Forward
             </button>
+            <button class="nav-btn" (click)="playbackService.clearHistory()" [disabled]="playbackService.currentPlaylist().length === 0">
+                Clear History
+            </button>
             <button class="shuffle-btn" (click)="playbackService.toggleShuffle()">
                 {{ isShuffled() ? 'Shuffle: ON' : 'Shuffle: OFF' }}
             </button>

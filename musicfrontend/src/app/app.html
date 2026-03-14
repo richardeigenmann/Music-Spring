@@ -46,7 +46,7 @@
     <div class="modal-content" (click)="$event.stopPropagation()">
       <h2>Select a Group</h2>
       <div class="groups-container">
-        @for (groupType of objectKeys(groupedGroups()); track groupType) {
+        @for (groupType of sortedGroupTypes(); track groupType) {
           <div class="group-type-section">
             <h3>{{ groupType }}</h3>
             <div class="groups-list">

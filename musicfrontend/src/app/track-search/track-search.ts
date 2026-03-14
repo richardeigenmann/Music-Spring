@@ -39,6 +39,6 @@ export class TrackSearch implements OnInit {
 
   playAll(): void {
     const playlist = this.tracks();
-    this.playbackService.playPlaylist(playlist, 'Search Results: ' + this.query());
+    this.playbackService.playPlaylist(playlist, 'Search: ' + this.query());
   }
 }

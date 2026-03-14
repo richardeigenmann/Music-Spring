@@ -147,7 +147,19 @@ export class ApiService {
   getGroups(): Observable<Group[]> {
     return new Observable(observer => {
       this.initPromise.then(() => {
-        this.http.get<Group[]>(`${this.API_URL}/api/groups`).subscribe(observer);
+        this.http.get<any[]>(`${this.API_URL}/api/groups`).subscribe({
+          next: (data) => {
+            const mapped = data.map(g => ({
+              groupId: g.groupId ?? g.GroupId,
+              groupName: g.groupName ?? g.GroupName,
+              groupTypeName: g.groupTypeName ?? g.GroupTypeName,
+              groupTypeId: g.groupTypeId ?? g.GroupTypeId
+            }));
+            observer.next(mapped);
+          },
+          error: (err) => observer.error(err),
+          complete: () => observer.complete()
+        });
       });
     });
   }

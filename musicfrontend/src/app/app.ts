@@ -29,13 +29,27 @@ export class App implements OnDestroy {
   groupedGroups = computed(() => {
     const groups = this.allGroups();
     const grouped: { [key: string]: Group[] } = {};
+    
+    // 1. Group the groups
     for (const group of groups) {
-      if (!grouped[group.groupTypeName]) {
-        grouped[group.groupTypeName] = [];
+      const type = group.groupTypeName || 'Other';
+      if (!grouped[type]) {
+        grouped[type] = [];
       }
-      grouped[group.groupTypeName].push(group);
+      grouped[type].push(group);
     }
+    
+    // 2. Sort groups within each type
+    for (const type in grouped) {
+      grouped[type].sort((a, b) => a.groupName.localeCompare(b.groupName));
+    }
+    
     return grouped;
+  });
+
+  // Helper to get sorted keys for consistent display
+  sortedGroupTypes = computed(() => {
+    return Object.keys(this.groupedGroups()).sort();
   });
 
   constructor() {
