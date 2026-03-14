@@ -1,7 +1,10 @@
 .queue-container {
     padding: 20px;
     padding-bottom: 100px; /* Space for bottom player */
-    color: white;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 0, 0.3);
 }
 
 .queue-header {
@@ -80,15 +83,15 @@
     flex-grow: 1;
 }
 
+.track-artist {
+    font-size: 0.9rem;
+}
+
 .track-title {
     font-weight: bold;
     font-size: 1rem;
 }
 
-.track-artist {
-    color: #bbb;
-    font-size: 0.9rem;
-}
 
 .group-pills {
     display: flex;
@@ -125,7 +128,7 @@
         flex-direction: column;
         align-items: flex-start;
     }
-    
+
     .group-pills {
         display: none; /* Hide pills on mobile to save space */
     }
