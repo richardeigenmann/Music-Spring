@@ -20,6 +20,11 @@ export class Groups {
     const groups = this.allGroups();
     const grouped: { [key: string]: Group[] } = {};
     
+    console.log('Mapping groups, count:', groups.length);
+    if (groups.length > 0) {
+        console.log('Sample group:', groups[0]);
+    }
+
     for (const group of groups) {
       const type = group.groupTypeName || 'Other';
       if (!grouped[type]) {
@@ -37,7 +42,25 @@ export class Groups {
   });
 
   sortedGroupTypes = computed(() => {
-    return Object.keys(this.groupedGroups()).sort();
+    const keys = Object.keys(this.groupedGroups());
+    
+    const priority = (s: string) => {
+        const lower = (s || '').toLowerCase().trim();
+        if (lower === 'playlist') return 0;
+        if (lower.includes('playlist')) return 1;
+        return 100;
+    };
+
+    const sorted = [...keys].sort((a, b) => {
+      const pA = priority(a);
+      const pB = priority(b);
+      
+      if (pA !== pB) return pA - pB;
+      return a.localeCompare(b);
+    });
+    
+    console.log('Final Sorted Group Types:', sorted);
+    return sorted;
   });
 
   constructor() {

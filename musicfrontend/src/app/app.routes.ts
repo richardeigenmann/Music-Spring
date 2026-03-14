@@ -1,8 +1,6 @@
 import { Routes } from '@angular/router';
-import { Playlists } from './playlists/playlists';
 import { TracksByGroup } from './tracks-by-group/tracks-by-group';
 import { TrackEdit } from './track-edit/track-edit';
-import { TrackPlayer } from './track-player/track-player';
 import { UnclassifiedTracks } from './unclassified-tracks/unclassified-tracks';
 import { TrackSearch } from './track-search/track-search';
 import { MixingBoard } from './mixing-board/mixing-board';
@@ -13,7 +11,6 @@ import { Groups } from './groups/groups';
 export const routes: Routes = [
     { path: 'status', component: Status },
     { path: 'groups', component: Groups },
-    { path: 'playlists', component: Playlists },
     { path: 'group/:groupId', component: TracksByGroup },
     { path: 'track/:id', component: TrackEdit },
     { path: 'player', redirectTo: '/queue', pathMatch: 'full' },
