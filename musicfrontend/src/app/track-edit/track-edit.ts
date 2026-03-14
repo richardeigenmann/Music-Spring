@@ -1,8 +1,9 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService, Group, Track } from '../apiservice';
+import { ApiService, Group, Track, TrackEntry } from '../apiservice';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { PlaybackService } from '../playback.service';
 
 /**
  * Component for editing a track.
@@ -17,6 +18,7 @@ import { FormsModule } from '@angular/forms';
 export class TrackEdit {
   route = inject(ActivatedRoute);
   apiService = inject(ApiService);
+  private playbackService = inject(PlaybackService);
 
   track = signal<Track | null>(null);
   allGroups = signal<Group[]>([]);
@@ -44,6 +46,17 @@ export class TrackEdit {
     this.apiService.getGroups().subscribe(groups => {
       this.allGroups.set(groups);
     });
+  }
+
+  play() {
+    const t = this.track();
+    if (!t) return;
+
+    // Convert Track to TrackEntry for the playback service
+    const trackEntry = this.apiService.mapToTrackEntry(t);
+    const title = `Track: ${trackEntry.artist} - ${trackEntry.title}`;
+
+    this.playbackService.playPlaylist([trackEntry], title);
   }
 
   trackGroups = computed(() => {

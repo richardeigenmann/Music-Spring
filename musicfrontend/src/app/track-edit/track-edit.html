@@ -1,12 +1,29 @@
 @if (track(); as track) {
   <div class="container">
     <h1>Edit Track: {{ track.TrackName }}</h1>
+
+          <div class="file-list">
+            @for (file of track.Files; track file.FileId) {
+              <div class="file-item">
+                <div class="art-container">
+                    <img [src]="getImageUrl(file.FileId)" alt="Album Art for {{ file.FileName }}" class="album-art">
+                    <button type="button" class="play-btn-overlay" (click)="play()" title="Play Track">▶</button>
+                </div>
+                <div class="file-info">
+                    <div class="file-name">{{ file.FileName }}</div>
+                    <div class="file-duration">{{ formatDuration(file.Duration) }}</div>
+                </div>
+              </div>
+            }
+          </div>
+
+
     <form (ngSubmit)="save()">
       <div class="form-group">
               <label for="trackName">Track Name:</label>
               <input type="text" id="trackName" [(ngModel)]="track.TrackName" name="trackName" class="form-control">
             </div>
-        
+
             <!-- Editable Array Fields -->
             @for(field of editableArrayFields; track field) {
               <div class="form-group array-group">
@@ -20,7 +37,7 @@
                 <button type="button" (click)="addArrayItem(field)" class="btn btn-secondary btn-add">➕ Add</button>
               </div>
             }
-        
+
             @for (groupType of objectKeys(availableGroups()); track groupType) {
                 <div class="group-section">
                   <hr>
@@ -49,22 +66,8 @@
           </div>
         </div>
       }
-      
-          <hr>
-      
-          <h3>Track Files</h3>
-          <div class="file-list">
-            @for (file of track.Files; track file.FileId) {
-              <div class="file-item">
-                <img [src]="getImageUrl(file.FileId)" alt="Album Art for {{ file.FileName }}" class="album-art">
-                          <div class="file-info">
-                            <div class="file-name">{{ file.FileName }}</div>
-                            <div class="file-duration">{{ formatDuration(file.Duration) }}</div>
-                            <audio [src]="getAudioUrl(file.FileId)" controls class="audio-player"></audio>
-                          </div>
-                        </div>
-                      }
-                    </div>            
+
+
           <button type="submit" class="btn btn-primary">Save Changes</button>
         </form>
       </div>
