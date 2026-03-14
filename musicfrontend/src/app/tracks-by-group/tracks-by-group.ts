@@ -3,6 +3,7 @@ import { ApiService } from '../apiservice';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { PlaybackService } from '../playback.service';
+import { TrackList } from '../shared/track-list/track-list.component';
 
 /**
  * Component for displaying tracks by a group.
@@ -10,7 +11,7 @@ import { PlaybackService } from '../playback.service';
 @Component({
   selector: 'app-tracks-by-group',
   standalone: true,
-  imports: [RouterLink, CommonModule],
+  imports: [RouterLink, CommonModule, TrackList],
   templateUrl: './tracks-by-group.html',
   styleUrls: ['./tracks-by-group.css']
 })
@@ -21,6 +22,7 @@ export class TracksByGroup {
   private router = inject(Router);
 
   playlistEntries = this.apiService.playlistEntries;
+  currentTrackId = computed(() => this.playbackService.currentTrack()?.trackId || null);
 
   currentGroupName = computed(() => {
     const id = Number(this.groupId());

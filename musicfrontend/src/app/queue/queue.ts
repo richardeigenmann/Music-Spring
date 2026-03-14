@@ -1,13 +1,14 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PlaybackService } from '../playback.service';
 import { ApiService } from '../apiservice';
 import { RouterLink } from '@angular/router';
+import { TrackList } from '../shared/track-list/track-list.component';
 
 @Component({
   selector: 'app-queue',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, TrackList],
   templateUrl: './queue.html',
   styleUrls: ['./queue.css']
 })
@@ -23,9 +24,7 @@ export class Queue {
   canGoBack = this.playbackService.canGoBack;
   canGoForward = this.playbackService.canGoForward;
 
-  playTrack(index: number) {
-    this.playbackService.jumpToTrack(index);
-  }
+  currentTrackId = computed(() => this.currentTrack()?.trackId || null);
 
   getTrackImageUrl(fileId: number): string {
     return `${this.apiService.getApiUrl()}/api/trackFileImage/${fileId}`;

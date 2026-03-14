@@ -1,22 +1,10 @@
-<h1>Search Results for '{{ query() }}'</h1>
-<button (click)="playAll()" [disabled]="tracks().length === 0">Play All</button>
-@if (tracks().length === 0) {
-  <p>No tracks found matching your search.</p>
-}
-<ul>
-  @for (entry of tracks(); track entry.trackId) {
-    <li style="margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
-      <span>{{ entry.artist }} - {{ entry.trackName }}</span>
-      
-      <div class="group-pills">
-        @for (group of entry.groupDetails; track group.groupId) {
-          <span class="group-pill-mini" [routerLink]="['/group', group.groupId]" title="{{ group.groupTypeName }}">
-            {{ group.groupName }}
-          </span>
-        }
-      </div>
+<div class="background-box">
+  <h1>Search Results for '{{ query() }}'</h1>
+  <button (click)="playAll()" [disabled]="tracks().length === 0" style="margin-bottom: 20px;">Play All</button>
 
-      <a [routerLink]="['/track', entry.trackId]" style="text-decoration: none;">✏️</a>
-    </li>
+  @if (tracks().length === 0) {
+    <p>No tracks found matching your search.</p>
+  } @else {
+    <app-track-list [tracks]="tracks()" [highlightId]="currentTrackId()"></app-track-list>
   }
-</ul>
+</div>

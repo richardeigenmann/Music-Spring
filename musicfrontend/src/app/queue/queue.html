@@ -1,4 +1,4 @@
-<div class="queue-container">
+<div class="background-box">
     <div class="queue-header">
         <h1>{{ playlistName() }}</h1>
         <div class="queue-controls">
@@ -17,28 +17,5 @@
         </div>
     </div>
 
-    <ul class="track-list">
-        @for (track of currentPlaylist(); track track.trackId; let i = $index) {
-            <li [class.playing]="track === currentTrack()" (click)="playTrack(i)">
-                <img [src]="getTrackImageUrl(track.fileId)" alt="Cover" class="list-cover">
-                <div class="track-info">
-                  <span class="track-artist">{{ track.artist }}</span>
-                  <span class="track-title" [routerLink]="['/track', track.trackId]" style="cursor: pointer;">{{ track.title }}</span>
-                </div>
-
-                <div class="group-pills">
-                    @for (group of track.groupDetails; track group.groupId) {
-                        <span class="group-pill"
-                              [routerLink]="['/group', group.groupId]"
-                              (click)="$event.stopPropagation()"
-                              title="{{ group.groupTypeName }}">
-                            {{ group.groupName }}
-                        </span>
-                    }
-                </div>
-            </li>
-        } @empty {
-            <li class="empty-message">No tracks in queue. Pick a playlist!</li>
-        }
-    </ul>
+    <app-track-list [tracks]="currentPlaylist()" [highlightId]="currentTrackId()"></app-track-list>
 </div>

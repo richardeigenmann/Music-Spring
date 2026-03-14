@@ -59,6 +59,10 @@ export class TrackEdit {
     this.playbackService.playPlaylist([trackEntry], title);
   }
 
+  goBack() {
+      window.history.back();
+  }
+
   trackGroups = computed(() => {
     const track = this.track();
     const allGroups = this.allGroups();

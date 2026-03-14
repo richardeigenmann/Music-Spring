@@ -1,14 +1,16 @@
-<h1>Playlists</h1>
-<div class="playlists-container">
-  <div class="playlist-list">
-    <ul>
-      @for (playlist of playlists(); track playlist.groupId) {
-        <div>
-          <a [routerLink]="['/group', playlist.groupId]">
-            {{ playlist.groupName }} ({{ playlist.tracks }} tracks)
-          </a>
-        </div>
-      }
-    </ul>
+<div class="background-box">
+  <h1>Playlists</h1>
+  <div class="playlists-container">
+    <div class="playlist-list">
+      <ul>
+        @for (playlist of playlists(); track playlist.groupId) {
+          <div>
+            <a [routerLink]="['/group', playlist.groupId]">
+              {{ playlist.groupName }} ({{ playlist.tracks }} tracks)
+            </a>
+          </div>
+        }
+      </ul>
+    </div>
   </div>
 </div>
