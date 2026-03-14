@@ -8,8 +8,7 @@
     </div>
     <div class="control-rectangle">
       <div class="search-and-groups">
-        <input type="text" placeholder="Search" (keyup.enter)="performSearch($event)" class="search-input">
-        <span class="tracks-count">{{ totalTracks() }} Tracks</span>
+        <input type="text" [placeholder]="'Search ' + totalTracks() + ' Tracks'" (keyup.enter)="performSearch($event)" class="search-input">
 
         <div class="hamburger-menu">
           <button (click)="toggleHamburgerMenu()" class="musicdb-button">☰ Menu</button>

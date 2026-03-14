@@ -36,11 +36,6 @@
   gap: 8px;
 }
 
-.tracks-count {
-  font-size: 1.2em;
-  font-weight: bold;
-}
-
 .search-and-groups {
   display: flex;
   align-items: center;
@@ -53,6 +48,8 @@
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid #ff0;
   color: #ff0;
+  flex-grow: 1; /* Make search fill available space */
+  min-width: 200px;
 }
 
 .search-input::placeholder {
