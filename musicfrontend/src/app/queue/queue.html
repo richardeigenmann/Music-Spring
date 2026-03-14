@@ -22,14 +22,14 @@
             <li [class.playing]="track === currentTrack()" (click)="playTrack(i)">
                 <img [src]="getTrackImageUrl(track.fileId)" alt="Cover" class="list-cover">
                 <div class="track-info">
-                    <span class="track-title">{{ track.title }}</span>
-                    <span class="track-artist">{{ track.artist }}</span>
+                  <span class="track-artist">{{ track.artist }}</span>
+                  <span class="track-title" [routerLink]="['/track', track.trackId]" style="cursor: pointer;">{{ track.title }}</span>
                 </div>
-                
+
                 <div class="group-pills">
                     @for (group of track.groupDetails; track group.groupId) {
-                        <span class="group-pill" 
-                              [routerLink]="['/group', group.groupId]" 
+                        <span class="group-pill"
+                              [routerLink]="['/group', group.groupId]"
                               (click)="$event.stopPropagation()"
                               title="{{ group.groupTypeName }}">
                             {{ group.groupName }}
