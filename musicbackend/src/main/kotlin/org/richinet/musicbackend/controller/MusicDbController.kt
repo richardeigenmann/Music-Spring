@@ -29,7 +29,7 @@ import java.io.File
 import java.math.BigDecimal
 import java.nio.file.Files
 
-private const val MUSIC_DIRECTORY = "/richi"
+private const val MUSIC_DIRECTORY = ""
 
 data class FilterRequest(
   val mustHaveIds: List<Long> = emptyList(),

@@ -54,6 +54,13 @@ cd musicbackend
 ./gradlew bootBuildImage
 ```
 
+```bash
+# find the latest build (as they all show a date of the Unix epoch to create repeatable builds)
+docker history richardeigenmann/musicbackend:latest-native
+docker push richardeigenmann/musicbackend:latest-native
+```
+
+
 
 
 ## Starting the container
