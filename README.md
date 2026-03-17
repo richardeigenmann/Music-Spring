@@ -58,10 +58,10 @@ graph LR
     User --> Browser
     
     %% Reverse the arrow syntax to force WS to the RIGHT of App
-    App <-.-|Serves| WS
+    App <-.-|Frontend\nhttp:/hostname:8010| WS
     
     %% Standard flow to the backend
-    App -->|REST| API
+    App -->|REST API\nhttp://hostname:8011| API
     
     %% Backend data flow
     API --> DB
