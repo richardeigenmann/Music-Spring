@@ -223,14 +223,4 @@ If you are Richard, use the `pushDockerContainers` Gradle task in the `docker` g
 This sill call the `pushDockerFrontend` task and the `pushDockerBackend` tasks. These tasks will run other tasks
 that read the `gradle.properties` file from where the `version` variable propagates.
 
-The `bootBuildImage` task looks at the `gradle.properties` `native` property to decide if a slow GraalVM or faster Java 
-Build should be done. The GraalVM build is much faster at runtime.
-
-
-## Backend Technical Requirement
-Ensure your backend image includes the PostgreSQL JDBC driver. If you're building it from the provided source, add the following dependency to `musicbackend/build.gradle`:
-```gradle
-runtimeOnly 'org.postgresql:postgresql'
-
-docker compose up -d
-```
+The `bootBuildImage` task looks at the `gradle.properties` `native` property to decide if a slow GraalVM or faster Java build should be done. The GraalVM build is much faster at runtime.
