@@ -190,11 +190,13 @@ export JAVA_HOME=/usr/lib/jvm/zulu21.30.15-ca-jdk21.0.1-linux_x64│ cd musicbac
 
 
 
-To build the GraalVM native image yourself using the same environment and configuration I used, follow these exact steps.
+To build the GraalVM native image yourself using the same environment and configuration 
+I used, follow these exact steps.
 
 
   1. Set the Environment
-  You must use JDK 21 and Gradle 8.12 (not the version 9.0.0 wrapper) to avoid compatibility errors with Spring Boot 3.3.0.
+  You must use JDK 21 and Gradle 8.12 (not the version 9.0.0 wrapper) 
+  to avoid compatibility errors with Spring Boot 3.3.0.
 
 
    1 # Set Java to Zulu 21

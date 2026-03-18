@@ -106,7 +106,8 @@ To get the application up and running quickly using Docker Compose, follow these
 ```bash
 mkdir musicdatabase
 cd musicdatabase
-wget https://raw.githubusercontent.com/richardeigenmann/Music-Spring/refs/heads/main/docker-compose.yaml
+# Note doesn't work while the repo is in private mode
+wget https://raw.githubusercontent.com/richardeigenmann/Music-Spring/main/docker-compose.yaml
 ```
 
 ### Customize `docker-compose.yaml`
@@ -155,14 +156,16 @@ docker kill music-frontend
 docker kill music-backend
 docker kill music-db 
 # removes the containers
-docker rm music-frotend
+docker rm music-frontend
 docker rm music-backend
-docker rm music-db
+# docker rm music-db # Think before you act!
 # removes the container images
 docker rmi richardeigenmann/musicfrontend:latest
 docker rmi richardeigenmann/musicbackend:latest
 docker rmi richardeigenmann/musicbackend:latest-native
-docker rmi richardeigenmann/musicdb:latest
+docker rmi postgres:15
+# They should all be gone:
+docker ps
 # remember to remove the directory you created and the docker-compose.yml file
 ```
 
@@ -170,6 +173,58 @@ docker rmi richardeigenmann/musicdb:latest
 
 - **Frontend:** [http://octan:8010](http://octan:8010)
 - **Backend API:** [http://octan:8011/api](http://octan:8011/api) (with Swagger at `/swagger-ui.html`)
+- **Status page:** [http://octan:8010/status](http://octan:8010/status)
+
+## Setting up the PgAdmin Database GUI
+
+To start up the PgAdmin GUI to check up on the database ass the following to the `docker-compose.yml` 
+file (before the `volumes:` section, remember to intent by 2 spaces):
+
+```yaml
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: music-pgadmin
+    restart: unless-stopped
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=adminpass
+    ports:
+      - "8012:80"
+    depends_on:
+      - db
+```
+
+And then start all of them up:
+
+```bash
+docker compose up -d
+```
+
+- **PgAdmin:** [http://octan:8012](http://octan:8012) Use the PGADMIN_DEFAULT_EMAIL and PGADMIN_DEFAULT_PASSWORD 
+values to login.
+
+Once the page has opened, right-click on the `Servers` icon and `Register` the database server. 
+You can Name it `Music Database`. On the `Connection` tab you need to give it the name inside the docker compase network.
+This is from the docker-compose.yml file where I named it `music-db`. Obviously the Username and Password are the
+ones associated with the database as set up in the docker-compose.yml file.
+
+One you have the server registered you can click on the Query Tool Workspace icon on the left margin and connect to
+the Music Database.
+
+Queries you can run:
+
+```sql
+select * from public.group_type
+```
+
+## Publishing a new version
+
+If you are Richard, use the `pushDockerContainers` Gradle task in the `docker` group to publish new versions.
+This sill call the `pushDockerFrontend` task and the `pushDockerBackend` tasks. These tasks will run other tasks
+that read the `gradle.properties` file from where the `version` variable propagates.
+
+The `bootBuildImage` task looks at the `gradle.properties` `native` property to decide if a slow GraalVM or faster Java 
+Build should be done. The GraalVM build is much faster at runtime.
 
 
 ## Backend Technical Requirement

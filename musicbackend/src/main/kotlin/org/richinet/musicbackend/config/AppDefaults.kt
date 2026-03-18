@@ -5,10 +5,10 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 @ConfigurationProperties(prefix = "app.defaults")
-class AppDefaults {
+open class AppDefaults {
     var groupTypes: List<GroupTypeDefault> = mutableListOf()
 
-    class GroupTypeDefault {
+    open class GroupTypeDefault {
         var id: String = ""
         var name: String = ""
         var edit: String = ""

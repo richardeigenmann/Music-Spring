@@ -23,27 +23,46 @@ project(':musicfrontend') {
 export const VERSION = '${version}';
 export const BUILD_DATE = '${new Date().toLocaleString()}';
 """
+            def packageJsonFile = file("${project.projectDir}/package.json")
+            def packageJson = new groovy.json.JsonSlurper().parseText(packageJsonFile.text)
+            packageJson.version = version
+            packageJsonFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(packageJson))
         }
     }
 
-    task buildDocker(type: Exec) {
+    task buildFrontendDocker(type: Exec) {
         dependsOn 'generateVersionFile'
         dependsOn 'npmInstall'
         group = 'docker'
         workingDir project.projectDir
-        commandLine 'docker', 'build', '-t', "${dockerHubUsername}/musicfrontend:${version}", '.'
+        doFirst {
+            commandLine 'docker', 'build',
+                '-t', "${dockerHubUsername}/musicfrontend:${version}",
+                '-t', "${dockerHubUsername}/musicfrontend:latest",
+                '.'
+        }
     }
 
-    task pushDocker(type: Exec) {
-        dependsOn 'buildDocker'
+    task pushFrontendDocker(type: Exec) {
+        dependsOn 'buildFrontendDocker'
         group = 'docker'
-        commandLine 'docker', 'push', "${dockerHubUsername}/musicfrontend:${version}"
+        doFirst {
+            commandLine 'sh', '-c', "docker push ${dockerHubUsername}/musicfrontend:${version} && docker push ${dockerHubUsername}/musicfrontend:latest"
+        }
     }
 }
 
-task pushFrontendDocker {
-    dependsOn ':musicfrontend:pushDocker'
+task pushDockerContainers {
+    dependsOn (':musicfrontend:pushDocker', ':musicbackend:pushDocker')
     group = 'docker'
+}
+
+task pushBackendDocker(type: Exec) {
+    dependsOn ':musicbackend:bootBuildImage'
+    group = 'docker'
+    doFirst {
+        commandLine 'sh', '-c', "docker push ${dockerHubUsername}/musicbackend:${version} && docker push ${dockerHubUsername}/musicbackend:latest"
+    }
 }
 
 project(':musicbackend') {

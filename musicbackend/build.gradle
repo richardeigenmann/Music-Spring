@@ -63,8 +63,30 @@ tasks.register("printJvmVersion") {
 springBoot {
     buildInfo()
 }
-
 bootBuildImage {
-    builder = "paketobuildpacks/builder-jammy-base"
-    runImage = "paketobuildpacks/run-jammy-base"
+    def isNative = project.findProperty('native')?.toString() == 'true'
+
+    project.logger.lifecycle(">>> Configuring bootBuildImage: native=${isNative}")
+
+    imageName = "${dockerHubUsername}/musicbackend:latest"
+    tags = ["${dockerHubUsername}/musicbackend:${version}"]
+
+    if (isNative) {
+        // Native build configuration
+        builder = "paketobuildpacks/builder-jammy-tiny"
+        environment = [
+            "BP_NATIVE_IMAGE": "true"
+        ]
+    } else {
+        // Standard JVM build configuration
+        // Using builder-jammy-base and explicitly forcing the JVM-only buildpack
+        builder = "paketobuildpacks/builder-jammy-base"
+        buildpacks = ["paketo-buildpacks/java"]
+        environment = [
+            "BP_NATIVE_IMAGE": "false",
+            "BP_JVM_VERSION": "21"
+        ]
+    }
+
 }
+
