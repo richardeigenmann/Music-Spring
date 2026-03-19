@@ -28,8 +28,9 @@ import org.springframework.web.bind.annotation.*
 import java.io.File
 import java.math.BigDecimal
 import java.nio.file.Files
+import java.util.concurrent.Semaphore
 
-private const val MUSIC_DIRECTORY = ""
+private const val MUSIC_DIRECTORY = "/mp3/"
 
 data class FilterRequest(
   val mustHaveIds: List<Long> = emptyList(),
@@ -54,6 +55,7 @@ class MusicDbController(
   private val jdbcTemplate: JdbcTemplate
 ) {
   private val logger = LoggerFactory.getLogger(MusicDbController::class.java)
+  private val imageExtractionSemaphore = Semaphore(4) // Only 4 concurrent image extractions allowed
 
   @Operation(summary = "Returns serialized track data including metadata.")
   @ApiResponses(
@@ -261,8 +263,13 @@ class MusicDbController(
     val trackFile = trackFileRepository.findById(id)
     if (trackFile.isPresent) {
       val fileEntity = trackFile.get()
-      val filePath = MUSIC_DIRECTORY + (fileEntity.fileLocation ?: "") + (fileEntity.fileName ?: "")
-      val file = File(filePath)
+      val fileLocation = fileEntity.fileLocation?.trim('/') ?: ""
+      val fileName = fileEntity.fileName ?: ""
+      val file = if (fileLocation.isEmpty()) {
+        File(MUSIC_DIRECTORY, fileName)
+      } else {
+        File(File(MUSIC_DIRECTORY, fileLocation), fileName)
+      }
       if (file.exists()) {
         val resource = FileSystemResource(file)
         val contentType = Files.probeContentType(file.toPath()) ?: "audio/mpeg"
@@ -290,23 +297,33 @@ class MusicDbController(
     val trackFile = trackFileRepository.findById(id)
     if (trackFile.isPresent) {
       val fileEntity = trackFile.get()
-      val filePath = MUSIC_DIRECTORY + (fileEntity.fileLocation ?: "") + (fileEntity.fileName ?: "")
-      val file = File(filePath)
+      val fileLocation = fileEntity.fileLocation?.trim('/') ?: ""
+      val fileName = fileEntity.fileName ?: ""
+      val file = if (fileLocation.isEmpty()) {
+        File(MUSIC_DIRECTORY, fileName)
+      } else {
+        File(File(MUSIC_DIRECTORY, fileLocation), fileName)
+      }
       if (file.exists()) {
         try {
-          val mp3file = Mp3File(file)
-          if (mp3file.hasId3v2Tag()) {
-            val id3v2Tag = mp3file.id3v2Tag
-            val albumImage = id3v2Tag.albumImage
-            if (albumImage != null) {
-              val mimeType = id3v2Tag.albumImageMimeType ?: "image/jpeg"
-              return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(mimeType))
-                .body(ByteArrayResource(albumImage))
+          imageExtractionSemaphore.acquire()
+          try {
+            val mp3file = Mp3File(file)
+            if (mp3file.hasId3v2Tag()) {
+              val id3v2Tag = mp3file.id3v2Tag
+              val albumImage = id3v2Tag.albumImage
+              if (albumImage != null) {
+                val mimeType = id3v2Tag.albumImageMimeType ?: "image/jpeg"
+                return ResponseEntity.ok()
+                  .contentType(MediaType.parseMediaType(mimeType))
+                  .body(ByteArrayResource(albumImage))
+              }
             }
+          } finally {
+            imageExtractionSemaphore.release()
           }
-        } catch (e: Exception) {
-          logger.warn("Failed to extract image from file: $filePath. Reason: ${e.message}")
+        } catch (e: Throwable) {
+          logger.warn("Failed to extract image from file: ${file.absolutePath}. Reason: ${e.message}")
         }
       }
     }

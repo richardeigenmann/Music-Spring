@@ -2,7 +2,7 @@
     @for (track of tracks(); track track.trackId) {
         <li [class.highlighted]="track.trackId === highlightId()" (click)="goToEdit(track.trackId)">
             <div class="art-container" (click)="playSingleTrack($event, track)" title="Play this track">
-                <img [src]="getTrackImageUrl(track.fileId)" alt="Cover" class="list-cover">
+                <img [src]="getTrackImageUrl(track.fileId)" alt="Cover" class="list-cover" loading="lazy">
                 <div class="play-overlay">▶</div>
             </div>
 

@@ -14,6 +14,19 @@ interface TrackRepository : JpaRepository<Track, Long> {
     @Query(
         value = """
         SELECT DISTINCT t.* FROM Track t
+        JOIN Track_Group tg ON t.Track_Id = tg.Track_Id
+        JOIN "groups" g ON tg.Group_Id = g.Group_Id
+        WHERE LOWER(t.Track_Name) = LOWER(:title)
+          AND g.Group_Type_Id = 2
+          AND LOWER(g.Group_Name) = LOWER(:artist)
+        """,
+        nativeQuery = true
+    )
+    fun findByTitleAndArtist(@Param("title") title: String, @Param("artist") artist: String): List<Track>
+
+    @Query(
+        value = """
+        SELECT DISTINCT t.* FROM Track t
         LEFT JOIN Track_Group tg ON t.Track_Id = tg.Track_Id
         LEFT JOIN "groups" g ON tg.Group_Id = g.Group_Id
         WHERE LOWER(t.Track_Name) LIKE LOWER(CONCAT('%', :query, '%'))

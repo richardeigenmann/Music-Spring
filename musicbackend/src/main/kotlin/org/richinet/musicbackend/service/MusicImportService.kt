@@ -165,8 +165,8 @@ class MusicImportService(
                     scanProgress.updateAndGet { it.copy(checked = index + 1, currentFile = file.name) }
                     try {
                         processNewMp3File(file)
-                    } catch (e: Exception) {
-                        logger.error("Error processing file ${file.absolutePath}", e)
+                    } catch (e: Throwable) {
+                        logger.error("Fatal error processing file ${file.absolutePath}", e)
                     }
                 }
             } catch (e: Exception) {
@@ -222,14 +222,14 @@ class MusicImportService(
         }
         duration = BigDecimal(mp3file.lengthInSeconds)
 
-        // Try to find a track by artist and title
-        val existingTracks = trackRepository.searchTracks(title)
-        var track = existingTracks.find { t ->
-            val serialized = trackDataService.serializeTrack(t)
-            val artists = serialized["Artist"]
-            val artistList = if (artists is List<*>) artists as List<String> else listOf(artists as? String ?: "")
-            artistList.contains(artist) && t.trackName.equals(title, ignoreCase = true)
+        // Try to find a track by artist and title (exact match)
+        val existingTracks = if (artist.isNotBlank()) {
+            trackRepository.findByTitleAndArtist(title, artist)
+        } else {
+            // Fallback to title only if artist is blank
+            trackRepository.searchTracks(title).filter { it.trackName.equals(title, ignoreCase = true) }
         }
+        var track = existingTracks.firstOrNull()
 
         if (track == null) {
             track = Track()

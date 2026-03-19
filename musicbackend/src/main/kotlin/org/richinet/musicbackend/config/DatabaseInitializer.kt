@@ -8,12 +8,26 @@ import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
+import org.springframework.jdbc.core.JdbcTemplate
 import java.math.BigDecimal
 import java.sql.Timestamp
 import java.time.Instant
 
 @Configuration
-open class DatabaseInitializer(private val appDefaults: AppDefaults) {
+open class DatabaseInitializer(private val appDefaults: AppDefaults, private val jdbcTemplate: JdbcTemplate) {
+
+    @Bean
+    @Order(0)
+    fun initPostgresExtensions(): CommandLineRunner {
+        return CommandLineRunner {
+            try {
+                println("Ensuring fuzzystrmatch extension for SOUNDEX...")
+                jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch")
+            } catch (e: Exception) {
+                println("Warning: Could not create fuzzystrmatch extension. SOUNDEX search may fail if not already present. Error: ${e.message}")
+            }
+        }
+    }
 
     @Bean
     @Order(1)

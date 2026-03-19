@@ -52,19 +52,23 @@ export const BUILD_DATE = '${new Date().toLocaleString()}';
     }
 }
 
-task pushDockerContainers {
-    dependsOn (':musicfrontend:pushDocker', ':musicbackend:pushDocker')
-    group = 'docker'
+project(':musicbackend') {
+  // Backend specific configurations if needed beyond its own build.gradle
 }
+
 
 task pushBackendDocker(type: Exec) {
-    dependsOn ':musicbackend:bootBuildImage'
-    group = 'docker'
-    doFirst {
-        commandLine 'sh', '-c', "docker push ${dockerHubUsername}/musicbackend:${version} && docker push ${dockerHubUsername}/musicbackend:latest"
-    }
+  dependsOn ':musicbackend:bootBuildImage'
+  group = 'docker'
+  doFirst {
+    commandLine 'sh', '-c', "docker push ${dockerHubUsername}/musicbackend:${version} && docker push ${dockerHubUsername}/musicbackend:latest"
+  }
 }
 
-project(':musicbackend') {
-    // Backend specific configurations if needed beyond its own build.gradle
+
+task pushDockerContainers {
+    dependsOn ':musicfrontend:pushFrontendDocker', ':pushBackendDocker'
+    group = 'docker'
 }
+
+
