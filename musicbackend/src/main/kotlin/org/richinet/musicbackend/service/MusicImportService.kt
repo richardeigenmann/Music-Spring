@@ -34,7 +34,7 @@ class MusicImportService(
 ) {
     private val logger = LoggerFactory.getLogger(MusicImportService::class.java)
     private val scanProgress = AtomicReference(ScanProgress(isDone = true))
-    private val MUSIC_DIRECTORY = "/richi"
+    private val MUSIC_DIRECTORY = "/mp3"
 
     fun getScanProgress(): ScanProgress = scanProgress.get()
 
@@ -148,7 +148,7 @@ class MusicImportService(
     fun startMp3Scan() {
         if (!scanProgress.get().isDone) return
 
-        val mp3Dir = File(MUSIC_DIRECTORY, "mp3")
+        val mp3Dir = File(MUSIC_DIRECTORY )
         if (!mp3Dir.exists() || !mp3Dir.isDirectory) {
             logger.error("MP3 directory not found at $mp3Dir")
             return

@@ -215,6 +215,13 @@ Queries you can run:
 
 ```sql
 select * from public.group_type
+
+# remove all tables (including their content):
+drop table public.track_group;
+drop table public.groups;
+drop table public.group_type;
+drop table public.track_file;
+drop table public.track;         
 ```
 
 ## Publishing a new version
