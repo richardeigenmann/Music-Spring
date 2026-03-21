@@ -46,9 +46,7 @@ export const BUILD_DATE = '${new Date().toLocaleString()}';
     task pushFrontendDocker(type: Exec) {
         dependsOn 'buildFrontendDocker'
         group = 'docker'
-        doFirst {
-            commandLine 'sh', '-c', "docker push ${dockerHubUsername}/musicfrontend:${version} && docker push ${dockerHubUsername}/musicfrontend:latest"
-        }
+        commandLine 'sh', '-c', "docker push ${dockerHubUsername}/musicfrontend:${version} && docker push ${dockerHubUsername}/musicfrontend:latest"
     }
 }
 
@@ -60,9 +58,7 @@ project(':musicbackend') {
 task pushBackendDocker(type: Exec) {
   dependsOn ':musicbackend:bootBuildImage'
   group = 'docker'
-  doFirst {
-    commandLine 'sh', '-c', "docker push ${dockerHubUsername}/musicbackend:${version} && docker push ${dockerHubUsername}/musicbackend:latest"
-  }
+  commandLine 'sh', '-c', "docker push ${dockerHubUsername}/musicbackend:${version} && docker push ${dockerHubUsername}/musicbackend:latest"
 }
 
 

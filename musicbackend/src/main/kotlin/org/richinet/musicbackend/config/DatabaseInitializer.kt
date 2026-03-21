@@ -21,10 +21,13 @@ open class DatabaseInitializer(private val appDefaults: AppDefaults, private val
     fun initPostgresExtensions(): CommandLineRunner {
         return CommandLineRunner {
             try {
+                println("Ensuring musicdatabase schema exists...")
+                jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS musicdatabase")
+
                 println("Ensuring fuzzystrmatch extension for SOUNDEX...")
                 jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch")
             } catch (e: Exception) {
-                println("Warning: Could not create fuzzystrmatch extension. SOUNDEX search may fail if not already present. Error: ${e.message}")
+                println("Warning: Database setup error (schema/extension). Error: ${e.message}")
             }
         }
     }

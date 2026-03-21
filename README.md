@@ -177,31 +177,15 @@ docker ps
 
 ## Setting up the PgAdmin Database GUI
 
-To start up the PgAdmin GUI to check up on the database ass the following to the `docker-compose.yml` 
+The `docker-compose.yml` contains a section for the pgadmin container which is serves
+a UI for the Postgres database. If you don't want this you can remove the ection from
+the YAML file. (Don't remove the `volumes` section or Postgres won't persit anything 
+between restarts.)
 file (before the `volumes:` section, remember to intent by 2 spaces):
 
-```yaml
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: music-pgadmin
-    restart: unless-stopped
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
-      - PGADMIN_DEFAULT_PASSWORD=adminpass
-    ports:
-      - "8012:80"
-    depends_on:
-      - db
-```
-
-And then start all of them up:
-
-```bash
-docker compose up -d
-```
-
 - **PgAdmin:** [http://octan:8012](http://octan:8012) Use the PGADMIN_DEFAULT_EMAIL and PGADMIN_DEFAULT_PASSWORD 
-values to login.
+environment variable values from the `docker-compose.yml file` to login. Default values are: 
+- `admin@admin.com` and `adminpass`
 
 Once the page has opened, right-click on the `Servers` icon and `Register` the database server. 
 You can Name it `Music Database`. On the `Connection` tab you need to give it the name inside the docker compase network.
@@ -214,14 +198,18 @@ the Music Database.
 Queries you can run:
 
 ```sql
+# Check the predefined classification types
 select * from public.group_type
+  
+# Check the available classifications:
+select * from musicdatabase.groups
 
 # remove all tables (including their content):
-drop table public.track_group;
-drop table public.groups;
-drop table public.group_type;
-drop table public.track_file;
-drop table public.track;         
+drop table musicdatabase.track_group;
+drop table musicdatabase.groups;
+drop table musicdatabase.group_type;
+drop table musicdatabase.track_file;
+drop table musicdatabase.track;         
 ```
 
 ## Publishing a new version
