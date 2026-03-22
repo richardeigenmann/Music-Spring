@@ -212,6 +212,29 @@ drop table musicdatabase.track_file;
 drop table musicdatabase.track;         
 ```
 
+## Using the application
+
+After you spun up all the container successfully you have an empty music database.
+
+![Initial Screen](doc/InitialScreenshot.png)
+
+Add music by hitting the Menu > Scan mp3 directoy.
+If you need some tracks to get started check out this site with royalty fee house tracks:
+https://elevenlabs.io/music/house
+
+After importing your tracks it may look like this:
+
+![Unclassified Tracks](doc/UnclassifiedTracks.png)
+
+You can now click on the track icon to open the player at 
+the bottom of the screen and play tracks individually or play the 
+whole list.
+
+If you click on the name of the track you open the 
+editor window and can assign the Mood, Genre and Rating
+
+
+
 ## Publishing a new version
 
 If you are Richard, use the `pushDockerContainers` Gradle task in the `docker` group to publish new versions.
