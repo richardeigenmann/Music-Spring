@@ -1,16 +1,14 @@
 package org.richinet.musicbackend
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.doThrow
 import org.richinet.musicbackend.controller.MusicDbController
 import org.richinet.musicbackend.data.entity.Track
-import org.richinet.musicbackend.data.entity.TrackFile
 import org.richinet.musicbackend.data.projection.GroupProjection
 import org.richinet.musicbackend.data.projection.PlaylistProjection
+import org.richinet.musicbackend.data.repository.GroupTypeRepository
 import org.richinet.musicbackend.data.repository.GroupsRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
 import org.richinet.musicbackend.data.repository.TrackRepository
@@ -42,10 +40,20 @@ class MusicbackendApplicationTests {
     private lateinit var groupsRepository: GroupsRepository
 
     @MockBean
+    private lateinit var groupTypeRepository: GroupTypeRepository
+
+    @MockBean
     private lateinit var trackFileRepository: TrackFileRepository
 
     @MockBean
     private lateinit var musicImportService: MusicImportService
+
+    @MockBean
+    private lateinit var jdbcTemplate: org.springframework.jdbc.core.JdbcTemplate
+
+    @MockBean
+    private lateinit var audioHandler: org.springframework.web.servlet.resource.ResourceHttpRequestHandler
+
 
     @Test
     fun `getTrack should return track data when found`() {

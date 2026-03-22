@@ -285,7 +285,12 @@ class MusicDbController(
     request: HttpServletRequest,
     response: HttpServletResponse
   ) {
-    val trackFile = trackFileRepository.findById(id).orElse(null) ?: return
+    val trackFile = trackFileRepository.findById(id).orElse(null)
+    if (trackFile == null) {
+      response.status = HttpServletResponse.SC_NOT_FOUND
+      return
+    }
+
     val file = File(File(musicDirectory, trackFile.fileLocation ?: ""), trackFile.fileName ?: "")
 
     if (file.exists()) {

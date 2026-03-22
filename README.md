@@ -292,3 +292,90 @@ graph LR
     %% Styling
     style Browser fill:#fff,stroke:#4285F4
 ```
+
+Starting it all up
+
+```bash
+
+# Prerequisites: You need to have NodeJs and Angular 21 installed
+su - # not sure: you may need to be root to install Angular globally.
+npm install -g @angular/cli
+npm install -g angular-cli-ghpages
+
+# clone the GitHub repository
+git clone https://github.com/richardeigenmann/Music-Spring
+cd Music-Spring
+
+# to list the folder structure
+tree -I 'node_modules|coverage|dist|build|bin'
+
+
+# start the Kotlin backend
+./gradlew bootRunPg
+
+# start the Angular frontend
+cd musicfrontend
+ng serve -o
+```
+
+Point your browser at http;//localhost:4200
+
+## Running the tests
+
+```bash
+# How to run the frontend unit tests
+cd musicfrontend
+ng test
+
+# the backend tests
+./gradlew test
+
+# Running end-to-end tests (when I get round to writing them)
+ng serve -o # ensure that the application is running on localhost:4200
+npx cypress open
+# Then click on "E2E Testing", pick a browser and "Start E2E Testing".
+# Then look for the spec.cy.js hypelink and click on it. The tests should run.
+```
+
+## Upgrading the frontend
+
+```bash
+cd musicfrontend
+npm outdated
+ng update
+npm update
+npx npm-check-updates -u
+```
+
+## Linting
+
+```bash
+cd musicfrontend
+ng lint
+```
+
+# ToDo List
+
+- An Android App would be nice
+- Cleaned up documentation
+- An End 2 End testing script
+
+# Notes from setting up the frontend on local OpenShift
+
+```bash
+oc expose svc/music-frontend --port=80
+
+oc get svc music-frontend
+
+# pull a fresh copy
+oc patch deployment music-frontend -p '{"spec":{"template":{"spec":{"containers":[{"name":"music-frontend","imagePullPolicy":"Always"}]}}}}'
+
+oc new-app --docker-image=docker.io/richardeigenmann/musicfrontend:0.0.1 \
+    --name=music-frontend \
+    -e BACKEND_URL=http://music-backend.default.svc.cluster.local:8002/
+
+# hit http://music-frontend-default.apps-crc.testing/
+
+```
+
+
