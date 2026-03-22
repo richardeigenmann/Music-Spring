@@ -268,19 +268,9 @@ graph LR
         App["🅰️ Angular App"]
     end
 
-    subgraph Docker ["🐳 Docker Containers"]
-        direction TB
-        subgraph FE ["Frontend Container"]
-            WS["🖥️ Web Server"]
-        end
+    WS["🖥️ Web Server"]
         
-        %% Vertical strut
-        %%FE ~~~ BE
-        
-        subgraph BE ["Backend Container"]
-            Backend["🎯 Kotlin Backend"]
-        end
-    end
+    Backend["🎯 Kotlin Backend"]
 
     DB[("🐘 Postgres")]
     Files[["🎵 MP3 Directory\nenv app.music-directory"]]
@@ -301,7 +291,4 @@ graph LR
 
     %% Styling
     style Browser fill:#fff,stroke:#4285F4
-    style Docker fill:#fff,stroke:#0db7ed,stroke-width:2px
-    style FE fill:#fff
-    style BE fill:#fff
 ```
