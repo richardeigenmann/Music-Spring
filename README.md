@@ -46,7 +46,7 @@ graph LR
         %%FE ~~~ BE
         
         subgraph BE ["Backend Container"]
-            API["🎯 Kotlin Backend"]
+            Backend["🎯 Kotlin Backend"]
         end
     end
 
@@ -55,17 +55,17 @@ graph LR
 
     %% --- THE CONNECTIONS (The "Physics" Fix) ---
     
-    User --> Browser
+    User -->|http://hostname:8010| Browser
     
     %% Reverse the arrow syntax to force WS to the RIGHT of App
     App <-.-|Frontend\nhttp:/hostname:8010| WS
     
     %% Standard flow to the backend
-    App -->|REST API\nhttp://hostname:8011| API
+    App -->|REST API\nhttp://hostname:8011| Backend
     
     %% Backend data flow
-    API --> DB
-    API --> Files
+    Backend -->|postgres:5432| DB
+    Backend --> Files
 
     %% Styling
     style Browser fill:#fff,stroke:#4285F4
@@ -256,6 +256,52 @@ If the backend is running from the `application:bootRunPg` task in Gradle then t
 comes from `musicbackend/src/main/resources/application.properties` 
 where you need to add the frontend URL to the `app.cors.allowed-origins` property.
 
-You will also need to define where the directory with the mp3 files is located in the $
-`application-dev-pg.properties` file.
+You will also need to define where the directory with the mp3 files is located in the
+`application-dev-pg.properties` file under the key `app.music-directory`.
 
+```mermaid
+graph LR
+    %% Entity Definitions
+    User["👤 User"]
+    
+    subgraph Browser ["🌐 Chrome Browser"]
+        App["🅰️ Angular App"]
+    end
+
+    subgraph Docker ["🐳 Docker Containers"]
+        direction TB
+        subgraph FE ["Frontend Container"]
+            WS["🖥️ Web Server"]
+        end
+        
+        %% Vertical strut
+        %%FE ~~~ BE
+        
+        subgraph BE ["Backend Container"]
+            Backend["🎯 Kotlin Backend"]
+        end
+    end
+
+    DB[("🐘 Postgres")]
+    Files[["🎵 MP3 Directory\nenv app.music-directory"]]
+
+    %% --- THE CONNECTIONS (The "Physics" Fix) ---
+    
+    User -->|http://localhost:4200| Browser
+    
+    %% Reverse the arrow syntax to force WS to the RIGHT of App
+    App <-.-|Frontend\nhttp:/hostname:8010| WS
+    
+    %% Standard flow to the backend
+    App -->|REST API\nhttp://localhost:8002| API
+    
+    %% Backend data flow
+    Backend -->|postgres:5432| DB
+    Backend --> Files
+
+    %% Styling
+    style Browser fill:#fff,stroke:#4285F4
+    style Docker fill:#fff,stroke:#0db7ed,stroke-width:2px
+    style FE fill:#fff
+    style BE fill:#fff
+```

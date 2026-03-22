@@ -10,11 +10,15 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import javax.sql.DataSource
+import java.io.File
+import java.sql.Connection
 
 @RestController
 @RequestMapping("/api")
 class VersionController(
-    private val buildProperties: BuildProperties
+    private val buildProperties: BuildProperties,
+    private val dataSource: DataSource
 ) {
 
     @Operation(summary = "Get application version information")
@@ -23,14 +27,30 @@ class VersionController(
             content = [Content(mediaType = "application/json", schema = Schema(implementation = Map::class))])
     ])
     @GetMapping("/version")
-    fun getVersion(): ResponseEntity<Map<String, String>> {
-        val versionInfo = mapOf(
+    fun getVersion(): ResponseEntity<Map<String, Any>> {
+        val versionInfo = mutableMapOf<String, Any>(
             "group" to buildProperties.group,
             "artifact" to buildProperties.artifact,
             "name" to buildProperties.name,
             "version" to buildProperties.version,
-            "time" to buildProperties.time.toString()
+            "time" to buildProperties.time.toString(),
+            "runtime" to System.getProperty("java.vm.name"),
+            "runtimeVersion" to System.getProperty("java.version"),
+            "environment" to if (File("/.dockerenv").exists() || System.getenv("KUBERNETES_SERVICE_HOST") != null) "container" else "ide/host"
         )
+
+        try {
+            dataSource.connection.use { conn: Connection ->
+                val metaData = conn.metaData
+                versionInfo["dbConnected"] = true
+                versionInfo["dbUrl"] = metaData.url
+                versionInfo["dbUser"] = metaData.userName
+            }
+        } catch (e: Exception) {
+            versionInfo["dbConnected"] = false
+            versionInfo["dbError"] = e.message ?: "Unknown connection error"
+        }
+
         return ResponseEntity.ok(versionInfo)
     }
 }

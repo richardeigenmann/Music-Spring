@@ -36,6 +36,27 @@
       <div class="status-item">
         <strong>Build time:</strong> {{ info.time | date:'medium' }}
       </div>
+      <div class="status-item">
+        <strong>Runtime:</strong> {{ info.runtime }} ({{ info.runtimeVersion }})
+      </div>
+      <div class="status-item">
+        <strong>Environment:</strong> {{ info.environment }}
+      </div>
+      <div class="status-item">
+        <strong>Database Connected:</strong> {{ info.dbConnected ? 'Yes' : 'No' }}
+      </div>
+      @if (info.dbConnected) {
+        <div class="status-item">
+          <strong>Database URL:</strong> {{ info.dbUrl }}
+        </div>
+        <div class="status-item">
+          <strong>Database User:</strong> {{ info.dbUser }}
+        </div>
+      } @else if (info.dbError) {
+        <div class="status-item error">
+          <strong>Database Error:</strong> {{ info.dbError }}
+        </div>
+      }
     } @else {
       <p>Loading backend version info...</p>
     }
