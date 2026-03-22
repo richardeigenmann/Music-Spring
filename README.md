@@ -290,13 +290,13 @@ graph LR
     User -->|http://localhost:4200| Browser
     
     %% Reverse the arrow syntax to force WS to the RIGHT of App
-    App <-.-|Frontend\nhttp:/hostname:8010| WS
+    App <-.-|Frontend\nhttp:/localhost:4200| WS
     
     %% Standard flow to the backend
-    App -->|REST API\nhttp://localhost:8002| API
+    App -->|REST API\nhttp://localhost:8002| Backend
     
     %% Backend data flow
-    Backend -->|postgres:5432| DB
+    Backend -->|localhost:5432| DB
     Backend --> Files
 
     %% Styling
