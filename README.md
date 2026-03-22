@@ -80,13 +80,13 @@ Architecture Notes
 - The **Backend** (port 8011) handles music file scanning, metadata extraction, and provides the REST API.
 - The **PostgreSQL** database stores track metadata and playlist information.
 
-
 ## Future enhancement ideas
 
-- Download playlists as .m3u files with links to the tracks on the backend
-- Download playlists with the mp3 files all in a .zip file
 - Android app that connects to the back-end
 - Ability to create playlists on an Android phone and download the files to phone for local playing
+- Cleaned up documentation
+- An End 2 End testing script
+
 
 ## Quick Start with Docker Compose
 
@@ -243,6 +243,14 @@ that read the `gradle.properties` file from where the `version` variable propaga
 
 The `bootBuildImage` task looks at the `gradle.properties` `native` property to decide if a slow GraalVM or faster Java build should be done. The GraalVM build is much faster at runtime.
 
+- check `gradle.properties`
+- increment version number
+- native build?
+- run pushDockerContainers
+- cd to directory where the `docker-compose.yml? file is located
+- run `docker compose up -d` to refresh the containers
+
+
 ## Running in development mode
 
 The file `musicfrontend/src/app/apiservice.ts` defines the fallback URL for the backend. Change the
@@ -318,7 +326,23 @@ cd musicfrontend
 ng serve -o
 ```
 
-Point your browser at http;//localhost:4200
+Point your browser at http://localhost:4200
+
+## CORS Configuration
+
+When you deploy, you can override this property without changing the code. 
+For example, if you deploy your Angular app to https://www.your-music-app.com, 
+you would set an environment variable for the backend Spring Boot container:
+
+`APP_CORS_ALLOWED-ORIGINS=https://www.your-music-app.com`
+
+### Supporting Multiple Origins
+
+If you have multiple origins, they can be comma-separated. The way the `CorsConfig.kt` is set up, Spring Boot will automatically handle a comma-separated list for you.
+When you define the property in `application.properties` like this: 
+`app.cors.allowed-origins=http://localhost:4200,https://your-app.com,https://staging.your-app.com`
+
+The `@Value` annotation injects this into the `allowedOrigins: Array<String>`, and Spring automatically splits the comma-separated string into an array of individual origins. The `allowedOrigins(*allowedOrigins)` call then correctly registers each one.
 
 ## Running the tests
 
@@ -354,15 +378,30 @@ cd musicfrontend
 ng lint
 ```
 
-# ToDo List
-
-- An Android App would be nice
-- Cleaned up documentation
-- An End 2 End testing script
-
 # Notes from setting up the frontend on local OpenShift
 
 ```bash
+crc console --credentials
+crc oc-env
+oc login -u developer -p developer https://api.crc.testing:6443 --insecure-skip-tls-verify=true
+
+# Create a new namespace/project
+oc new-project music-backend
+oc new-project music-backend-v2
+
+# Deploy the image from Docker Hub
+oc create service clusterip music-backend --tcp=8002:8002
+oc new-app --name=music-backend --image=docker.io/richardeigenmann/musicbackend:0.1.0-SNAPSHOT
+
+oc set volume deployment/music-backend --add \
+    --name=music-storage \
+    --type=pvc \
+    --claim-name=music-data-pvc \
+    --mount-path=/richi
+oc set env deployment/music-backend \
+    APP_CORS_ALLOWED_ORIGINS="http://music-frontend-default.apps-crc.testing"
+
+
 oc expose svc/music-frontend --port=80
 
 oc get svc music-frontend
@@ -376,6 +415,86 @@ oc new-app --docker-image=docker.io/richardeigenmann/musicfrontend:0.0.1 \
 
 # hit http://music-frontend-default.apps-crc.testing/
 
+oc expose deployment/music-backend --port=8002 --target-port=8002
+oc expose svc/music-backend --hostname=music-backend-v2.apps-crc.testing
+
+curl music-backend-default.apps-crc.testing:8002/api/version
+curl music-backend-default.apps-crc.testing/api/version
+curl music-backend-default.apps-crc.testing:8002/api/totalTrackCount
+curl music-backend-v2.apps-crc.testing/api/version
+
+# Update to new version:
+oc set image deployment/music-backend music-backend=docker.io/richardeigenmann/music-backend:0.1.0-SNAPSHOT
+# Then, force a fresh pull just in case:
+oc patch deployment music-backend -p '{"spec":{"template":{"metadata":{"annotations":{"update-date":"'$(date +%s)'"}}}}}'
+
+# Describe Volume Mounts
+oc describe deployment music-app | grep -A 10 Volumes
+
+# Need to do this ad admin
+crc console --credentials
+
+oc label ns music-backend pod-security.kubernetes.io/enforce=privileged
+
+oc create -f - <<EOF
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: music-data-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+EOF
+
+oc set volume deployment/music-app --add \
+  --name=music-data-volume \
+  --type=pvc \
+  --claim-name=music-data-pvc \
+  --mount-path=/richi
+
+# spin up a container with the PVC attached and use that to do the rsync
+oc run rsync-helper --image=registry.access.redhat.com/ubi9/ubi-minimal --overrides='
+{
+  "spec": {
+    "containers": [
+      {
+        "name": "helper",
+        "image": "registry.access.redhat.com/ubi9/ubi-minimal",
+        "command": ["/bin/sh", "-c", "microdnf install -y rsync && sleep 3600"],
+        "volumeMounts": [{"name": "richi", "mountPath": "/richi"}]
+      }
+    ],
+    "volumes": [{"name": "richi", "persistentVolumeClaim": {"claimName": "music-data-pvc"}}]
+  }
+}'
+
+# Then 
+oc rsync /richi/mp3/ rsync-helper:/richi/mp3/
+oc rsync /home/richi/ToDo/ rsync-helper:/richi/ToDo/
+
+oc exec rsync-helper -- du -sh /richi
+oc exec rsync-helper -- ls /richi/mp3
+oc delete pod rsync-helper --force --grace-period=0
+
+
+# Now hit
+
+
 ```
 
+## Database Notes
+
+By default, the application uses an H2 in-memory database. 
+
+**Security Warning:** In production or public-facing deployments, the H2 console should be disabled to prevent unauthorized database access.
+
+### Disabling H2 Console
+To disable the H2 console, set the following property in your `application.properties` or as an environment variable:
+
+`SPRING_H2_CONSOLE_ENABLED=false`
+
+In the provided `application.properties`, this is currently set to `false` by default.
 
