@@ -1,8 +1,21 @@
 <div class="background-box">
-  <h1>{{ currentGroupTitle() }}</h1>
-  <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
-    <button (click)="playAll()">Play All</button>
-    <button (click)="deleteCurrentGroup()" class="btn-delete" title="Delete this group">🗑️</button>
+  <div class="header">
+    <h1>{{ currentGroupTitle() }}</h1>
+    <div class="actions">
+      <button class="play-all-btn" (click)="playAll()" title="Play All">
+        <span class="play-icon"></span>
+      </button>
+      <div class="menu-container">
+        <button class="menu-btn" (click)="toggleMenu($event)" title="More options">
+          <span class="menu-icon"></span>
+        </button>
+        <div class="dropdown-menu" *ngIf="showMenu()" (click)="onDropdownClick($event)">
+          <a (click)="downloadM3u()">Download as .m3u</a>
+          <a (click)="downloadZip()">Download as .zip</a>
+          <a (click)="deleteCurrentGroup()">Delete Group</a>
+        </div>
+      </div>
+    </div>
   </div>
 
   <app-track-list [tracks]="playlistEntries()" [highlightId]="currentTrackId()"></app-track-list>

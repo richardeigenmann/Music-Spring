@@ -282,6 +282,22 @@ export class ApiService {
     });
   }
 
+  downloadGroupAsM3u(groupId: number): Observable<Blob> {
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.get(`${this.API_URL}/api/group/${groupId}/m3u`, { responseType: 'blob' }).subscribe(observer);
+      });
+    });
+  }
+
+  downloadGroupAsZip(groupId: number): Observable<Blob> {
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.get(`${this.API_URL}/api/group/${groupId}/zip`, { responseType: 'blob' }).subscribe(observer);
+      });
+    });
+  }
+
   getFrontendUrl(): string {
     return window.location.origin;
   }

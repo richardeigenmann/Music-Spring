@@ -252,7 +252,10 @@ Note that the CORS policy must allow the frontend to connect. If the backend is 
 container specify the frontend URL in the variable `APP_CORS_ALLOWED_ORIGINS` (additional ones with 
 comma seperation).
 
-If the backend is runing from the `application:bootRunPg` task in Gradle then the CORS policy 
+If the backend is running from the `application:bootRunPg` task in Gradle then the CORS policy 
 comes from `musicbackend/src/main/resources/application.properties` 
 where you need to add the frontend URL to the `app.cors.allowed-origins` property.
+
+You will also need to define where the directory with the mp3 files is located in the $
+`application-dev-pg.properties` file.
 

@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.richinet.musicbackend.data.entity.Groups
 import org.richinet.musicbackend.data.projection.GroupProjection
 import org.richinet.musicbackend.data.projection.PlaylistProjection
@@ -18,6 +20,8 @@ import org.richinet.musicbackend.service.MusicImportService
 import org.richinet.musicbackend.service.ScanProgress
 import org.richinet.musicbackend.service.TrackDataService
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.ClassPathResource
 import org.springframework.core.io.FileSystemResource
@@ -28,13 +32,14 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
+import org.springframework.web.servlet.resource.ResourceHttpRequestHandler
 import java.io.File
 import java.math.BigDecimal
-import java.nio.file.Files
 import java.sql.Timestamp
 import java.util.concurrent.Semaphore
-
-private const val MUSIC_DIRECTORY = "/mp3/"
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 data class FilterRequest(
   val mustHaveIds: List<Long> = emptyList(),
@@ -66,6 +71,9 @@ class MusicDbController(
 ) {
   private val logger = LoggerFactory.getLogger(MusicDbController::class.java)
   private val imageExtractionSemaphore = Semaphore(4) // Only 4 concurrent image extractions allowed
+
+  @Value("\${app.music-directory:/mp3/}")
+  private lateinit var musicDirectory: String
 
   @Operation(summary = "Returns serialized track data including metadata.")
   @ApiResponses(
@@ -258,6 +266,9 @@ class MusicDbController(
     return ResponseEntity.ok(serializedTracks)
   }
 
+  @Autowired
+  lateinit var audioHandler: ResourceHttpRequestHandler
+
   @Operation(summary = "Stream audio file")
   @ApiResponses(
     value = [
@@ -269,28 +280,41 @@ class MusicDbController(
     ]
   )
   @GetMapping("/trackFile/{id}")
-  fun getTrackFile(@PathVariable id: Long): ResponseEntity<Resource> {
-    val trackFile = trackFileRepository.findById(id)
-    if (trackFile.isPresent) {
-      val fileEntity = trackFile.get()
-      val fileLocation = fileEntity.fileLocation?.trim('/') ?: ""
-      val fileName = fileEntity.fileName ?: ""
-      val file = if (fileLocation.isEmpty()) {
-        File(MUSIC_DIRECTORY, fileName)
-      } else {
-        File(File(MUSIC_DIRECTORY, fileLocation), fileName)
-      }
-      if (file.exists()) {
-        val resource = FileSystemResource(file)
-        val contentType = Files.probeContentType(file.toPath()) ?: "audio/mpeg"
-        return ResponseEntity.ok()
-          .contentType(MediaType.parseMediaType(contentType))
-          .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"${file.name}\"")
-          .body(resource)
-      }
+  fun getTrackFile(
+    @PathVariable id: Long,
+    request: HttpServletRequest,
+    response: HttpServletResponse
+  ) {
+    val trackFile = trackFileRepository.findById(id).orElse(null) ?: return
+    val file = File(File(musicDirectory, trackFile.fileLocation ?: ""), trackFile.fileName ?: "")
+
+    if (file.exists()) {
+      val resource = FileSystemResource(file)
+
+      // EXPLICITLY set the content type before the handler takes over
+      response.contentType = "audio/mpeg"
+      // Some GStreamer versions need this to recognize the stream can be indexed
+      response.setHeader("Accept-Ranges", "bytes")
+      // Pass the resource to the handler via a request attribute
+      request.setAttribute("trackResource", resource)
+      // 2. The "Anti-Stall" Headers for Amarok
+      // Prevents GStreamer from trying to 'buffer' a previous seek's data
+      response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+      response.setHeader(HttpHeaders.PRAGMA, "no-cache")
+      response.setHeader(HttpHeaders.EXPIRES, "0")
+    // 3. Keep-Alive is vital for GStreamer to reuse the connection after a seek
+      response.setHeader(HttpHeaders.CONNECTION, "keep-alive")
+
+      // Pass the resource to the handler via a request attribute
+      request.setAttribute("trackResource", resource)
+      // Let the pre-initialized bean handle the Range headers and 206 status
+      audioHandler.handleRequest(request, response)
+    } else {
+      response.status = HttpServletResponse.SC_NOT_FOUND
     }
-    return ResponseEntity.notFound().build()
   }
+
+
 
   @Operation(summary = "Get album art from track file")
   @ApiResponses(
@@ -310,9 +334,9 @@ class MusicDbController(
       val fileLocation = fileEntity.fileLocation?.trim('/') ?: ""
       val fileName = fileEntity.fileName ?: ""
       val file = if (fileLocation.isEmpty()) {
-        File(MUSIC_DIRECTORY, fileName)
+        File(musicDirectory, fileName)
       } else {
-        File(File(MUSIC_DIRECTORY, fileLocation), fileName)
+        File(File(musicDirectory, fileLocation), fileName)
       }
       if (file.exists()) {
         try {
@@ -504,5 +528,120 @@ class MusicDbController(
   fun deleteGroup(@PathVariable id: Long): ResponseEntity<Unit> {
     musicImportService.deleteGroup(id)
     return ResponseEntity.ok().build()
+  }
+
+  private fun sanitizeFilename(name: String): String {
+    // Replace any character that is not a letter, number, space, hyphen, or underscore with an underscore.
+    val sanitized = name.replace(Regex("[^a-zA-Z0-9 \\-_]"), "_")
+    // Collapse multiple underscores or spaces into a single underscore.
+    return sanitized.replace(Regex("[_ ]+"), "_")
+  }
+
+  @Operation(summary = "Download a group's tracks as an M3U playlist")
+  @GetMapping("/group/{id}/m3u")
+  fun downloadGroupAsM3u(@PathVariable id: Long, @RequestHeader(HttpHeaders.HOST) host: String): ResponseEntity<String> {
+    val group = groupsRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
+    val tracks = trackRepository.findTracksByGroupId(id)
+    val baseUrl = "http://$host/api"
+
+    val m3uContent = buildString {
+      appendLine("#EXTM3U")
+      tracks.forEach { track ->
+        val serializedTrack = trackDataService.serializeTrack(track)
+        val files = serializedTrack["Files"] as? List<Map<String, Any?>>
+        val firstFile = files?.firstOrNull()
+
+        if (firstFile != null) {
+          val artist = (serializedTrack["Artist"] as? Any)?.let {
+            if (it is List<*>) it.joinToString(", ") else it.toString()
+          } ?: "Unknown Artist"
+          val title = serializedTrack["TrackName"] as? String ?: "Unknown Track"
+          val duration = (firstFile["Duration"] as? Number)?.toInt() ?: -1
+          val fileId = firstFile["FileId"]
+
+          appendLine("#EXTINF:$duration,$artist - $title")
+          appendLine("$baseUrl/trackFile/$fileId")
+        }
+      }
+    }
+
+    val groupTypeName = group.groupType?.groupTypeName ?: "Group"
+    val safeFilename = sanitizeFilename("$groupTypeName - ${group.groupName}")
+
+    val headers = HttpHeaders()
+    headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${safeFilename}.m3u\"")
+    headers.add(HttpHeaders.CONTENT_TYPE, "application/x-mpegurl")
+
+    return ResponseEntity.ok().headers(headers).body(m3uContent)
+  }
+
+  @Operation(summary = "Download a group's tracks and playlist as a ZIP file")
+  @GetMapping("/group/{id}/zip")
+  fun downloadGroupAsZip(@PathVariable id: Long): ResponseEntity<StreamingResponseBody> {
+    val group = groupsRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
+    val tracks = trackRepository.findTracksByGroupId(id)
+    val serializedTracks = tracks.map { trackDataService.serializeTrack(it) }
+
+    val groupTypeName = group.groupType?.groupTypeName ?: "Group"
+    val safeFilenameBase = sanitizeFilename("$groupTypeName - ${group.groupName}")
+
+    val streamingResponseBody = StreamingResponseBody { outputStream ->
+      val zipOut = ZipOutputStream(outputStream)
+
+      // 1. Create and add the M3U file to the zip
+      val m3uContent = buildString {
+        appendLine("#EXTM3U")
+        serializedTracks.forEach { serializedTrack ->
+          val files = serializedTrack["Files"] as? List<Map<String, Any?>>
+          val firstFile = files?.firstOrNull()
+
+          if (firstFile != null) {
+            val artist = (serializedTrack["Artist"] as? Any)?.let {
+              if (it is List<*>) it.joinToString(", ") else it.toString()
+            } ?: "Unknown Artist"
+            val title = serializedTrack["TrackName"] as? String ?: "Unknown Track"
+            val duration = (firstFile["Duration"] as? Number)?.toInt() ?: -1
+            val fileName = firstFile["FileName"] as? String
+
+            if (fileName != null) {
+              appendLine("#EXTINF:$duration,$artist - $title")
+              appendLine(fileName) // Use relative paths for the ZIP
+            }
+          }
+        }
+      }
+      val m3uEntry = ZipEntry("${safeFilenameBase}.m3u")
+      zipOut.putNextEntry(m3uEntry)
+      zipOut.write(m3uContent.toByteArray())
+      zipOut.closeEntry()
+
+      // 2. Add each MP3 file to the zip
+      serializedTracks.forEach { serializedTrack ->
+        val files = serializedTrack["Files"] as? List<Map<String, Any?>>
+        files?.firstOrNull()?.let { fileMap ->
+          val fileLocation = fileMap["FileLocation"] as? String ?: ""
+          val fileName = fileMap["FileName"] as? String ?: ""
+          val file = if (fileLocation.trim('/').isEmpty()) {
+            File(musicDirectory, fileName)
+          } else {
+            File(File(musicDirectory, fileLocation.trim('/')), fileName)
+          }
+
+          if (file.exists()) {
+            val zipEntry = ZipEntry(fileName)
+            zipOut.putNextEntry(zipEntry)
+            file.inputStream().use { it.copyTo(zipOut) }
+            zipOut.closeEntry()
+          }
+        }
+      }
+      zipOut.close()
+    }
+
+    val headers = HttpHeaders()
+    headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${safeFilenameBase}.zip\"")
+    headers.add(HttpHeaders.CONTENT_TYPE, "application/zip")
+
+    return ResponseEntity.ok().headers(headers).body(streamingResponseBody)
   }
 }
