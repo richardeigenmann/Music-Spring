@@ -15,6 +15,7 @@
           @if (showHamburgerMenu()) {
             <div class="menu-dropdown">
               <button routerLink="/mixer" (click)="closeHamburgerMenu()" class="menu-item">Mixing Board</button>
+              <button routerLink="/stats" (click)="closeHamburgerMenu()" class="menu-item">Library Statistics</button>
               <button (click)="goUnclassified(); closeHamburgerMenu()" class="menu-item">Unclassified Tracks</button>
               <button routerLink="/status" (click)="closeHamburgerMenu()" class="menu-item">Status</button>
               <button (click)="startScan(); closeHamburgerMenu()" class="menu-item">Scan mp3 directory</button>

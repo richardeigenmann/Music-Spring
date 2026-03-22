@@ -44,4 +44,37 @@ interface GroupsRepository : JpaRepository<Groups, Long> {
         nativeQuery = true
     )
     fun findAllEditableGroups(): List<GroupProjection>
+
+    @Query(
+        value = """
+        SELECT
+            gt.Group_Type_Name AS name,
+            COUNT(tg.Track_Id) AS count
+        FROM Group_Type gt
+        JOIN "groups" g ON gt.Group_Type_Id = g.Group_Type_Id
+        LEFT JOIN Track_Group tg ON g.Group_Id = tg.Group_Id
+        WHERE gt.Group_Type_Edit = 'S'
+        GROUP BY gt.Group_Type_Name
+        ORDER BY count DESC
+        """,
+        nativeQuery = true
+    )
+    fun getGroupTypeUsageStats(): List<Map<String, Any>>
+
+    @Query(
+        value = """
+        SELECT
+            gt.Group_Type_Name AS typeName,
+            g.Group_Name AS groupName,
+            COUNT(tg.Track_Id) AS count
+        FROM Group_Type gt
+        JOIN "groups" g ON gt.Group_Type_Id = g.Group_Type_Id
+        LEFT JOIN Track_Group tg ON g.Group_Id = tg.Group_Id
+        WHERE gt.Group_Type_Edit = 'S'
+        GROUP BY gt.Group_Type_Name, g.Group_Name
+        ORDER BY gt.Group_Type_Name, count DESC
+        """,
+        nativeQuery = true
+    )
+    fun getGroupUsageStats(): List<Map<String, Any>>
 }

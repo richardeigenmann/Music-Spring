@@ -204,6 +204,41 @@ export class ApiService {
     });
   }
 
+  getGroupTypeUsageStats(): Observable<{ name: string, count: number }[]> {
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.get<any[]>(`${this.API_URL}/api/stats/groupTypeUsage`).subscribe({
+          next: (data) => {
+            observer.next(data.map(d => ({
+              name: d.name ?? d.NAME,
+              count: d.count ?? d.COUNT
+            })));
+          },
+          error: (err) => observer.error(err),
+          complete: () => observer.complete()
+        });
+      });
+    });
+  }
+
+  getGroupUsageStats(): Observable<{ typeName: string, groupName: string, count: number }[]> {
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.get<any[]>(`${this.API_URL}/api/stats/groupUsage`).subscribe({
+          next: (data) => {
+            observer.next(data.map(d => ({
+              typeName: d.typeName ?? d.TYPENAME,
+              groupName: d.groupName ?? d.GROUPNAME,
+              count: d.count ?? d.COUNT
+            })));
+          },
+          error: (err) => observer.error(err),
+          complete: () => observer.complete()
+        });
+      });
+    });
+  }
+
   getUnclassifiedTracks(): Observable<Track[]> {
     return new Observable(observer => {
       this.initPromise.then(() => {

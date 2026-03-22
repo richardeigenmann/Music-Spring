@@ -7,9 +7,11 @@ import { MixingBoard } from './mixing-board/mixing-board';
 import { Status } from './status/status';
 import { Queue } from './queue/queue';
 import { Groups } from './groups/groups';
+import { Stats } from './stats/stats';
 
 export const routes: Routes = [
     { path: 'status', component: Status },
+    { path: 'stats', component: Stats },
     { path: 'groups', component: Groups },
     { path: 'group/:groupId', component: TracksByGroup },
     { path: 'track/:id', component: TrackEdit },
