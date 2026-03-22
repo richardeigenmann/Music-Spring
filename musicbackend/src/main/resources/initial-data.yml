@@ -17,7 +17,7 @@ app:
         name: "Rating"
         edit: "S"
       - id: "6"
-        name: "Music Style"
+        name: "Genre"
         edit: "S"
       - id: "7"
         name: "Mood"
@@ -38,7 +38,7 @@ app:
       - typeId: "5"
         name: "Subpar"
 
-      # 6 Is Music Style
+      # 6 Is Genre
       - typeId: "6"
         name: "Acid House"
       - typeId: "6"

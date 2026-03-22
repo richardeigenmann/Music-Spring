@@ -7,8 +7,10 @@ import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import org.richinet.musicbackend.data.entity.Groups
 import org.richinet.musicbackend.data.projection.GroupProjection
 import org.richinet.musicbackend.data.projection.PlaylistProjection
+import org.richinet.musicbackend.data.repository.GroupTypeRepository
 import org.richinet.musicbackend.data.repository.GroupsRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
 import org.richinet.musicbackend.data.repository.TrackRepository
@@ -21,6 +23,7 @@ import org.springframework.core.io.ClassPathResource
 import org.springframework.core.io.FileSystemResource
 import org.springframework.core.io.Resource
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.jdbc.core.JdbcTemplate
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.*
 import java.io.File
 import java.math.BigDecimal
 import java.nio.file.Files
+import java.sql.Timestamp
 import java.util.concurrent.Semaphore
 
 private const val MUSIC_DIRECTORY = "/mp3/"
@@ -43,6 +47,11 @@ data class CreatePlaylistRequest(
   val trackIds: List<Long>
 )
 
+data class CreateGroupRequest(
+  val groupType: String,
+  val groupName: String
+)
+
 @RestController
 @RequestMapping("/api")
 @CrossOrigin
@@ -50,6 +59,7 @@ class MusicDbController(
   private val trackRepository: TrackRepository,
   private val trackDataService: TrackDataService,
   private val groupsRepository: GroupsRepository,
+  private val groupTypeRepository: GroupTypeRepository,
   private val trackFileRepository: TrackFileRepository,
   private val musicImportService: MusicImportService,
   private val jdbcTemplate: JdbcTemplate
@@ -446,6 +456,37 @@ class MusicDbController(
   fun createPlaylist(@RequestBody request: CreatePlaylistRequest): ResponseEntity<Map<String, Any?>> {
     val groups = musicImportService.createPlaylist(request.name, request.trackIds)
     return ResponseEntity.ok(mapOf("groupId" to groups.groupId, "groupName" to groups.groupName))
+  }
+
+  @Operation(summary = "Create a new group under a specific group type")
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "201", description = "Group created",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = Map::class))]
+      ),
+      ApiResponse(responseCode = "404", description = "Group type not found")
+    ]
+  )
+  @PostMapping("/group")
+  fun createGroup(@RequestBody request: CreateGroupRequest): ResponseEntity<Map<String, Any?>> {
+    val groupType = groupTypeRepository.findByGroupTypeName(request.groupType)
+      ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
+
+    val newGroup = Groups().apply {
+      this.groupName = request.groupName
+      this.groupTypeId = groupType.groupTypeId
+      this.lastModification = Timestamp(System.currentTimeMillis())
+    }
+
+    val savedGroup = groupsRepository.save(newGroup)
+    return ResponseEntity.status(HttpStatus.CREATED).body(
+      mapOf(
+        "groupId" to savedGroup.groupId,
+        "groupName" to savedGroup.groupName,
+        "groupTypeName" to groupType.groupTypeName
+      )
+    )
   }
 
   @Operation(summary = "Delete a group/playlist")

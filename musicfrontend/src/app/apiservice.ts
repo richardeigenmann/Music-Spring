@@ -236,6 +236,25 @@ export class ApiService {
     });
   }
 
+  createGroup(groupType: string, groupName: string): Observable<Group> {
+    return new Observable(observer => {
+      this.initPromise.then(() => {
+        this.http.post<any>(`${this.API_URL}/api/group`, { groupType, groupName }).subscribe({
+          next: (data) => {
+            observer.next({
+              groupId: data.groupId,
+              groupName: data.groupName,
+              groupTypeName: data.groupTypeName,
+              groupTypeId: data.groupTypeId
+            });
+          },
+          error: (err) => observer.error(err),
+          complete: () => observer.complete()
+        });
+      });
+    });
+  }
+
   deleteGroup(groupId: number): Observable<void> {
     return new Observable(observer => {
       this.initPromise.then(() => {

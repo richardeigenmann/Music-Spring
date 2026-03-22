@@ -63,7 +63,16 @@
                   <button type="button" (click)="addGroup(group)" class="btn-icon">➕</button>
                 </span>
               }
+              <button type="button" class="btn btn-secondary btn-sm" style="margin-left: 5px;" (click)="showCreateGroupForm(groupType)">➕ New Group</button>
           </div>
+
+          @if (creatingGroupForType() === groupType) {
+            <div class="new-group-form">
+              <input type="text" [ngModel]="newGroupName()" (ngModelChange)="newGroupName.set($event)" name="newGroupName" placeholder="Enter group name" class="form-control" style="width: auto; display: inline-block;">
+              <button type="button" class="btn btn-primary btn-sm" (click)="createGroup()">Create</button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="cancelCreateGroup()">Cancel</button>
+            </div>
+          }
         </div>
       }
 

@@ -24,6 +24,10 @@ export class TrackEdit {
   allGroups = signal<Group[]>([]);
   trackId = signal<number | null>(null);
 
+  // For creating new groups
+  creatingGroupForType = signal<string | null>(null);
+  newGroupName = signal<string>('');
+
   objectKeys = Object.keys;
 
   constructor() {
@@ -143,6 +147,31 @@ export class TrackEdit {
       }
       return newTrack;
     });
+  }
+
+  showCreateGroupForm(groupType: string) {
+    this.creatingGroupForType.set(groupType);
+    this.newGroupName.set('');
+  }
+
+  cancelCreateGroup() {
+    this.creatingGroupForType.set(null);
+    this.newGroupName.set('');
+  }
+
+  createGroup() {
+    const type = this.creatingGroupForType();
+    const name = this.newGroupName();
+    if (type && name.trim()) {
+      this.apiService.createGroup(type, name.trim()).subscribe({
+        next: (newGroup) => {
+          this.allGroups.update(groups => [...groups, newGroup]);
+          this.addGroup(newGroup);
+          this.cancelCreateGroup();
+        },
+        error: (error) => console.error('Error creating group', error)
+      });
+    }
   }
 
   removeGroup(group: Group) {
