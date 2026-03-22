@@ -47,7 +47,8 @@ export interface TrackEntry {
   providedIn: 'root',
 })
 export class ApiService {
-  private API_URL = 'http://localhost:8002'; // Fallback
+  //private API_URL = 'http://octan:8011'; // Docker backend container
+  private API_URL = 'http://localhost:8002'; // backend bootRunPg or bootRunH2
   private initialized = false;
   private initPromise: Promise<void>;
 
@@ -204,31 +205,14 @@ export class ApiService {
     });
   }
 
-  getGroupTypeUsageStats(): Observable<{ name: string, count: number }[]> {
-    return new Observable(observer => {
-      this.initPromise.then(() => {
-        this.http.get<any[]>(`${this.API_URL}/api/stats/groupTypeUsage`).subscribe({
-          next: (data) => {
-            observer.next(data.map(d => ({
-              name: d.name ?? d.NAME,
-              count: d.count ?? d.COUNT
-            })));
-          },
-          error: (err) => observer.error(err),
-          complete: () => observer.complete()
-        });
-      });
-    });
-  }
-
   getGroupUsageStats(): Observable<{ typeName: string, groupName: string, count: number }[]> {
     return new Observable(observer => {
       this.initPromise.then(() => {
         this.http.get<any[]>(`${this.API_URL}/api/stats/groupUsage`).subscribe({
           next: (data) => {
             observer.next(data.map(d => ({
-              typeName: d.typeName ?? d.TYPENAME,
-              groupName: d.groupName ?? d.GROUPNAME,
+              typeName: d.typeName ?? d.typename ?? d.TYPENAME,
+              groupName: d.groupName ?? d.groupname ?? d.GROUPNAME,
               count: d.count ?? d.COUNT
             })));
           },

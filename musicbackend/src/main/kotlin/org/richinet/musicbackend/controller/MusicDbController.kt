@@ -386,29 +386,6 @@ class MusicDbController(
     return ResponseEntity.ok(musicImportService.getScanProgress())
   }
 
-  @Operation(summary = "Get group type usage statistics")
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200", description = "Statistics returned",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = List::class))]
-      )
-    ]
-  )
-  @GetMapping("/stats/groupTypeUsage")
-  fun getGroupTypeUsageStats(): ResponseEntity<List<Map<String, Any>>> {
-    return ResponseEntity.ok(groupsRepository.getGroupTypeUsageStats())
-  }
-
-  @Operation(summary = "Get detailed group usage statistics")
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200", description = "Statistics returned",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = List::class))]
-      )
-    ]
-  )
   @GetMapping("/stats/groupUsage")
   fun getGroupUsageStats(): ResponseEntity<List<Map<String, Any>>> {
     return ResponseEntity.ok(groupsRepository.getGroupUsageStats())

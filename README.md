@@ -242,3 +242,17 @@ This sill call the `pushDockerFrontend` task and the `pushDockerBackend` tasks. 
 that read the `gradle.properties` file from where the `version` variable propagates.
 
 The `bootBuildImage` task looks at the `gradle.properties` `native` property to decide if a slow GraalVM or faster Java build should be done. The GraalVM build is much faster at runtime.
+
+## Running in development mode
+
+The file `musicfrontend/src/app/apiservice.ts` defines the fallback URL for the backend. Change the
+API_URL to the url where the backend is running.
+
+Note that the CORS policy must allow the frontend to connect. If the backend is running from the 
+container specify the frontend URL in the variable `APP_CORS_ALLOWED_ORIGINS` (additional ones with 
+comma seperation).
+
+If the backend is runing from the `application:bootRunPg` task in Gradle then the CORS policy 
+comes from `musicbackend/src/main/resources/application.properties` 
+where you need to add the frontend URL to the `app.cors.allowed-origins` property.
+

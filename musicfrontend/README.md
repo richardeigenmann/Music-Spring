@@ -74,7 +74,7 @@ docker push richardeigenmann/musicfrontend:0.0.1
 docker tag musicfrontend richardeigenmann/musicfrontend:latest
 docker push richardeigenmann/musicfrontend:latest
 
-./gradlew :musicfrontend:pushDocker.
+./gradlew :musicfrontend:pushDocker
 
  To build and push everything, you can now simply run:
    1 ./gradlew buildDocker  # For frontend

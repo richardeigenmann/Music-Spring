@@ -9,6 +9,8 @@ services:
       - POSTGRES_PASSWORD=musicpass
     volumes:
       - music_db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U musicuser -d musicdb"]
       interval: 5s
@@ -26,7 +28,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/musicdb?currentSchema=musicdatabase,public
       - SPRING_DATASOURCE_USERNAME=musicuser
       - SPRING_DATASOURCE_PASSWORD=musicpass
-      - APP_CORS_ALLOWED_ORIGINS=http://octan:8010
+      - APP_CORS_ALLOWED_ORIGINS=http://octan:8010,http:/localhost:4200
       - SPRING_CONFIG_IMPORT_EXTRA=optional:file:/config/initial-data.yml
     volumes:
       - /richi/mp3:/mp3

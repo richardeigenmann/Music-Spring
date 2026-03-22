@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, effect, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { ApiService } from '../apiservice';
 import { PlaybackService } from '../playback.service';
 
@@ -10,7 +10,7 @@ import { PlaybackService } from '../playback.service';
 @Component({
   selector: 'app-track-player',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   templateUrl: './track-player.html',
   styleUrls: ['./track-player.css']
 })
@@ -31,17 +31,17 @@ export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
     effect(() => {
       const track = this.currentTrack();
       const audio = this.audioPlayer?.nativeElement;
-      
+
       if (track && audio) {
         const newSrc = this.getTrackUrl(track.fileId);
-        
+
         // Check current source to avoid redundant loads
         // We also check if it's the first time or a track skip
         if (audio.src !== newSrc) {
             console.log('Switching track source to:', newSrc);
             audio.src = newSrc;
             audio.load();
-            
+
             // Only autoplay if the audio element is ready and not already playing something else
             // Use a slight timeout to ensure the DOM has updated and let previous requests settle
             setTimeout(() => {
@@ -78,7 +78,7 @@ export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
   getTrackImageUrl(fileId: number): string {
     return `${this.apiService.getApiUrl()}/api/trackFileImage/${fileId}`;
   }
-  
+
   openQueue() {
       this.router.navigate(['/queue']);
   }

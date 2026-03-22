@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { ApiService, TrackEntry } from '../apiservice';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { PlaybackService } from '../playback.service';
 import { TrackList } from '../shared/track-list/track-list.component';
@@ -8,7 +8,7 @@ import { TrackList } from '../shared/track-list/track-list.component';
 @Component({
   selector: 'app-unclassified-tracks',
   standalone: true,
-  imports: [RouterLink, CommonModule, TrackList],
+  imports: [CommonModule, TrackList],
   templateUrl: './unclassified-tracks.html',
   styleUrls: ['./unclassified-tracks.css']
 })

@@ -1,6 +1,6 @@
 import { Component, effect, inject, input, computed } from '@angular/core';
 import { ApiService } from '../apiservice';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { PlaybackService } from '../playback.service';
 import { TrackList } from '../shared/track-list/track-list.component';
@@ -11,7 +11,7 @@ import { TrackList } from '../shared/track-list/track-list.component';
 @Component({
   selector: 'app-tracks-by-group',
   standalone: true,
-  imports: [RouterLink, CommonModule, TrackList],
+  imports: [CommonModule, TrackList],
   templateUrl: './tracks-by-group.html',
   styleUrls: ['./tracks-by-group.css']
 })
@@ -33,17 +33,17 @@ export class TracksByGroup {
   currentGroupTitle = computed(() => {
     const id = Number(this.groupId());
     const playlist = this.playlistEntries();
-    
+
     // Find info from global playlists (works for actual playlists)
     const playlistInfo = this.apiService.playlists().find(p => p.groupId === id);
-    
+
     // If it's a non-playlist group, we need to find its type from the track details
     const sampleTrack = playlist[0];
     const detail = sampleTrack?.groupDetails.find(d => d.groupId === id);
-    
+
     const type = detail?.groupTypeName || (playlistInfo ? 'Playlist' : 'Group');
     const name = playlistInfo?.groupName || detail?.groupName || 'Unknown';
-    
+
     return `${type}: ${name}`;
   });
 
@@ -59,7 +59,7 @@ export class TracksByGroup {
   playAll(): void {
     const playlist = this.playlistEntries();
     const title = this.currentGroupTitle();
-    
+
     console.log('Playing playlist:', title, playlist);
     this.playbackService.playPlaylist(playlist, title);
   }

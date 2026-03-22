@@ -91,3 +91,18 @@ bootBuildImage {
 
 }
 
+task bootRunH2(type: org.springframework.boot.gradle.tasks.run.BootRun) {
+    group = "Application"
+    description = "Runs the Spring Boot application with the default H2 database profile."
+    mainClass.set("org.richinet.musicbackend.MusicbackendApplicationKt")
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task bootRunPg(type: org.springframework.boot.gradle.tasks.run.BootRun) {
+    group = "Application"
+    description = "Runs the Spring Boot application with the 'dev-pg' (PostgreSQL) profile."
+    mainClass.set("org.richinet.musicbackend.MusicbackendApplicationKt")
+    classpath = sourceSets.main.runtimeClasspath
+    args = ["--spring.profiles.active=dev-pg"]
+}
+
