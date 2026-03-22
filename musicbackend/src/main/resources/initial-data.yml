@@ -83,3 +83,9 @@ app:
         name: "Euphoric"
       - typeId: "7"
         name: "Melancholic"
+
+      # 4 is Playlists
+      - typeId: "4"
+        name: "Great Songs"
+      - typeId: "4"
+        name: "My Favorites"
