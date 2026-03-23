@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.io.FileSystemResource
+import org.springframework.core.io.Resource
 import org.springframework.web.servlet.resource.ResourceHttpRequestHandler
 import java.io.File
 import java.util.Collections
@@ -16,8 +17,12 @@ class AudioHandlerConfig {
 
     @Bean
     fun audioHandler(): ResourceHttpRequestHandler {
-        val handler = ResourceHttpRequestHandler()
-        handler.setLocations(Collections.singletonList(FileSystemResource(File(musicDirectory))) as List<org.springframework.core.io.Resource>)
-        return handler
+        return object : ResourceHttpRequestHandler() {
+            override fun getResource(request: jakarta.servlet.http.HttpServletRequest): Resource? {
+                return request.getAttribute("trackResource") as? Resource
+            }
+        }.apply {
+            setLocations(Collections.singletonList(FileSystemResource(File(musicDirectory))) as List<Resource>)
+        }
     }
 }

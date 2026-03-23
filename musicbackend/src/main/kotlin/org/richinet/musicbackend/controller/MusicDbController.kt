@@ -285,8 +285,10 @@ class MusicDbController(
     request: HttpServletRequest,
     response: HttpServletResponse
   ) {
+    logger.info("Fetching track file with id: $id")
     val trackFile = trackFileRepository.findById(id).orElse(null)
     if (trackFile == null) {
+      logger.error("Failed to find track $id in the database")
       response.status = HttpServletResponse.SC_NOT_FOUND
       return
     }
@@ -315,6 +317,7 @@ class MusicDbController(
       // Let the pre-initialized bean handle the Range headers and 206 status
       audioHandler.handleRequest(request, response)
     } else {
+      logger.error("Failed find the file $file")
       response.status = HttpServletResponse.SC_NOT_FOUND
     }
   }

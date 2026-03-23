@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.*
 import java.io.File
 
 private const val DB_DUMP_FILE = "/admin/music_db.sql"
-private const val DB_JSON_FILE = "/admin/music.json"
+//private const val DB_JSON_FILE = "/admin/music.json"
+private const val DB_JSON_FILE = "/richi/ToDo/music.json"
 
 private val logger = LoggerFactory.getLogger(MusicDumpController::class.java)
 
