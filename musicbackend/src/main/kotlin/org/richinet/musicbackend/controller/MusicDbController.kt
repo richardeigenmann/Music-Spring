@@ -558,8 +558,8 @@ class MusicDbController(
       appendLine("#EXTM3U")
       tracks.forEach { track ->
         val serializedTrack = trackDataService.serializeTrack(track)
-        val files = serializedTrack["Files"] as? List<Map<String, Any?>>
-        val firstFile = files?.firstOrNull()
+        val files = serializedTrack["Files"] as? List<*>
+        val firstFile = files?.firstOrNull() as? Map<String, Any?>
 
         if (firstFile != null) {
           val artist = (serializedTrack["Artist"])?.let {
@@ -602,8 +602,8 @@ class MusicDbController(
       val m3uContent = buildString {
         appendLine("#EXTM3U")
         serializedTracks.forEach { serializedTrack ->
-          val files = serializedTrack["Files"] as? List<Map<String, Any?>>
-          val firstFile = files?.firstOrNull()
+          val files = serializedTrack["Files"] as? List<*>
+          val firstFile = files?.firstOrNull() as? Map<String, Any?>
 
           if (firstFile != null) {
             val artist = (serializedTrack["Artist"] as? Any)?.let {
@@ -627,8 +627,8 @@ class MusicDbController(
 
       // 2. Add each MP3 file to the zip
       serializedTracks.forEach { serializedTrack ->
-        val files = serializedTrack["Files"] as? List<Map<String, Any?>>
-        files?.firstOrNull()?.let { fileMap ->
+        val files = serializedTrack["Files"] as? List<*>
+        (files?.firstOrNull() as? Map<String, Any?>)?.let { fileMap ->
           val fileLocation = fileMap["FileLocation"] as? String ?: ""
           val fileName = fileMap["FileName"] as? String ?: ""
           val file = if (fileLocation.trim('/').isEmpty()) {
