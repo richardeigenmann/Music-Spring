@@ -7,6 +7,7 @@ import org.richinet.musicbackend.data.entity.TrackFile
 import org.richinet.musicbackend.data.entity.TrackGroup
 import org.richinet.musicbackend.data.repository.*
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.io.File
@@ -34,7 +35,9 @@ class MusicImportService(
 ) {
     private val logger = LoggerFactory.getLogger(MusicImportService::class.java)
     private val scanProgress = AtomicReference(ScanProgress(isDone = true))
-    private val MUSIC_DIRECTORY = "/mp3"
+
+    @Value("\${app.music-directory}")
+    private lateinit var musicDirectory: String
 
     fun getScanProgress(): ScanProgress = scanProgress.get()
 
@@ -148,7 +151,7 @@ class MusicImportService(
     fun startMp3Scan() {
         if (!scanProgress.get().isDone) return
 
-        val mp3Dir = File(MUSIC_DIRECTORY )
+        val mp3Dir = File(musicDirectory)
         if (!mp3Dir.exists() || !mp3Dir.isDirectory) {
             logger.error("MP3 directory not found at $mp3Dir")
             return
@@ -181,7 +184,7 @@ class MusicImportService(
     @Transactional
     fun processNewMp3File(file: File) {
         val fullPath = file.absolutePath
-        val relPath = fullPath.substringAfter(MUSIC_DIRECTORY)
+        val relPath = fullPath.substringAfter(musicDirectory)
         val fileName = file.name
         val fileLocation = relPath.substringBeforeLast(fileName)
 

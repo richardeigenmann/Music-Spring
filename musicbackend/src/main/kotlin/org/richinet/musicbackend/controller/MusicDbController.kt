@@ -72,7 +72,7 @@ class MusicDbController(
   private val logger = LoggerFactory.getLogger(MusicDbController::class.java)
   private val imageExtractionSemaphore = Semaphore(4) // Only 4 concurrent image extractions allowed
 
-  @Value("\${app.music-directory:/mp3/}")
+  @Value("\${app.music-directory}")
   private lateinit var musicDirectory: String
 
   @Operation(summary = "Returns serialized track data including metadata.")
@@ -336,6 +336,7 @@ class MusicDbController(
   )
   @GetMapping("/trackFileImage/{id}")
   fun getTrackFileImage(@PathVariable id: Long): ResponseEntity<Resource> {
+    logger.info("Fetching track file image with id: $id")
     val trackFile = trackFileRepository.findById(id)
     if (trackFile.isPresent) {
       val fileEntity = trackFile.get()
@@ -346,6 +347,7 @@ class MusicDbController(
       } else {
         File(File(musicDirectory, fileLocation), fileName)
       }
+      logger.info("Searching for image in file: ${file.absolutePath}")
       if (file.exists()) {
         try {
           imageExtractionSemaphore.acquire()
@@ -560,7 +562,7 @@ class MusicDbController(
         val firstFile = files?.firstOrNull()
 
         if (firstFile != null) {
-          val artist = (serializedTrack["Artist"] as? Any)?.let {
+          val artist = (serializedTrack["Artist"])?.let {
             if (it is List<*>) it.joinToString(", ") else it.toString()
           } ?: "Unknown Artist"
           val title = serializedTrack["TrackName"] as? String ?: "Unknown Track"

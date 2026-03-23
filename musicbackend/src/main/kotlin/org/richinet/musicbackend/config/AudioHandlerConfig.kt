@@ -12,7 +12,7 @@ import java.util.Collections
 @Configuration
 class AudioHandlerConfig {
 
-    @Value("\${app.music-directory:/mp3/}")
+    @Value("\${app.music-directory}")
     private lateinit var musicDirectory: String
 
     @Bean
