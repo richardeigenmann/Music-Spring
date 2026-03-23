@@ -28,23 +28,22 @@ export class TracksByGroup implements OnDestroy {
 
   currentGroupName = computed(() => {
     const id = Number(this.groupId());
-    const playlistInfo = this.apiService.playlists().find(p => p.groupId === id);
-    return playlistInfo ? playlistInfo.groupName : '';
+    const playlist = this.playlistEntries();
+    const sampleTrack = playlist[0];
+    const detail = sampleTrack?.groupDetails.find(d => d.groupId === id);
+    return detail?.groupName || 'Unknown';
   });
 
   currentGroupTitle = computed(() => {
     const id = Number(this.groupId());
     const playlist = this.playlistEntries();
 
-    // Find info from global playlists (works for actual playlists)
-    const playlistInfo = this.apiService.playlists().find(p => p.groupId === id);
-
     // If it's a non-playlist group, we need to find its type from the track details
     const sampleTrack = playlist[0];
     const detail = sampleTrack?.groupDetails.find(d => d.groupId === id);
 
-    const type = detail?.groupTypeName || (playlistInfo ? 'Playlist' : 'Group');
-    const name = playlistInfo?.groupName || detail?.groupName || 'Unknown';
+    const type = detail?.groupTypeName || 'Group';
+    const name = detail?.groupName || 'Unknown';
 
     return `${type}: ${name}`;
   });
@@ -94,7 +93,6 @@ export class TracksByGroup implements OnDestroy {
     if (confirm(`Are you sure you want to delete the group "${name}"? This will NOT delete the tracks, only the group itself.`)) {
       this.apiService.deleteGroup(id).subscribe({
         next: () => {
-          this.apiService.loadPlaylists(); // Refresh global list
           this.router.navigate(['/groups']);
         },
         error: (err) => {
