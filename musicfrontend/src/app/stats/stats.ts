@@ -2,11 +2,13 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../apiservice';
 import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
+import { ChartConfiguration, ChartData, ChartEvent, ChartType } from 'chart.js';
+import { Router } from '@angular/router';
 
 interface GroupTypeChart {
   typeName: string;
   data: ChartData<'pie', number[], string | string[]>;
+  groupIds: number[];
 }
 
 @Component({
@@ -18,6 +20,7 @@ interface GroupTypeChart {
 })
 export class Stats implements OnInit {
   private apiService = inject(ApiService);
+  private router = inject(Router);
 
   // Common Chart Configuration
   public pieChartOptions: ChartConfiguration['options'] = {
@@ -61,15 +64,16 @@ export class Stats implements OnInit {
   ngOnInit(): void {
     // Load detailed charts for each group type using the single consolidated API
     this.apiService.getGroupUsageStats().subscribe(stats => {
-      const grouped: { [key: string]: { labels: string[], data: number[] } } = {};
-      
+      const grouped: { [key: string]: { labels: string[], data: number[], groupIds: number[] } } = {};
+
       stats.forEach(s => {
         if (s.count > 0) {
           if (!grouped[s.typeName]) {
-            grouped[s.typeName] = { labels: [], data: [] };
+            grouped[s.typeName] = { labels: [], data: [], groupIds: [] };
           }
           grouped[s.typeName].labels.push(s.groupName);
           grouped[s.typeName].data.push(s.count);
+          grouped[s.typeName].groupIds.push(s.groupId);
         }
       });
 
@@ -83,10 +87,29 @@ export class Stats implements OnInit {
             borderColor: 'yellow',
             borderWidth: 1
           }]
-        }
+        },
+        groupIds: grouped[typeName].groupIds
       }));
 
       this.groupTypeCharts.set(charts);
     });
+  }
+
+  public chartClicked({ event, active }: { event?: ChartEvent, active?: {}[] }): void {
+    if (active && active.length > 0 && event && event.native) {
+      const clickedElement = active[0] as any;
+      const chartIndex = clickedElement.index;
+
+      const canvas = event.native.target as HTMLElement;
+      const chartContainer = canvas.closest('.chart-section');
+      if (chartContainer) {
+          const chartNumber = (chartContainer as HTMLElement).dataset['chart'];
+          if (chartNumber) {
+            const chart = this.groupTypeCharts()[parseInt(chartNumber, 10)];
+            const groupId = chart.groupIds[chartIndex];
+            this.router.navigate(['/group', groupId]);
+          }
+      }
+    }
   }
 }

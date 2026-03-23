@@ -205,7 +205,7 @@ export class ApiService {
     });
   }
 
-  getGroupUsageStats(): Observable<{ typeName: string, groupName: string, count: number }[]> {
+  getGroupUsageStats(): Observable<{ typeName: string, groupName: string, count: number, groupId: number }[]> {
     return new Observable(observer => {
       this.initPromise.then(() => {
         this.http.get<any[]>(`${this.API_URL}/api/stats/groupUsage`).subscribe({
@@ -213,7 +213,8 @@ export class ApiService {
             observer.next(data.map(d => ({
               typeName: d.typeName ?? d.typename ?? d.TYPENAME,
               groupName: d.groupName ?? d.groupname ?? d.GROUPNAME,
-              count: d.count ?? d.COUNT
+              count: d.count ?? d.COUNT,
+              groupId: d.groupId ?? d.groupid ?? d.GROUPID
             })));
           },
           error: (err) => observer.error(err),

@@ -3,10 +3,11 @@
 
   <div class="detailed-stats" *ngIf="groupTypeCharts().length > 0">
     <div class="grid-container">
-      <div class="chart-section" *ngFor="let chart of groupTypeCharts()">
+      <div class="chart-section" *ngFor="let chart of groupTypeCharts(); let i = index" [attr.data-chart]="i">
         <h3>{{ chart.typeName }}</h3>
         <div class="chart-wrapper">
           <canvas baseChart
+                  (chartClick)="chartClicked($event)"
                   [data]="chart.data"
                   [options]="pieChartOptions"
                   [type]="pieChartType">

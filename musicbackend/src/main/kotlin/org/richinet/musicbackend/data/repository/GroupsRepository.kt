@@ -49,13 +49,14 @@ interface GroupsRepository : JpaRepository<Groups, Long> {
         value = """
         SELECT
             gt.Group_Type_Name AS typeName,
+            g.Group_Id AS groupId,
             g.Group_Name AS groupName,
             COUNT(tg.Track_Id) AS count
         FROM Group_Type gt
         JOIN "groups" g ON gt.Group_Type_Id = g.Group_Type_Id
         LEFT JOIN Track_Group tg ON g.Group_Id = tg.Group_Id
         WHERE gt.Group_Type_Edit = 'S'
-        GROUP BY gt.Group_Type_Name, g.Group_Name
+        GROUP BY gt.Group_Type_Name, g.Group_Id, g.Group_Name
         ORDER BY gt.Group_Type_Name, count DESC
         """,
         nativeQuery = true
