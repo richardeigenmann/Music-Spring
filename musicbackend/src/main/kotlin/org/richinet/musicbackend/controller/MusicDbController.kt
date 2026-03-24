@@ -11,7 +11,6 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.richinet.musicbackend.data.entity.Groups
 import org.richinet.musicbackend.data.projection.GroupProjection
-import org.richinet.musicbackend.data.projection.PlaylistProjection
 import org.richinet.musicbackend.data.repository.GroupTypeRepository
 import org.richinet.musicbackend.data.repository.GroupsRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
@@ -152,21 +151,6 @@ class MusicDbController(
       logger.error("Failed to delete track $id. Exception: ${e.message}")
       ResponseEntity.notFound().build()
     }
-  }
-
-  @Operation(summary = "Get all playlists")
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200", description = "Found the playlists",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = PlaylistProjection::class))]
-      )
-    ]
-  )
-  @GetMapping("/playlists")
-  fun getPlaylists(): ResponseEntity<List<PlaylistProjection>> {
-    val playlists = groupsRepository.findPlaylistsByTypeId(BigDecimal(4))
-    return ResponseEntity.ok(playlists)
   }
 
   @Operation(summary = "Get all editable groups with their types")

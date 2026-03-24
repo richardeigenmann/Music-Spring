@@ -99,7 +99,6 @@ export class MixingBoard implements OnInit {
       next: (res) => {
         alert(`Playlist '${res.groupName}' created with ${ids.length} tracks!`);
         this.newPlaylistName = '';
-        this.apiService.loadPlaylists();
         this.router.navigate(['/groups']);
       },
       error: (err) => {

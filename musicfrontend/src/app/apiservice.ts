@@ -2,12 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, Signal, signal } from '@angular/core';
 import { Observable, tap, firstValueFrom } from 'rxjs';
 
-export interface PlaylistEntry {
-  groupName: string,
-  tracks: number,
-  groupId: number,
-}
-
 export interface Group {
   groupTypeName: string;
   groupTypeId: number;
@@ -52,17 +46,14 @@ export class ApiService {
   private initialized = false;
   private initPromise: Promise<void>;
 
-  private readonly _playlists = signal<PlaylistEntry[]>([]);
   private readonly _playlistEntries = signal<TrackEntry[]>([]);
   private readonly _totalTrackCount = signal<number>(0);
 
-  readonly playlists: Signal<PlaylistEntry[]> = this._playlists.asReadonly();
   readonly playlistEntries: Signal<TrackEntry[]> = this._playlistEntries.asReadonly();
   readonly totalTrackCount: Signal<number> = this._totalTrackCount.asReadonly();
 
   constructor(private http: HttpClient) {
     this.initPromise = this.loadConfig().then(() => {
-      this.loadPlaylists();
       this.loadTotalTrackCount();
     });
   }
@@ -86,19 +77,6 @@ export class ApiService {
       .subscribe({
         next: (data) => this._totalTrackCount.set(data.count),
         error: (error) => console.error('Failed to load total track count', error)
-      });
-  }
-
-  loadPlaylists(): void {
-    if (!this.initialized) { this.initPromise.then(() => this.loadPlaylists()); return; }
-    this.http.get<PlaylistEntry[]>(this.API_URL+'/api/playlists')
-      .pipe(
-        tap(data => {
-          this._playlists.set(data);
-        })
-      )
-      .subscribe({
-        error: (error) => console.error('Failed to load playlists data', error)
       });
   }
 

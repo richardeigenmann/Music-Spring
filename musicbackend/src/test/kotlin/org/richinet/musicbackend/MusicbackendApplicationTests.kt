@@ -7,7 +7,6 @@ import org.mockito.Mockito.doThrow
 import org.richinet.musicbackend.controller.MusicDbController
 import org.richinet.musicbackend.data.entity.Track
 import org.richinet.musicbackend.data.projection.GroupProjection
-import org.richinet.musicbackend.data.projection.PlaylistProjection
 import org.richinet.musicbackend.data.repository.GroupTypeRepository
 import org.richinet.musicbackend.data.repository.GroupsRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
@@ -78,23 +77,6 @@ class MusicbackendApplicationTests {
 
         mockMvc.perform(get("/api/track/$trackId"))
             .andExpect(status().isNotFound)
-    }
-
-    @Test
-    fun `getPlaylists should return list of playlists`() {
-        val projection = object : PlaylistProjection {
-            override fun getGroupId(): Long = 10
-            override fun getGroupName(): String = "My Playlist"
-            override fun getTracks(): Int = 5
-        }
-
-        `when`(groupsRepository.findPlaylistsByTypeId(BigDecimal(4))).thenReturn(listOf(projection))
-
-        mockMvc.perform(get("/api/playlists"))
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$[0].groupName").value("My Playlist"))
-            .andExpect(jsonPath("$[0].tracks").value(5))
     }
 
     @Test
