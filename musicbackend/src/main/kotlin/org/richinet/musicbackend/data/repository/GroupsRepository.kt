@@ -17,11 +17,11 @@ interface GroupsRepository : JpaRepository<Groups, Long> {
         SELECT
             gt.Group_Type_Id AS groupTypeId,
             gt.Group_Type_Name AS groupTypeName,
+            gt.Group_Type_Edit AS groupTypeEdit,
             g.Group_Id AS groupId,
             g.Group_Name AS groupName
         FROM Group_Type gt
         JOIN "groups" g ON gt.Group_Type_Id = g.Group_Type_Id
-        WHERE gt.Group_Type_Edit = 'S'
         ORDER BY
             gt.Group_Type_Name,
             g.Group_Name
@@ -40,7 +40,6 @@ interface GroupsRepository : JpaRepository<Groups, Long> {
         FROM Group_Type gt
         JOIN "groups" g ON gt.Group_Type_Id = g.Group_Type_Id
         LEFT JOIN Track_Group tg ON g.Group_Id = tg.Group_Id
-        WHERE gt.Group_Type_Edit = 'S'
         GROUP BY gt.Group_Type_Name, g.Group_Id, g.Group_Name
         ORDER BY gt.Group_Type_Name, count DESC
         """,

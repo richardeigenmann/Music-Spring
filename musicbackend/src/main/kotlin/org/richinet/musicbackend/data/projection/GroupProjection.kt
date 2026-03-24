@@ -16,4 +16,7 @@ interface GroupProjection {
 
     @Schema(description = "The name of the group")
     fun getGroupName(): String
+
+    @Schema(description = "The edit type of the group type (S or T)")
+    fun getGroupTypeEdit(): String
 }

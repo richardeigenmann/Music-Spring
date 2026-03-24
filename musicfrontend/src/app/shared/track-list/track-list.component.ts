@@ -14,7 +14,7 @@ import { PlaybackService } from '../../playback.service';
 export class TrackList {
   tracks = input.required<TrackEntry[]>();
   highlightId = input<number | null>(null);
-  
+
   private apiService = inject(ApiService);
   private playbackService = inject(PlaybackService);
   private router = inject(Router);
@@ -31,5 +31,10 @@ export class TrackList {
 
   goToEdit(trackId: number) {
       this.router.navigate(['/track', trackId]);
+  }
+
+  getArtistGroupId(track: TrackEntry): number | null {
+    const artistGroup = track.groupDetails.find(g => g.groupTypeName.toLowerCase() === 'artist');
+    return artistGroup ? artistGroup.groupId : null;
   }
 }

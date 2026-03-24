@@ -43,11 +43,21 @@ export class Groups {
 
   sortedGroupTypes = computed(() => {
     const keys = Object.keys(this.groupedGroups());
+    const allGroups = this.allGroups();
 
-    const priority = (s: string) => {
-        const lower = (s || '').toLowerCase().trim();
+    const priority = (typeName: string) => {
+        const lower = typeName.toLowerCase().trim();
+        
+        // Find the edit type for this category
+        const sampleGroup = allGroups.find(g => g.groupTypeName === typeName);
+        const editType = sampleGroup?.groupTypeEdit || 'T';
+
         if (lower === 'playlist') return 0;
         if (lower.includes('playlist')) return 1;
+        
+        // Selection types ('S') come before Text types ('T')
+        if (editType === 'S') return 10;
+        
         return 100;
     };
 

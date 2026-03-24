@@ -33,7 +33,8 @@ export class MixingBoard implements OnInit {
 
   ngOnInit(): void {
     this.apiService.getGroups().subscribe(groups => {
-      this.availableGroups.set(groups.sort((a, b) => a.groupName.localeCompare(b.groupName)));
+      const selectionGroups = groups.filter(g => g.groupTypeEdit === 'S');
+      this.availableGroups.set(selectionGroups.sort((a, b) => a.groupName.localeCompare(b.groupName)));
     });
   }
 
@@ -77,7 +78,7 @@ export class MixingBoard implements OnInit {
     this.isFiltering.set(true);
     this.apiService.filterTracks(must, can, not).subscribe({
       next: (tracks) => {
-        this.filteredTracks.set(tracks.map(t => this.apiService.mapToTrackEntry(t)));
+        this.filteredTracks.set(tracks);
         this.isFiltering.set(false);
       },
       error: () => this.isFiltering.set(false)

@@ -88,12 +88,16 @@ export class TrackEdit {
 
     const trackGroups: { [groupType: string]: Group[] } = {};
     for (const groupType in assignedGroupNames) {
-      trackGroups[groupType] = [];
+      const typeGroups: Group[] = [];
       for (const groupName of assignedGroupNames[groupType]) {
         const group = allGroups.find(g => g.groupTypeName === groupType && g.groupName === groupName);
-        if (group) {
-          trackGroups[groupType].push(group);
+        // Only include if found AND it's an 'S' (Selection) type
+        if (group && group.groupTypeEdit === 'S') {
+          typeGroups.push(group);
         }
+      }
+      if (typeGroups.length > 0) {
+        trackGroups[groupType] = typeGroups;
       }
     }
     return trackGroups;
@@ -106,8 +110,12 @@ export class TrackEdit {
       return {};
     }
 
+    // Only show group types that are marked as 'S' (Selection)
     const allGrouped: { [key: string]: Group[] } = {};
     for (const group of all) {
+      if (group.groupTypeEdit !== 'S') {
+        continue;
+      }
       if (!allGrouped[group.groupTypeName]) {
         allGrouped[group.groupTypeName] = [];
       }

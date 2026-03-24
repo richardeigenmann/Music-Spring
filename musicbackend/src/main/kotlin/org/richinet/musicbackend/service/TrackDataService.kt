@@ -12,43 +12,19 @@ class TrackDataService {
         trackData["TrackId"] = track.trackId
         trackData["TrackName"] = track.trackName
 
-        val groupDetails = ArrayList<Map<String, Any?>>()
+        // Group by type name
+        val groupsByType = track.trackGroups?.mapNotNull { it.group }?.groupBy { it.groupType?.groupTypeName } ?: emptyMap()
 
-        track.trackGroups?.forEach { trackGroup ->
-            val group = trackGroup.group
-            val groupType = group?.groupType
-
-            if (group != null && groupType != null) {
-                val groupTypeName = groupType.groupTypeName
-                val groupName = group.groupName
-                val groupId = group.groupId
-
-                if (groupTypeName != null && groupName != null) {
-                    val detail = LinkedHashMap<String, Any?>()
-                    detail["GroupId"] = groupId
-                    detail["GroupName"] = groupName
-                    detail["GroupTypeName"] = groupTypeName
-                    groupDetails.add(detail)
-
-                    if (trackData.containsKey(groupTypeName)) {
-                        val existing = trackData[groupTypeName]
-                        if (existing is MutableList<*>) {
-                            @Suppress("UNCHECKED_CAST")
-                            (existing as MutableList<String>).add(groupName)
-                        } else {
-                            val list = ArrayList<String>()
-                            list.add(existing as String)
-                            list.add(groupName)
-                            trackData[groupTypeName] = list
-                        }
-                    } else {
-                        trackData[groupTypeName] = groupName
-                    }
+        groupsByType.forEach { (typeName, groups) ->
+            if (typeName != null) {
+                val groupNames = groups.mapNotNull { it.groupName }
+                if (groupNames.size == 1) {
+                    trackData[typeName] = groupNames[0]
+                } else if (groupNames.isNotEmpty()) {
+                    trackData[typeName] = groupNames
                 }
             }
         }
-        
-        trackData["GroupDetails"] = groupDetails
 
         if (!track.trackFiles.isNullOrEmpty()) {
             val filesData = ArrayList<Map<String, Any?>>()
@@ -56,10 +32,7 @@ class TrackDataService {
                 val fileInfo = LinkedHashMap<String, Any?>()
                 fileInfo["FileId"] = file.fileId
                 fileInfo["FileName"] = file.fileName
-                fileInfo["FileLocation"] = file.fileLocation
-                fileInfo["FileOnline"] = file.fileOnline
                 fileInfo["Duration"] = file.duration
-                fileInfo["BackupDate"] = file.backupDate
                 filesData.add(fileInfo)
             }
             trackData["Files"] = filesData

@@ -30,17 +30,7 @@ export class UnclassifiedTracks implements OnInit {
     this.apiService.getUnclassifiedTracks().subscribe({
       next: (tracks) => {
         console.log('Received tracks from backend (count):', tracks.length);
-        console.log('First track raw:', tracks[0]);
-        const mapped = tracks.map(t => {
-          try {
-            return this.apiService.mapToTrackEntry(t);
-          } catch (e) {
-            console.error('Error mapping track:', t, e);
-            return null;
-          }
-        }).filter(t => t !== null) as TrackEntry[];
-        console.log('Mapped tracks (count):', mapped.length);
-        this.tracks.set(mapped);
+        this.tracks.set(tracks);
       },
       error: (err) => {
         console.error('Error loading unclassified tracks:', err);

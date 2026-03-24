@@ -80,6 +80,11 @@
     text-overflow: ellipsis;
 }
 
+.track-artist.clickable:hover {
+    text-decoration: underline;
+    color: #ff0;
+}
+
 .group-pills {
     display: flex;
     gap: 5px;

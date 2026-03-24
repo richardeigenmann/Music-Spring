@@ -65,13 +65,62 @@ class MusicImportService(
 
         if (trackData.containsKey("TrackName")) {
             track.trackName = trackData["TrackName"] as? String
+            trackRepository.save(track)
         }
-        trackRepository.save(track)
 
-        trackGroupRepository.deleteByTrackId(trackId)
-        trackFileRepository.deleteByTrackId(trackId)
+        val groupTypeCache = groupTypeRepository.findAll().associateBy { it.groupTypeName }
 
-        processTrackData(track, trackData)
+        for ((key, value) in trackData) {
+            if (key == "TrackName" || key == "TrackId") continue
+
+            if (key == "Files") {
+                val filesList = value as? List<Map<String, Any?>>
+                filesList?.forEach { fileData ->
+                    val fileId = (fileData["FileId"] as? Number)?.toLong() ?: return@forEach
+                    val newFileName = fileData["FileName"] as? String ?: return@forEach
+
+                    val trackFile = trackFileRepository.findById(fileId).orElse(null) ?: return@forEach
+
+                    if (trackFile.fileName != newFileName) {
+                        // Check if the new file actually exists on disk
+                        val baseDir = File(musicDirectory)
+                        val relativeLocation = trackFile.fileLocation?.trim('/') ?: ""
+                        val targetDir = if (relativeLocation.isEmpty()) baseDir else File(baseDir, relativeLocation)
+                        val newFile = File(targetDir, newFileName)
+
+                        if (newFile.exists() && newFile.isFile) {
+                            logger.info("Updating file mapping for ID $fileId to $newFileName")
+                            trackFile.fileName = newFileName
+
+                            // Update duration from the new file
+                            try {
+                                val mp3File = Mp3File(newFile)
+                                trackFile.duration = BigDecimal(mp3File.lengthInSeconds)
+                            } catch (e: Exception) {
+                                logger.warn("Could not read duration from new file ${newFile.absolutePath}: ${e.message}")
+                            }
+
+                            trackFileRepository.save(trackFile)
+                        } else {
+                            logger.warn("Ignoring filename change for ID $fileId: file ${newFile.absolutePath} not found")
+                        }
+                    }
+                }
+                continue
+            }
+
+            val groupType = groupTypeCache[key]
+            if (groupType != null && value != null) {
+                // Surgical delete: only delete mappings for this specific GroupType
+                trackGroupRepository.deleteByTrackIdAndGroupTypeId(trackId, groupType.groupTypeId!!)
+
+                val groupNames = if (value is List<*>) value else listOf(value)
+                for (groupNameObj in groupNames) {
+                    val groupName = groupNameObj as? String ?: continue
+                    linkTrackToGroup(trackId, groupName, groupType.groupTypeId!!)
+                }
+            }
+        }
     }
 
     @Transactional
@@ -85,39 +134,7 @@ class MusicImportService(
         val groupTypeCache = groupTypeRepository.findAll().associateBy { it.groupTypeName }
 
         for ((key, value) in trackData) {
-            if (key == "TrackName" || key == "TrackId") continue
-
-            if (key == "Files") {
-                val filesList = value as? List<Map<String, Any?>>
-                filesList?.forEach { fileData ->
-                    val trackFile = TrackFile()
-                    trackFile.trackId = track.trackId
-                    trackFile.fileName = fileData["FileName"] as? String
-                    trackFile.fileLocation = fileData["FileLocation"] as? String
-                    trackFile.fileOnline = fileData["FileOnline"] as? String
-
-                    val duration = fileData["Duration"]
-                    if (duration is Int) {
-                         trackFile.duration = BigDecimal(duration)
-                    } else if (duration is Double) {
-                         trackFile.duration = BigDecimal(duration)
-                    } else if (duration is BigDecimal) {
-                         trackFile.duration = duration
-                    }
-
-                    val backupDateStr = fileData["BackupDate"] as? String
-                    if (backupDateStr != null) {
-                         try {
-                             trackFile.backupDate = Timestamp.from(Instant.parse(backupDateStr))
-                         } catch (e: Exception) {
-                             // ignore
-                         }
-                    }
-
-                    trackFileRepository.save(trackFile)
-                }
-                continue
-            }
+            if (key == "TrackName" || key == "TrackId" || key == "Files") continue
 
             val groupType = groupTypeCache[key]
             if (groupType != null && value != null) {

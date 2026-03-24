@@ -1,6 +1,12 @@
 <div class="background-box">
-  <h1>Search Results for '{{ query() }}'</h1>
-  <button (click)="playAll()" [disabled]="tracks().length === 0" style="margin-bottom: 20px;">Play All</button>
+  <div class="header">
+    <h1>Search: {{ query() }}</h1>
+    <div class="actions">
+      <button class="play-all-btn" (click)="playAll()" [disabled]="tracks().length === 0" title="Play All">
+        <span class="play-icon"></span>
+      </button>
+    </div>
+  </div>
 
   @if (tracks().length === 0) {
     <p>No tracks found matching your search.</p>

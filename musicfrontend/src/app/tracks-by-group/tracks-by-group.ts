@@ -28,22 +28,18 @@ export class TracksByGroup implements OnDestroy {
 
   currentGroupName = computed(() => {
     const id = Number(this.groupId());
-    const playlist = this.playlistEntries();
-    const sampleTrack = playlist[0];
-    const detail = sampleTrack?.groupDetails.find(d => d.groupId === id);
-    return detail?.groupName || 'Unknown';
+    const groups = this.apiService.groups();
+    const group = groups.find(g => g.groupId === id);
+    return group?.groupName || 'Unknown';
   });
 
   currentGroupTitle = computed(() => {
     const id = Number(this.groupId());
-    const playlist = this.playlistEntries();
+    const groups = this.apiService.groups();
+    const group = groups.find(g => g.groupId === id);
 
-    // If it's a non-playlist group, we need to find its type from the track details
-    const sampleTrack = playlist[0];
-    const detail = sampleTrack?.groupDetails.find(d => d.groupId === id);
-
-    const type = detail?.groupTypeName || 'Group';
-    const name = detail?.groupName || 'Unknown';
+    const type = group?.groupTypeName || 'Group';
+    const name = group?.groupName || 'Unknown';
 
     return `${type}: ${name}`;
   });

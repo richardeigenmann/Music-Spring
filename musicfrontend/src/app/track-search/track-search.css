@@ -1,26 +1,42 @@
-.group-pills {
+.header {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.group-pill-mini {
-  display: inline-flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 0.25em 0.6em;
-  font-size: 75%;
-  font-weight: 700;
-  line-height: 1;
-  color: #fff;
-  background-color: #007bff;
-  border-radius: 0.25rem;
-  margin: 2px;
-  cursor: pointer;
-  text-decoration: none;
-  transition: background-color 0.2s;
+  margin-bottom: 20px;
+  border-bottom: 1px solid yellow;
+  padding-bottom: 10px;
 }
 
-.group-pill-mini:hover {
-  background-color: #0056b3;
-  color: white;
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.play-all-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-all-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.play-icon {
+  width: 0;
+  height: 0;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  border-left: 20px solid #28a745; /* Green play button */
+  transition: transform 0.2s;
+}
+
+.play-all-btn:not([disabled]):hover .play-icon {
+  transform: scale(1.1);
 }

@@ -7,7 +7,13 @@
             </div>
 
             <div class="track-info">
-                <span class="track-artist">{{ track.artist }}</span>
+                @if (getArtistGroupId(track); as artistId) {
+                  <span class="track-artist clickable"
+                        [routerLink]="['/group', artistId]"
+                        (click)="$event.stopPropagation()">{{ track.artist }}</span>
+                } @else {
+                  <span class="track-artist">{{ track.artist }}</span>
+                }
                 <span class="track-title">{{ track.title }}</span>
             </div>
 

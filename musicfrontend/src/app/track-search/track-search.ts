@@ -35,7 +35,7 @@ export class TrackSearch implements OnInit {
 
   loadTracks(q: string): void {
     this.apiService.searchTracks(q).subscribe(tracks => {
-      this.tracks.set(tracks.map(t => this.apiService.mapToTrackEntry(t)));
+      this.tracks.set(tracks);
     });
   }
 
