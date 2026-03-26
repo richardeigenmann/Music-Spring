@@ -6,16 +6,16 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 @ConfigurationProperties(prefix = "app.defaults")
 open class AppDefaults {
-    var groupTypes: List<GroupTypeDefault> = mutableListOf()
-    var groups: List<GroupDefault> = mutableListOf()
+    var tagTypes: List<TagTypeDefault> = mutableListOf()
+    var tags: List<TagDefault> = mutableListOf()
 
-    open class GroupTypeDefault {
+    open class TagTypeDefault {
         var id: String = ""
         var name: String = ""
         var edit: String = ""
     }
 
-    open class GroupDefault {
+    open class TagDefault {
         var typeId: String = ""
         var name: String = ""
     }

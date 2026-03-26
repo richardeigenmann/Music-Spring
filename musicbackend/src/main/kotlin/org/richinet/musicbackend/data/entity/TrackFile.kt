@@ -3,44 +3,35 @@ package org.richinet.musicbackend.data.entity
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.persistence.*
 import java.math.BigDecimal
-import java.sql.Timestamp
 
 @Entity
-@Table(name = "TrackFile")
+@Table(name = "track_file")
 @Schema(description = "Represents a physical file for a track")
 class TrackFile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "FileId")
+    @Column(name = "id")
     @Schema(description = "Unique identifier for the file")
-    var fileId: Long? = null
+    var id: Long? = null
 
-    @Column(name = "TrackId")
+    @Column(name = "track_id")
     @Schema(description = "ID of the track this file belongs to")
     var trackId: Long? = null
 
-    @Column(name = "FileName")
+    @Column(name = "file_name")
     @Schema(description = "Name of the file")
     var fileName: String? = null
 
-    @Column(name = "FileLocation")
+    @Column(name = "file_location")
     @Schema(description = "Relative path location of the file")
     var fileLocation: String? = null
 
-    @Column(name = "FileOnline")
-    @Schema(description = "Status indicating if the file is online")
-    var fileOnline: String? = null
-
-    @Column(name = "Duration")
+    @Column(name = "duration")
     @Schema(description = "Duration of the track in seconds")
     var duration: BigDecimal? = null
 
-    @Column(name = "BackupDate")
-    @Schema(description = "Timestamp when the file was last backed up")
-    var backupDate: Timestamp? = null
-
     @ManyToOne
-    @JoinColumn(name = "TrackId", insertable = false, updatable = false)
+    @JoinColumn(name = "track_id", insertable = false, updatable = false)
     @Schema(description = "The track entity associated with this file")
     var track: Track? = null
 }

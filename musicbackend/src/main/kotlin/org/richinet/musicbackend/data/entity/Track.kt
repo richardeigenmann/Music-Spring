@@ -2,26 +2,25 @@ package org.richinet.musicbackend.data.entity
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.persistence.*
-import java.math.BigDecimal
 
 @Entity
-@Table(name = "Track")
+@Table(name = "track")
 @Schema(description = "Represents a music track")
 class Track {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "TrackId")
+    @Column(name = "id")
     @Schema(description = "Unique identifier for the track")
-    var trackId: Long? = null
+    var id: Long? = null
 
-    @Column(name = "TrackName")
+    @Column(name = "name")
     @Schema(description = "Name of the track")
-    var trackName: String? = null
+    var name: String? = null
 
     @OneToMany(mappedBy = "track")
     @OrderBy("sequence ASC")
-    @Schema(description = "List of groups this track belongs to")
-    var trackGroups: List<TrackGroup>? = null
+    @Schema(description = "List of tags this track belongs to")
+    var trackTags: List<TrackTag>? = null
 
     @OneToMany(mappedBy = "track")
     @Schema(description = "List of files associated with this track")

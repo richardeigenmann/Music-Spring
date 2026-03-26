@@ -11,11 +11,11 @@ import java.io.File
 @Service
 class DatabaseMaintenanceService(
   private val jdbcTemplate: JdbcTemplate,
-  private val trackGroupRepository: TrackGroupRepository,
+  private val trackTagRepository: TrackTagRepository,
   private val trackFileRepository: TrackFileRepository,
   private val trackRepository: TrackRepository,
-  private val groupsRepository: GroupsRepository,
-  private val groupTypeRepository: GroupTypeRepository,
+  private val tagRepository: TagRepository,
+  private val tagTypeRepository: TagTypeRepository,
   private val databaseInitializer: DatabaseInitializer
 ) {
 
@@ -56,12 +56,12 @@ class DatabaseMaintenanceService(
 
   @Transactional
   fun clearDatabase() {
-    trackGroupRepository.deleteAllInBatch()
+    trackTagRepository.deleteAllInBatch()
     trackFileRepository.deleteAllInBatch()
     trackRepository.deleteAllInBatch()
-    groupsRepository.deleteAllInBatch()
-    groupTypeRepository.deleteAllInBatch()
-    logger.info("Database cleared (including GroupType)")
+    tagRepository.deleteAllInBatch()
+    tagTypeRepository.deleteAllInBatch()
+    logger.info("Database cleared (including TagType)")
     databaseInitializer.runInitialization()
   }
 }

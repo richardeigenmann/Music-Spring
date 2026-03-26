@@ -5,10 +5,10 @@ import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartEvent, ChartType } from 'chart.js';
 import { Router } from '@angular/router';
 
-interface GroupTypeChart {
+interface TagTypeChart {
   typeName: string;
   data: ChartData<'pie', number[], string | string[]>;
-  groupIds: number[];
+  tagIds: number[];
 }
 
 @Component({
@@ -43,7 +43,7 @@ export class Stats implements OnInit {
     }
   };
 
-  public groupTypeCharts = signal<GroupTypeChart[]>([]);
+  public tagTypeCharts = signal<TagTypeChart[]>([]);
   public pieChartType: ChartType = 'pie';
 
   private chartColors = [
@@ -62,22 +62,22 @@ export class Stats implements OnInit {
   ];
 
   ngOnInit(): void {
-    // Load detailed charts for each group type using the single consolidated API
-    this.apiService.getGroupUsageStats().subscribe(stats => {
-      const grouped: { [key: string]: { labels: string[], data: number[], groupIds: number[] } } = {};
+    // Load detailed charts for each tag type using the single consolidated API
+    this.apiService.getTagUsageStats().subscribe(stats => {
+      const grouped: { [key: string]: { labels: string[], data: number[], tagIds: number[] } } = {};
 
       stats.forEach(s => {
         if (s.count > 0) {
           if (!grouped[s.typeName]) {
-            grouped[s.typeName] = { labels: [], data: [], groupIds: [] };
+            grouped[s.typeName] = { labels: [], data: [], tagIds: [] };
           }
-          grouped[s.typeName].labels.push(s.groupName);
+          grouped[s.typeName].labels.push(s.tagName);
           grouped[s.typeName].data.push(s.count);
-          grouped[s.typeName].groupIds.push(s.groupId);
+          grouped[s.typeName].tagIds.push(s.tagId);
         }
       });
 
-      const charts: GroupTypeChart[] = Object.keys(grouped).map(typeName => ({
+      const charts: TagTypeChart[] = Object.keys(grouped).map(typeName => ({
         typeName,
         data: {
           labels: grouped[typeName].labels,
@@ -88,10 +88,10 @@ export class Stats implements OnInit {
             borderWidth: 1
           }]
         },
-        groupIds: grouped[typeName].groupIds
+        tagIds: grouped[typeName].tagIds
       }));
 
-      this.groupTypeCharts.set(charts);
+      this.tagTypeCharts.set(charts);
     });
   }
 
@@ -105,9 +105,9 @@ export class Stats implements OnInit {
       if (chartContainer) {
           const chartNumber = (chartContainer as HTMLElement).dataset['chart'];
           if (chartNumber) {
-            const chart = this.groupTypeCharts()[parseInt(chartNumber, 10)];
-            const groupId = chart.groupIds[chartIndex];
-            this.router.navigate(['/group', groupId]);
+            const chart = this.tagTypeCharts()[parseInt(chartNumber, 10)];
+            const tagId = chart.tagIds[chartIndex];
+            this.router.navigate(['/tag', tagId]);
           }
       }
     }

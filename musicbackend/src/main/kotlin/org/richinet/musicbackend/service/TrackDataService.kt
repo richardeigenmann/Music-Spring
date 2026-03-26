@@ -9,19 +9,19 @@ class TrackDataService {
 
     fun serializeTrack(track: Track): Map<String, Any?> {
         val trackData = LinkedHashMap<String, Any?>()
-        trackData["TrackId"] = track.trackId
-        trackData["TrackName"] = track.trackName
+        trackData["trackId"] = track.id
+        trackData["trackName"] = track.name
 
         // Group by type name
-        val groupsByType = track.trackGroups?.mapNotNull { it.group }?.groupBy { it.groupType?.groupTypeName } ?: emptyMap()
+        val tagsByType = track.trackTags?.mapNotNull { it.tag }?.groupBy { it.tagType?.name } ?: emptyMap()
 
-        groupsByType.forEach { (typeName, groups) ->
+        tagsByType.forEach { (typeName, tags) ->
             if (typeName != null) {
-                val groupNames = groups.mapNotNull { it.groupName }
-                if (groupNames.size == 1) {
-                    trackData[typeName] = groupNames[0]
-                } else if (groupNames.isNotEmpty()) {
-                    trackData[typeName] = groupNames
+                val tagNames = tags.mapNotNull { it.name }
+                if (tagNames.size == 1) {
+                    trackData[typeName] = tagNames[0]
+                } else if (tagNames.isNotEmpty()) {
+                    trackData[typeName] = tagNames
                 }
             }
         }
@@ -30,12 +30,12 @@ class TrackDataService {
             val filesData = ArrayList<Map<String, Any?>>()
             track.trackFiles?.forEach { file ->
                 val fileInfo = LinkedHashMap<String, Any?>()
-                fileInfo["FileId"] = file.fileId
-                fileInfo["FileName"] = file.fileName
-                fileInfo["Duration"] = file.duration
+                fileInfo["fileId"] = file.id
+                fileInfo["fileName"] = file.fileName
+                fileInfo["duration"] = file.duration
                 filesData.add(fileInfo)
             }
-            trackData["Files"] = filesData
+            trackData["files"] = filesData
         }
         return trackData
     }

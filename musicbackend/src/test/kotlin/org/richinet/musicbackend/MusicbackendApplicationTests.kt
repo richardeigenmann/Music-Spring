@@ -6,9 +6,9 @@ import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.doThrow
 import org.richinet.musicbackend.controller.MusicDbController
 import org.richinet.musicbackend.data.entity.Track
-import org.richinet.musicbackend.data.projection.GroupProjection
-import org.richinet.musicbackend.data.repository.GroupTypeRepository
-import org.richinet.musicbackend.data.repository.GroupsRepository
+import org.richinet.musicbackend.data.projection.TagProjection
+import org.richinet.musicbackend.data.repository.TagTypeRepository
+import org.richinet.musicbackend.data.repository.TagRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
 import org.richinet.musicbackend.data.repository.TrackRepository
 import org.richinet.musicbackend.service.MusicImportService
@@ -20,7 +20,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
-import java.math.BigDecimal
 import java.util.*
 
 @WebMvcTest(MusicDbController::class, org.richinet.musicbackend.config.JacksonConfig::class)
@@ -36,10 +35,10 @@ class MusicbackendApplicationTests {
     private lateinit var trackDataService: TrackDataService
 
     @MockitoBean
-    private lateinit var groupsRepository: GroupsRepository
+    private lateinit var tagRepository: TagRepository
 
     @MockitoBean
-    private lateinit var groupTypeRepository: GroupTypeRepository
+    private lateinit var tagTypeRepository: TagTypeRepository
 
     @MockitoBean
     private lateinit var trackFileRepository: TrackFileRepository
@@ -57,8 +56,8 @@ class MusicbackendApplicationTests {
     @Test
     fun `getTrack should return track data when found`() {
         val trackId = 1L
-        val track = Track().apply { this.trackId = trackId }
-        val trackData = mapOf("TrackId" to trackId, "TrackName" to "Test Track")
+        val track = Track().apply { this.id = trackId }
+        val trackData = mapOf("trackId" to trackId, "trackName" to "Test Track")
 
         `when`(trackRepository.findById(trackId)).thenReturn(Optional.of(track))
         `when`(trackDataService.serializeTrack(track)).thenReturn(trackData)
@@ -66,8 +65,8 @@ class MusicbackendApplicationTests {
         mockMvc.perform(get("/api/track/$trackId"))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.TrackId").value(trackId))
-            .andExpect(jsonPath("$.TrackName").value("Test Track"))
+            .andExpect(jsonPath("$.trackId").value(trackId))
+            .andExpect(jsonPath("$.trackName").value("Test Track"))
     }
 
     @Test
@@ -80,37 +79,37 @@ class MusicbackendApplicationTests {
     }
 
     @Test
-    fun `getGroups should return list of groups`() {
-        val projection = object : GroupProjection {
-            override fun getGroupTypeId(): BigDecimal = BigDecimal(1)
-            override fun getGroupTypeName(): String = "Genre"
-            override fun getGroupId(): Long = 100
-            override fun getGroupName(): String = "Rock"
-            override fun getGroupTypeEdit(): String = "S"
+    fun `getTags should return list of tags`() {
+        val projection = object : TagProjection {
+            override fun getTagTypeId(): Long = 1L
+            override fun getTagTypeName(): String = "Genre"
+            override fun getTagId(): Long = 100L
+            override fun getTagName(): String = "Rock"
+            override fun getTagTypeEdit(): String = "S"
         }
 
-        `when`(groupsRepository.findAllEditableGroups()).thenReturn(listOf(projection))
+        `when`(tagRepository.findAllEditableTags()).thenReturn(listOf(projection))
 
-        mockMvc.perform(get("/api/groups"))
+        mockMvc.perform(get("/api/tags"))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$[0].groupTypeName").value("Genre"))
-            .andExpect(jsonPath("$[0].groupName").value("Rock"))
+            .andExpect(jsonPath("$[0].tagTypeName").value("Genre"))
+            .andExpect(jsonPath("$[0].tagName").value("Rock"))
     }
 
     @Test
-    fun `getTracksByGroup should return list of tracks`() {
-        val groupId = 10L
-        val track = Track().apply { trackId = 1L }
-        val trackData = mapOf("TrackId" to 1L, "TrackName" to "Group Track")
+    fun `getTracksByTag should return list of tracks`() {
+        val tagId = 10L
+        val track = Track().apply { id = 1L }
+        val trackData = mapOf("trackId" to 1L, "trackName" to "Tag Track")
 
-        `when`(trackRepository.findTracksByGroupId(groupId)).thenReturn(listOf(track))
+        `when`(trackRepository.findTracksByTagId(tagId)).thenReturn(listOf(track))
         `when`(trackDataService.serializeTrack(track)).thenReturn(trackData)
 
-        mockMvc.perform(get("/api/tracksByGroup/$groupId"))
+        mockMvc.perform(get("/api/tracksByTag/$tagId"))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$[0].TrackName").value("Group Track"))
+            .andExpect(jsonPath("$[0].trackName").value("Tag Track"))
     }
 
     @Test
@@ -125,26 +124,26 @@ class MusicbackendApplicationTests {
     @Test
     fun `updateTrack should return 200 when successful`() {
         val trackId = 1L
-        val trackData = mapOf("TrackName" to "Updated Track")
+        val trackData = mapOf("trackName" to "Updated Track")
 
         doNothing().`when`(musicImportService).updateTrack(trackId, trackData)
 
         mockMvc.perform(post("/api/track/$trackId")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"TrackName": "Updated Track"}"""))
+            .content("""{"trackName": "Updated Track"}"""))
             .andExpect(status().isOk)
     }
 
     @Test
     fun `updateTrack should return 404 when track not found`() {
         val trackId = 99L
-        val trackData = mapOf("TrackName" to "Updated Track")
+        val trackData = mapOf("trackName" to "Updated Track")
 
         doThrow(RuntimeException("Track not found")).`when`(musicImportService).updateTrack(trackId, trackData)
 
         mockMvc.perform(post("/api/track/$trackId")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("""{"TrackName": "Updated Track"}"""))
+            .content("""{"trackName": "Updated Track"}"""))
             .andExpect(status().isNotFound)
     }
 
@@ -171,8 +170,8 @@ class MusicbackendApplicationTests {
     @Test
     fun `searchTracks should return matching tracks`() {
         val query = "test"
-        val track = Track().apply { trackId = 1L; trackName = "Test Song" }
-        val trackData = mapOf("TrackId" to 1L, "TrackName" to "Test Song")
+        val track = Track().apply { id = 1L; name = "Test Song" }
+        val trackData = mapOf("trackId" to 1L, "trackName" to "Test Song")
 
         `when`(trackRepository.searchTracks(query)).thenReturn(listOf(track))
         `when`(trackDataService.serializeTrack(track)).thenReturn(trackData)
@@ -180,6 +179,6 @@ class MusicbackendApplicationTests {
         mockMvc.perform(get("/api/trackSearch").param("query", query))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$[0].TrackName").value("Test Song"))
+            .andExpect(jsonPath("$[0].trackName").value("Test Song"))
     }
 }

@@ -2,7 +2,7 @@ package org.richinet.musicbackend.config
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.richinet.musicbackend.data.repository.GroupTypeRepository
+import org.richinet.musicbackend.data.repository.TagTypeRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
@@ -11,24 +11,24 @@ import org.springframework.transaction.annotation.Transactional
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class DatabaseInitializerTest {
+class TagTypeInitializerTest {
 
     @Autowired
-    private lateinit var groupTypeRepository: GroupTypeRepository
+    private lateinit var tagTypeRepository: TagTypeRepository
 
     @Autowired
     private lateinit var databaseInitializer: DatabaseInitializer
 
     @Test
-    fun `should initialize group types from yml`() {
+    fun `should initialize tag types from yml`() {
         databaseInitializer.runInitialization()
-        val count = groupTypeRepository.count()
+        val count = tagTypeRepository.count()
         // The count should match the number of items in initial-data.yml (8)
-        assertEquals(8, count, "Should have 8 group types initialized from YAML")
+        assertEquals(8, count, "Should have 8 tag types initialized from YAML")
 
-        val mood = groupTypeRepository.findAll().find { it.groupTypeName == "Mood" }
+        val mood = tagTypeRepository.findAll().find { it.name == "Mood" }
         assert(mood != null)
-        assert(java.math.BigDecimal("7").compareTo(mood?.groupTypeId) == 0)
-        assertEquals("S", mood?.groupTypeEdit)
+        assertEquals(7L, mood?.id)
+        assertEquals("S", mood?.edit)
     }
 }

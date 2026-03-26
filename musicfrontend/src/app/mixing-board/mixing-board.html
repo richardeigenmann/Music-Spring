@@ -1,19 +1,19 @@
 <div class="mixer-container">
-  <!-- Left Side: The Group Rack -->
-  <div class="group-rack">
-    <h2>The Rack (Available Groups)</h2>
+  <!-- Left Side: The Tag Rack -->
+  <div class="tag-rack">
+    <h2>The Rack (Available Tags)</h2>
     <div
       cdkDropList
       id="availableList"
       #availableList="cdkDropList"
-      [cdkDropListData]="availableGroups()"
+      [cdkDropListData]="availableTags()"
       [cdkDropListConnectedTo]="['mustList', 'canList', 'notList']"
-      class="groups-list"
+      class="tags-list"
       (cdkDropListDropped)="drop($event)">
-      @for (group of availableGroups(); track group.groupId) {
-        <div class="group-pill" cdkDrag>
-          <span class="type-tag">{{ group.groupTypeName }}</span>
-          {{ group.groupName }}
+      @for (tag of availableTags(); track tag.tagId) {
+        <div class="tag-pill" cdkDrag>
+          <span class="type-tag">{{ tag.tagTypeName }}</span>
+          {{ tag.tagName }}
         </div>
       }
     </div>
@@ -57,11 +57,11 @@
           [cdkDropListConnectedTo]="['availableList']"
           class="bucket-list"
           (cdkDropListDropped)="drop($event)">
-          @for (group of mustHave(); track group.groupId) {
-            <div class="group-pill selected" cdkDrag>{{ group.groupName }}</div>
+          @for (tag of mustHave(); track tag.tagId) {
+            <div class="tag-pill selected" cdkDrag>{{ tag.tagName }}</div>
           }
           @if (mustHave().length === 0) {
-            <div class="placeholder">Drop Groups Here</div>
+            <div class="placeholder">Drop Tags Here</div>
           }
         </div>
       </div>
@@ -78,11 +78,11 @@
           [cdkDropListConnectedTo]="['availableList']"
           class="bucket-list"
           (cdkDropListDropped)="drop($event)">
-          @for (group of canHave(); track group.groupId) {
-            <div class="group-pill selected" cdkDrag>{{ group.groupName }}</div>
+          @for (tag of canHave(); track tag.tagId) {
+            <div class="tag-pill selected" cdkDrag>{{ tag.tagName }}</div>
           }
           @if (canHave().length === 0) {
-            <div class="placeholder">Drop Groups Here</div>
+            <div class="placeholder">Drop Tags Here</div>
           }
         </div>
       </div>
@@ -99,11 +99,11 @@
           [cdkDropListConnectedTo]="['availableList']"
           class="bucket-list"
           (cdkDropListDropped)="drop($event)">
-          @for (group of mustNotHave(); track group.groupId) {
-            <div class="group-pill selected" cdkDrag>{{ group.groupName }}</div>
+          @for (tag of mustNotHave(); track tag.tagId) {
+            <div class="tag-pill selected" cdkDrag>{{ tag.tagName }}</div>
           }
           @if (mustNotHave().length === 0) {
-            <div class="placeholder">Drop Groups Here</div>
+            <div class="placeholder">Drop Tags Here</div>
           }
         </div>
       </div>

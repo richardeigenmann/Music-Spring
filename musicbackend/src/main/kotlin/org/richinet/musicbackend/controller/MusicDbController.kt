@@ -9,10 +9,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.richinet.musicbackend.data.entity.Groups
-import org.richinet.musicbackend.data.projection.GroupProjection
-import org.richinet.musicbackend.data.repository.GroupTypeRepository
-import org.richinet.musicbackend.data.repository.GroupsRepository
+import org.richinet.musicbackend.data.entity.Tag
+import org.richinet.musicbackend.data.projection.TagProjection
+import org.richinet.musicbackend.data.repository.TagTypeRepository
+import org.richinet.musicbackend.data.repository.TagRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
 import org.richinet.musicbackend.data.repository.TrackRepository
 import org.richinet.musicbackend.service.MusicImportService
@@ -34,8 +34,6 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import org.springframework.web.servlet.resource.ResourceHttpRequestHandler
 import java.io.File
-import java.math.BigDecimal
-import java.sql.Timestamp
 import java.util.concurrent.Semaphore
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -51,9 +49,9 @@ data class CreatePlaylistRequest(
   val trackIds: List<Long>
 )
 
-data class CreateGroupRequest(
-  val groupType: String,
-  val groupName: String
+data class CreateTagRequest(
+  val tagType: String,
+  val tagName: String
 )
 
 @RestController
@@ -62,8 +60,8 @@ data class CreateGroupRequest(
 class MusicDbController(
   private val trackRepository: TrackRepository,
   private val trackDataService: TrackDataService,
-  private val groupsRepository: GroupsRepository,
-  private val groupTypeRepository: GroupTypeRepository,
+  private val tagRepository: TagRepository,
+  private val tagTypeRepository: TagTypeRepository,
   private val trackFileRepository: TrackFileRepository,
   private val musicImportService: MusicImportService,
   private val jdbcTemplate: JdbcTemplate,
@@ -124,18 +122,16 @@ class MusicDbController(
             ExampleObject(
               value = """
                 {
-                  "TrackId": 1,
-                  "TrackName": "Song Title",
+                  "trackId": 1,
+                  "trackName": "Song Title",
                   "Artist": "Artist Name",
                   "Album": "Album Name",
-                  "Files": [
+                  "files": [
                     {
-                      "FileId": 101,
-                      "FileName": "song.mp3",
-                      "FileLocation": "/path/to/file/",
-                      "FileOnline": "Y",
-                      "Duration": 300,
-                      "BackupDate": "2023-01-01T12:00:00"
+                      "fileId": 101,
+                      "fileName": "song.mp3",
+                      "fileLocation": "/path/to/file/",
+                      "duration": 300
                     }
                   ]
                 }
@@ -193,22 +189,22 @@ class MusicDbController(
     }
   }
 
-  @Operation(summary = "Get all editable groups with their types")
+  @Operation(summary = "Get all editable tags with their types")
   @ApiResponses(
     value = [
       ApiResponse(
-        responseCode = "200", description = "Found the groups",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = GroupProjection::class))]
+        responseCode = "200", description = "Found the tags",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = TagProjection::class))]
       )
     ]
   )
-  @GetMapping("/groups")
-  fun getGroups(): ResponseEntity<List<GroupProjection>> {
-    val groups = groupsRepository.findAllEditableGroups()
-    return ResponseEntity.ok(groups)
+  @GetMapping("/tags")
+  fun getTags(): ResponseEntity<List<TagProjection>> {
+    val tags = tagRepository.findAllEditableTags()
+    return ResponseEntity.ok(tags)
   }
 
-  @Operation(summary = "Get all tracks belonging to a group")
+  @Operation(summary = "Get all tracks belonging to a tag")
   @ApiResponses(
     value = [
       ApiResponse(
@@ -219,18 +215,16 @@ class MusicDbController(
               value = """
                 [
                   {
-                    "TrackId": 1,
-                    "TrackName": "Song Title",
+                    "trackId": 1,
+                    "trackName": "Song Title",
                     "Artist": "Artist Name",
                     "Album": "Album Name",
-                    "Files": [
+                    "files": [
                       {
-                        "FileId": 101,
-                        "FileName": "song.mp3",
-                        "FileLocation": "/path/to/file/",
-                        "FileOnline": "Y",
-                        "Duration": 300,
-                        "BackupDate": "2023-01-01T12:00:00"
+                        "fileId": 101,
+                        "fileName": "song.mp3",
+                        "fileLocation": "/path/to/file/",
+                        "duration": 300
                       }
                     ]
                   }
@@ -242,14 +236,14 @@ class MusicDbController(
       )
     ]
   )
-  @GetMapping("/tracksByGroup/{id}")
-  fun getTracksByGroup(@PathVariable id: Long): ResponseEntity<List<Map<String, Any?>>> {
-    val tracks = trackRepository.findTracksByGroupId(id)
+  @GetMapping("/tracksByTag/{id}")
+  fun getTracksByTag(@PathVariable id: Long): ResponseEntity<List<Map<String, Any?>>> {
+    val tracks = trackRepository.findTracksByTagId(id)
     val serializedTracks = tracks.map { trackDataService.serializeTrack(it) }
     return ResponseEntity.ok(serializedTracks)
   }
 
-  @Operation(summary = "Search for tracks by name or group name")
+  @Operation(summary = "Search for tracks by name or tag name")
   @ApiResponses(
     value = [
       ApiResponse(
@@ -260,18 +254,16 @@ class MusicDbController(
               value = """
                 [
                   {
-                    "TrackId": 1,
-                    "TrackName": "Song Title",
+                    "trackId": 1,
+                    "trackName": "Song Title",
                     "Artist": "Artist Name",
                     "Album": "Album Name",
-                    "Files": [
+                    "files": [
                       {
-                        "FileId": 101,
-                        "FileName": "song.mp3",
-                        "FileLocation": "/path/to/file/",
-                        "FileOnline": "Y",
-                        "Duration": 300,
-                        "BackupDate": "2023-01-01T12:00:00"
+                        "fileId": 101,
+                        "fileName": "song.mp3",
+                        "fileLocation": "/path/to/file/",
+                        "duration": 300
                       }
                     ]
                   }
@@ -312,7 +304,7 @@ class MusicDbController(
     logger.info("Fetching track file with id: $id")
     val trackFile = trackFileRepository.findById(id).orElse(null)
     if (trackFile == null) {
-      logger.error("Failed to find track $id in the database")
+      logger.error("Failed to find track file $id in the database")
       response.status = HttpServletResponse.SC_NOT_FOUND
       return
     }
@@ -429,12 +421,12 @@ class MusicDbController(
     return ResponseEntity.ok(musicImportService.getScanProgress())
   }
 
-  @GetMapping("/stats/groupUsage")
-  fun getGroupUsageStats(): ResponseEntity<List<Map<String, Any>>> {
-    return ResponseEntity.ok(groupsRepository.getGroupUsageStats())
+  @GetMapping("/stats/tagUsage")
+  fun getTagUsageStats(): ResponseEntity<List<Map<String, Any>>> {
+    return ResponseEntity.ok(tagRepository.getTagUsageStats())
   }
 
-  @Operation(summary = "Get tracks that are not in any group")
+  @Operation(summary = "Get tracks that are not in any tag")
   @ApiResponses(
     value = [
       ApiResponse(
@@ -450,7 +442,7 @@ class MusicDbController(
     return ResponseEntity.ok(serializedTracks)
   }
 
-  @Operation(summary = "Filter tracks based on group criteria")
+  @Operation(summary = "Filter tracks based on tag criteria")
   @ApiResponses(
     value = [
       ApiResponse(
@@ -465,22 +457,22 @@ class MusicDbController(
       return ResponseEntity.ok(emptyList())
     }
 
-    val sql = StringBuilder("SELECT DISTINCT t.Track_Id FROM Track t ")
+    val sql = StringBuilder("SELECT DISTINCT t.id FROM track t ")
     val conditions = mutableListOf<String>()
 
     if (request.mustHaveIds.isNotEmpty()) {
       val ids = request.mustHaveIds.joinToString(",")
-      conditions.add("t.Track_Id IN (SELECT tg.Track_Id FROM Track_Group tg WHERE tg.Group_Id IN ($ids) GROUP BY tg.Track_Id HAVING COUNT(DISTINCT tg.Group_Id) = ${request.mustHaveIds.size})")
+      conditions.add("t.id IN (SELECT tt.track_id FROM track_tag tt WHERE tt.tag_id IN ($ids) GROUP BY tt.track_id HAVING COUNT(DISTINCT tt.tag_id) = ${request.mustHaveIds.size})")
     }
 
     if (request.canHaveIds.isNotEmpty()) {
       val ids = request.canHaveIds.joinToString(",")
-      conditions.add("t.Track_Id IN (SELECT tg.Track_Id FROM Track_Group tg WHERE tg.Group_Id IN ($ids))")
+      conditions.add("t.id IN (SELECT tt.track_id FROM track_tag tt WHERE tt.tag_id IN ($ids))")
     }
 
     if (request.mustNotHaveIds.isNotEmpty()) {
       val ids = request.mustNotHaveIds.joinToString(",")
-      conditions.add("t.Track_Id NOT IN (SELECT tg.Track_Id FROM Track_Group tg WHERE tg.Group_Id IN ($ids))")
+      conditions.add("t.id NOT IN (SELECT tt.track_id FROM track_tag tt WHERE tt.tag_id IN ($ids))")
     }
 
     if (conditions.isNotEmpty()) {
@@ -502,81 +494,80 @@ class MusicDbController(
   )
   @PostMapping("/createPlaylist")
   fun createPlaylist(@RequestBody request: CreatePlaylistRequest): ResponseEntity<Map<String, Any?>> {
-    val groups = musicImportService.createPlaylist(request.name, request.trackIds)
-    return ResponseEntity.ok(mapOf("groupId" to groups.groupId, "groupName" to groups.groupName))
+    val tag = musicImportService.createPlaylist(request.name, request.trackIds)
+    return ResponseEntity.ok(mapOf("tagId" to tag.id, "tagName" to tag.name))
   }
 
-  @Operation(summary = "Create a new group under a specific group type")
+  @Operation(summary = "Create a new tag under a specific tag type")
   @ApiResponses(
     value = [
       ApiResponse(
-        responseCode = "201", description = "Group created",
+        responseCode = "201", description = "Tag created",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = Map::class))]
       ),
-      ApiResponse(responseCode = "404", description = "Group type not found")
+      ApiResponse(responseCode = "404", description = "Tag type not found")
     ]
   )
-  @PostMapping("/group")
-  fun createGroup(@RequestBody request: CreateGroupRequest): ResponseEntity<Map<String, Any?>> {
-    val groupType = groupTypeRepository.findByGroupTypeName(request.groupType)
+  @PostMapping("/tag")
+  fun createTag(@RequestBody request: CreateTagRequest): ResponseEntity<Map<String, Any?>> {
+    val tagType = tagTypeRepository.findByName(request.tagType)
       ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
 
-    val newGroup = Groups().apply {
-      this.groupName = request.groupName
-      this.groupTypeId = groupType.groupTypeId
-      this.lastModification = Timestamp(System.currentTimeMillis())
+    val newTag = Tag().apply {
+      this.name = request.tagName
+      this.tagTypeId = tagType.id
     }
 
-    val savedGroup = groupsRepository.save(newGroup)
+    val savedTag = tagRepository.save(newTag)
     return ResponseEntity.status(HttpStatus.CREATED).body(
       mapOf(
-        "groupId" to savedGroup.groupId,
-        "groupName" to savedGroup.groupName,
-        "groupTypeName" to groupType.groupTypeName
+        "tagId" to savedTag.id,
+        "tagName" to savedTag.name,
+        "tagTypeName" to tagType.name
       )
     )
   }
 
-  @Operation(summary = "Delete a group/playlist")
+  @Operation(summary = "Delete a tag/playlist")
   @ApiResponses(
     value = [
-      ApiResponse(responseCode = "200", description = "Group deleted")
+      ApiResponse(responseCode = "200", description = "Tag deleted")
     ]
   )
-  @DeleteMapping("/group/{id}")
-  fun deleteGroup(@PathVariable id: Long): ResponseEntity<Unit> {
-    musicImportService.deleteGroup(id)
+  @DeleteMapping("/tag/{id}")
+  fun deleteTag(@PathVariable id: Long): ResponseEntity<Unit> {
+    musicImportService.deleteTag(id)
     return ResponseEntity.ok().build()
   }
 
   private fun sanitizeFilename(name: String): String {
     // Replace any character that is not a letter, number, space, hyphen, or underscore with an underscore.
-    val sanitized = name.replace(Regex("[^a-zA-Z0-9 \\-_]"), "_")
+    val sanitized = name.replace(Regex("[^a-zA-Z0-9 _-]"), "_")
     // Collapse multiple underscores or spaces into a single underscore.
     return sanitized.replace(Regex("[_ ]+"), "_")
   }
 
-  @Operation(summary = "Download a group's tracks as an M3U playlist")
-  @GetMapping("/group/{id}/m3u")
-  fun downloadGroupAsM3u(@PathVariable id: Long, @RequestHeader(HttpHeaders.HOST) host: String): ResponseEntity<String> {
-    val group = groupsRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
-    val tracks = trackRepository.findTracksByGroupId(id)
+  @Operation(summary = "Download a tag's tracks as an M3U playlist")
+  @GetMapping("/tag/{id}/m3u")
+  fun downloadTagAsM3u(@PathVariable id: Long, @RequestHeader(HttpHeaders.HOST) host: String): ResponseEntity<String> {
+    val tag = tagRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
+    val tracks = trackRepository.findTracksByTagId(id)
     val baseUrl = "http://$host/api"
 
     val m3uContent = buildString {
       appendLine("#EXTM3U")
       tracks.forEach { track ->
         val serializedTrack = trackDataService.serializeTrack(track)
-        val files = serializedTrack["Files"] as? List<*>
+        val files = serializedTrack["files"] as? List<*>
         val firstFile = files?.firstOrNull() as? Map<String, Any?>
 
         if (firstFile != null) {
           val artist = (serializedTrack["Artist"])?.let {
             if (it is List<*>) it.joinToString(", ") else it.toString()
           } ?: "Unknown Artist"
-          val title = serializedTrack["TrackName"] as? String ?: "Unknown Track"
-          val duration = (firstFile["Duration"] as? Number)?.toInt() ?: -1
-          val fileId = firstFile["FileId"]
+          val title = serializedTrack["trackName"] as? String ?: "Unknown Track"
+          val duration = (firstFile["duration"] as? Number)?.toInt() ?: -1
+          val fileId = firstFile["fileId"]
 
           appendLine("#EXTINF:$duration,$artist - $title")
           appendLine("$baseUrl/trackFile/$fileId")
@@ -584,8 +575,8 @@ class MusicDbController(
       }
     }
 
-    val groupTypeName = group.groupType?.groupTypeName ?: "Group"
-    val safeFilename = sanitizeFilename("$groupTypeName - ${group.groupName}")
+    val tagTypeName = tag.tagType?.name ?: "Tag"
+    val safeFilename = sanitizeFilename("$tagTypeName - ${tag.name}")
 
     val headers = HttpHeaders()
     headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${safeFilename}.m3u\"")
@@ -594,15 +585,15 @@ class MusicDbController(
     return ResponseEntity.ok().headers(headers).body(m3uContent)
   }
 
-  @Operation(summary = "Download a group's tracks and playlist as a ZIP file")
-  @GetMapping("/group/{id}/zip")
-  fun downloadGroupAsZip(@PathVariable id: Long): ResponseEntity<StreamingResponseBody> {
-    val group = groupsRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
-    val tracks = trackRepository.findTracksByGroupId(id)
+  @Operation(summary = "Download a tag's tracks and playlist as a ZIP file")
+  @GetMapping("/tag/{id}/zip")
+  fun downloadTagAsZip(@PathVariable id: Long): ResponseEntity<StreamingResponseBody> {
+    val tag = tagRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
+    val tracks = trackRepository.findTracksByTagId(id)
     val serializedTracks = tracks.map { trackDataService.serializeTrack(it) }
 
-    val groupTypeName = group.groupType?.groupTypeName ?: "Group"
-    val safeFilenameBase = sanitizeFilename("$groupTypeName - ${group.groupName}")
+    val tagTypeName = tag.tagType?.name ?: "Tag"
+    val safeFilenameBase = sanitizeFilename("$tagTypeName - ${tag.name}")
 
     val streamingResponseBody = StreamingResponseBody { outputStream ->
       val zipOut = ZipOutputStream(outputStream)
@@ -611,16 +602,16 @@ class MusicDbController(
       val m3uContent = buildString {
         appendLine("#EXTM3U")
         serializedTracks.forEach { serializedTrack ->
-          val files = serializedTrack["Files"] as? List<*>
+          val files = serializedTrack["files"] as? List<*>
           val firstFile = files?.firstOrNull() as? Map<String, Any?>
 
           if (firstFile != null) {
             val artist = (serializedTrack["Artist"] as? Any)?.let {
               if (it is List<*>) it.joinToString(", ") else it.toString()
             } ?: "Unknown Artist"
-            val title = serializedTrack["TrackName"] as? String ?: "Unknown Track"
-            val duration = (firstFile["Duration"] as? Number)?.toInt() ?: -1
-            val fileName = firstFile["FileName"] as? String
+            val title = serializedTrack["trackName"] as? String ?: "Unknown Track"
+            val duration = (firstFile["duration"] as? Number)?.toInt() ?: -1
+            val fileName = firstFile["fileName"] as? String
 
             if (fileName != null) {
               appendLine("#EXTINF:$duration,$artist - $title")
@@ -636,10 +627,10 @@ class MusicDbController(
 
       // 2. Add each MP3 file to the zip
       serializedTracks.forEach { serializedTrack ->
-        val files = serializedTrack["Files"] as? List<*>
+        val files = serializedTrack["files"] as? List<*>
         (files?.firstOrNull() as? Map<String, Any?>)?.let { fileMap ->
-          val fileLocation = fileMap["FileLocation"] as? String ?: ""
-          val fileName = fileMap["FileName"] as? String ?: ""
+          val fileLocation = fileMap["fileLocation"] as? String ?: ""
+          val fileName = fileMap["fileName"] as? String ?: ""
           val file = if (fileLocation.trim('/').isEmpty()) {
             File(musicDirectory, fileName)
           } else {

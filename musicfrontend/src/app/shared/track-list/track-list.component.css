@@ -85,7 +85,7 @@
     color: #ff0;
 }
 
-.group-pills {
+.tag-pills {
     display: flex;
     gap: 5px;
     flex-wrap: wrap;
@@ -93,7 +93,7 @@
     justify-content: flex-end;
 }
 
-.group-pill {
+.tag-pill {
     font-size: 0.75rem;
     padding: 2px 8px;
     background: #444;
@@ -104,13 +104,13 @@
     white-space: nowrap;
 }
 
-.group-pill:hover {
+.tag-pill:hover {
     background: #666;
     color: white;
 }
 
 @media (max-width: 600px) {
-    .group-pills {
+    .tag-pills {
         display: none;
     }
 }

@@ -2,25 +2,25 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, Signal, signal } from '@angular/core';
 import { Observable, tap, firstValueFrom } from 'rxjs';
 
-export interface Group {
-  groupTypeName: string;
-  groupTypeId: number;
-  groupName: string;
-  groupId: number;
-  groupTypeEdit: string;
+export interface Tag {
+  tagTypeName: string;
+  tagTypeId: number;
+  tagName: string;
+  tagId: number;
+  tagTypeEdit: string;
 }
 
 export interface TrackFile {
-  FileId: number;
-  FileName: string;
-  Duration: number;
+  fileId: number;
+  fileName: string;
+  duration: number;
 }
 
 export interface Track {
-  TrackId: number;
-  TrackName: string;
+  trackId: number;
+  trackName: string;
   [key: string]: any;
-  Files: TrackFile[];
+  files: TrackFile[];
 }
 
 export interface TrackEntry {
@@ -31,7 +31,7 @@ export interface TrackEntry {
     album: string;
     duration: number;
     fileId: number;
-    groupDetails: { groupId: number, groupName: string, groupTypeName: string }[];
+    tagDetails: { tagId: number, tagName: string, tagTypeName: string }[];
 }
 
 
@@ -43,22 +43,22 @@ export class ApiService {
   private API_URL = 'http://localhost:8002'; // backend bootRunPg or bootRunH2
   private initialized = false;
   private initPromise: Promise<void>;
-  private groupsPromise: Promise<void>;
-  private resolveGroups!: () => void;
+  private tagsPromise: Promise<void>;
+  private resolveTags!: () => void;
 
   private readonly _playlistEntries = signal<TrackEntry[]>([]);
   private readonly _totalTrackCount = signal<number>(0);
-  private readonly _groups = signal<Group[]>([]);
+  private readonly _tags = signal<Tag[]>([]);
 
   readonly playlistEntries: Signal<TrackEntry[]> = this._playlistEntries.asReadonly();
   readonly totalTrackCount: Signal<number> = this._totalTrackCount.asReadonly();
-  readonly groups: Signal<Group[]> = this._groups.asReadonly();
+  readonly tags: Signal<Tag[]> = this._tags.asReadonly();
 
   constructor(private http: HttpClient) {
-    this.groupsPromise = new Promise(resolve => this.resolveGroups = resolve);
+    this.tagsPromise = new Promise(resolve => this.resolveTags = resolve);
     this.initPromise = this.loadConfig().then(() => {
       this.getVersion().subscribe();
-      this.loadGroups();
+      this.loadTags();
     });
   }
 
@@ -77,10 +77,10 @@ export class ApiService {
 
   loadPlaylistEntries(playlistId: number): void {
     if (!this.initialized) { this.initPromise.then(() => this.loadPlaylistEntries(playlistId)); return; }
-    this.http.get<Track[]>(`${this.API_URL}/api/tracksByGroup/${playlistId}`)
+    this.http.get<Track[]>(`${this.API_URL}/api/tracksByTag/${playlistId}`)
       .subscribe({
         next: (data) => {
-          this.groupsPromise.then(() => {
+          this.tagsPromise.then(() => {
             this._playlistEntries.set(data.map(track => this.mapToTrackEntry(track)));
           });
         },
@@ -92,12 +92,12 @@ export class ApiService {
     const artistRaw = track['Artist'] || track['artist'];
     const artist = Array.isArray(artistRaw) ? artistRaw.join(', ') : (artistRaw || '');
 
-    const groupDetails: { groupId: number, groupName: string, groupTypeName: string }[] = [];
-    const allGroups = this._groups();
+    const tagDetails: { tagId: number, tagName: string, tagTypeName: string }[] = [];
+    const allTags = this._tags();
     
-    if (allGroups.length > 0) {
+    if (allTags.length > 0) {
       // Keys to ignore (not group types)
-      const internalKeys = ['TrackId', 'TrackName', 'Files', 'trackId', 'trackName', 'files'];
+      const internalKeys = ['trackId', 'trackName', 'files', 'trackId', 'trackName', 'files'];
       
       for (const key in track) {
         if (!internalKeys.includes(key)) {
@@ -106,15 +106,15 @@ export class ApiService {
             const groupNames = Array.isArray(value) ? value : [value];
             for (const name of groupNames) {
               if (typeof name === 'string') {
-                const found = allGroups.find(g => 
-                  g.groupTypeName.toLowerCase() === key.toLowerCase() && 
-                  g.groupName.toLowerCase() === name.toLowerCase()
+                const found = allTags.find(g => 
+                  g.tagTypeName.toLowerCase() === key.toLowerCase() && 
+                  g.tagName.toLowerCase() === name.toLowerCase()
                 );
                 if (found) {
-                  groupDetails.push({
-                    groupId: found.groupId,
-                    groupName: found.groupName, // Use the name from DB for consistency
-                    groupTypeName: found.groupTypeName
+                  tagDetails.push({
+                    tagId: found.tagId,
+                    tagName: found.tagName, // Use the name from DB for consistency
+                    tagTypeName: found.tagTypeName
                   });
                 }
               }
@@ -125,14 +125,14 @@ export class ApiService {
     }
 
     return {
-      trackId: track.TrackId || track.trackId,
-      title: track.TrackName || track.trackName,
-      trackName: track.TrackName || track.trackName,
+      trackId: track.trackId || track.trackId,
+      title: track.trackName || track.trackName,
+      trackName: track.trackName || track.trackName,
       artist: artist,
       album: track['Album'] || track['album'],
-      duration: track.Files?.[0]?.Duration || track.files?.[0]?.duration || 0,
-      fileId: track.Files?.[0]?.FileId || track.files?.[0]?.fileId || 0,
-      groupDetails: groupDetails
+      duration: track.files?.[0]?.duration || track.files?.[0]?.duration || 0,
+      fileId: track.files?.[0]?.fileId || track.files?.[0]?.fileId || 0,
+      tagDetails: tagDetails
     };
   }
 
@@ -144,46 +144,46 @@ export class ApiService {
     });
   }
 
-  loadGroups(): void {
-    if (!this.initialized) { this.initPromise.then(() => this.loadGroups()); return; }
-    this.http.get<any[]>(`${this.API_URL}/api/groups`)
+  loadTags(): void {
+    if (!this.initialized) { this.initPromise.then(() => this.loadTags()); return; }
+    this.http.get<any[]>(`${this.API_URL}/api/tags`)
       .subscribe({
         next: (data) => {
           const mapped = data.map(g => ({
-            groupId: g.groupId ?? g.GroupId,
-            groupName: g.groupName ?? g.GroupName,
-            groupTypeName: g.groupTypeName ?? g.GroupTypeName,
-            groupTypeId: g.groupTypeId ?? g.GroupTypeId,
-            groupTypeEdit: g.groupTypeEdit ?? g.GroupTypeEdit
+            tagId: g.tagId ?? g.tagId,
+            tagName: g.tagName ?? g.tagName,
+            tagTypeName: g.tagTypeName ?? g.tagTypeName,
+            tagTypeId: g.tagTypeId ?? g.tagTypeId,
+            tagTypeEdit: g.tagTypeEdit ?? g.tagTypeEdit
           }));
-          this._groups.set(mapped);
-          this.resolveGroups();
+          this._tags.set(mapped);
+          this.resolveTags();
         },
         error: (err) => {
-          console.error('Failed to load groups', err);
-          this.resolveGroups(); // Still resolve to avoid hangs
+          console.error('Failed to load tags', err);
+          this.resolveTags(); // Still resolve to avoid hangs
         }
       });
   }
 
-  getGroups(): Observable<Group[]> {
+  getTags(): Observable<Tag[]> {
     return new Observable(observer => {
       this.initPromise.then(() => {
-        const currentGroups = this._groups();
-        if (currentGroups.length > 0) {
-          observer.next(currentGroups);
+        const currentTags = this._tags();
+        if (currentTags.length > 0) {
+          observer.next(currentTags);
           observer.complete();
         } else {
-          this.http.get<any[]>(`${this.API_URL}/api/groups`).subscribe({
+          this.http.get<any[]>(`${this.API_URL}/api/tags`).subscribe({
             next: (data) => {
               const mapped = data.map(g => ({
-                groupId: g.groupId ?? g.GroupId,
-                groupName: g.groupName ?? g.GroupName,
-                groupTypeName: g.groupTypeName ?? g.GroupTypeName,
-                groupTypeId: g.groupTypeId ?? g.GroupTypeId,
-                groupTypeEdit: g.groupTypeEdit ?? g.GroupTypeEdit
+                tagId: g.tagId ?? g.tagId,
+                tagName: g.tagName ?? g.tagName,
+                tagTypeName: g.tagTypeName ?? g.tagTypeName,
+                tagTypeId: g.tagTypeId ?? g.tagTypeId,
+                tagTypeEdit: g.tagTypeEdit ?? g.tagTypeEdit
               }));
-              this._groups.set(mapped);
+              this._tags.set(mapped);
               observer.next(mapped);
             },
             error: (err) => observer.error(err),
@@ -197,7 +197,7 @@ export class ApiService {
   saveTrack(track: Track): Observable<Track> {
     return new Observable(observer => {
       this.initPromise.then(() => {
-        this.http.post<Track>(`${this.API_URL}/api/track/${track.TrackId}`, track).subscribe(observer);
+        this.http.post<Track>(`${this.API_URL}/api/track/${track.trackId}`, track).subscribe(observer);
       });
     });
   }
@@ -234,16 +234,16 @@ export class ApiService {
     });
   }
 
-  getGroupUsageStats(): Observable<{ typeName: string, groupName: string, count: number, groupId: number }[]> {
+  getTagUsageStats(): Observable<{ typeName: string, tagName: string, count: number, tagId: number }[]> {
     return new Observable(observer => {
       this.initPromise.then(() => {
-        this.http.get<any[]>(`${this.API_URL}/api/stats/groupUsage`).subscribe({
+        this.http.get<any[]>(`${this.API_URL}/api/stats/tagUsage`).subscribe({
           next: (data) => {
             observer.next(data.map(d => ({
               typeName: d.typeName ?? d.typename ?? d.TYPENAME,
-              groupName: d.groupName ?? d.groupname ?? d.GROUPNAME,
+              tagName: d.tagName ?? d.groupname ?? d.GROUPNAME,
               count: d.count ?? d.COUNT,
-              groupId: d.groupId ?? d.groupid ?? d.GROUPID
+              tagId: d.tagId ?? d.groupid ?? d.GROUPID
             })));
           },
           error: (err) => observer.error(err),
@@ -258,7 +258,7 @@ export class ApiService {
       this.initPromise.then(() => {
         this.http.get<Track[]>(`${this.API_URL}/api/unclassifiedTracks`).subscribe({
           next: (data) => {
-            this.groupsPromise.then(() => {
+            this.tagsPromise.then(() => {
               observer.next(data.map(track => this.mapToTrackEntry(track)));
               observer.complete();
             });
@@ -274,7 +274,7 @@ export class ApiService {
       this.initPromise.then(() => {
         this.http.get<Track[]>(`${this.API_URL}/api/trackSearch?query=${encodeURIComponent(query)}`).subscribe({
           next: (data) => {
-            this.groupsPromise.then(() => {
+            this.tagsPromise.then(() => {
               observer.next(data.map(track => this.mapToTrackEntry(track)));
               observer.complete();
             });
@@ -290,7 +290,7 @@ export class ApiService {
       this.initPromise.then(() => {
         this.http.post<Track[]>(`${this.API_URL}/api/filterTracks`, { mustHaveIds, canHaveIds, mustNotHaveIds }).subscribe({
           next: (data) => {
-            this.groupsPromise.then(() => {
+            this.tagsPromise.then(() => {
               observer.next(data.map(track => this.mapToTrackEntry(track)));
               observer.complete();
             });
@@ -301,25 +301,25 @@ export class ApiService {
     });
   }
 
-  createPlaylist(name: string, trackIds: number[]): Observable<{ groupId: number, groupName: string }> {
+  createPlaylist(name: string, trackIds: number[]): Observable<{ tagId: number, tagName: string }> {
     return new Observable(observer => {
       this.initPromise.then(() => {
-        this.http.post<{ groupId: number, groupName: string }>(`${this.API_URL}/api/createPlaylist`, { name, trackIds }).subscribe(observer);
+        this.http.post<{ tagId: number, tagName: string }>(`${this.API_URL}/api/createPlaylist`, { name, trackIds }).subscribe(observer);
       });
     });
   }
 
-  createGroup(groupType: string, groupName: string): Observable<Group> {
+  createTag(groupType: string, tagName: string): Observable<Tag> {
     return new Observable(observer => {
       this.initPromise.then(() => {
-        this.http.post<any>(`${this.API_URL}/api/group`, { groupType, groupName }).subscribe({
+        this.http.post<any>(`${this.API_URL}/api/tag`, { groupType, tagName }).subscribe({
           next: (data) => {
             observer.next({
-              groupId: data.groupId,
-              groupName: data.groupName,
-              groupTypeName: data.groupTypeName,
-              groupTypeId: data.groupTypeId,
-              groupTypeEdit: data.groupTypeEdit
+              tagId: data.tagId,
+              tagName: data.tagName,
+              tagTypeName: data.tagTypeName,
+              tagTypeId: data.tagTypeId,
+              tagTypeEdit: data.tagTypeEdit
             });
           },
           error: (err) => observer.error(err),
@@ -329,26 +329,26 @@ export class ApiService {
     });
   }
 
-  deleteGroup(groupId: number): Observable<void> {
+  deleteTag(tagId: number): Observable<void> {
     return new Observable(observer => {
       this.initPromise.then(() => {
-        this.http.delete<void>(`${this.API_URL}/api/group/${groupId}`).subscribe(observer);
+        this.http.delete<void>(`${this.API_URL}/api/tag/${tagId}`).subscribe(observer);
       });
     });
   }
 
-  downloadGroupAsM3u(groupId: number): Observable<Blob> {
+  downloadTagAsM3u(tagId: number): Observable<Blob> {
     return new Observable(observer => {
       this.initPromise.then(() => {
-        this.http.get(`${this.API_URL}/api/group/${groupId}/m3u`, { responseType: 'blob' }).subscribe(observer);
+        this.http.get(`${this.API_URL}/api/tag/${tagId}/m3u`, { responseType: 'blob' }).subscribe(observer);
       });
     });
   }
 
-  downloadGroupAsZip(groupId: number): Observable<Blob> {
+  downloadTagAsZip(tagId: number): Observable<Blob> {
     return new Observable(observer => {
       this.initPromise.then(() => {
-        this.http.get(`${this.API_URL}/api/group/${groupId}/zip`, { responseType: 'blob' }).subscribe(observer);
+        this.http.get(`${this.API_URL}/api/tag/${tagId}/zip`, { responseType: 'blob' }).subscribe(observer);
       });
     });
   }

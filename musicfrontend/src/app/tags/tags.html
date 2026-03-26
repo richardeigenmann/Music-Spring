@@ -1,0 +1,16 @@
+<div class="tags-page">
+  <div class="tags-container">
+    @for (tagType of sortedTagTypes(); track tagType) {
+      <div class="tag-type-section">
+        <h2 class="type-header">{{ tagType }}</h2>
+        <div class="tags-list">
+          @for (tag of groupedTags()[tagType]; track tag.tagId) {
+            <span class="tag-pill" (click)="selectTag(tag.tagId)">
+              {{ tag.tagName }}
+            </span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

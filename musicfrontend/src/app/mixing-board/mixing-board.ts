@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ApiService, Group, TrackEntry } from '../apiservice';
+import { ApiService, Tag, TrackEntry } from '../apiservice';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -18,11 +18,11 @@ export class MixingBoard implements OnInit {
   private playbackService = inject(PlaybackService);
   private router = inject(Router);
 
-  // Group lists for drag and drop
-  availableGroups = signal<Group[]>([]);
-  mustHave = signal<Group[]>([]);
-  canHave = signal<Group[]>([]);
-  mustNotHave = signal<Group[]>([]);
+  // Tag lists for drag and drop
+  availableTags = signal<Tag[]>([]);
+  mustHave = signal<Tag[]>([]);
+  canHave = signal<Tag[]>([]);
+  mustNotHave = signal<Tag[]>([]);
 
   // Filtering results
   filteredTracks = signal<TrackEntry[]>([]);
@@ -32,13 +32,13 @@ export class MixingBoard implements OnInit {
   newPlaylistName = '';
 
   ngOnInit(): void {
-    this.apiService.getGroups().subscribe(groups => {
-      const selectionGroups = groups.filter(g => g.groupTypeEdit === 'S');
-      this.availableGroups.set(selectionGroups.sort((a, b) => a.groupName.localeCompare(b.groupName)));
+    this.apiService.getTags().subscribe(tags => {
+      const selectionTags = tags.filter(t => t.tagTypeEdit === 'S');
+      this.availableTags.set(selectionTags.sort((a, b) => a.tagName.localeCompare(b.tagName)));
     });
   }
 
-  drop(event: CdkDragDrop<Group[]>): void {
+  drop(event: CdkDragDrop<Tag[]>): void {
     if (event.previousContainer === event.container) {
       const data = [...event.container.data];
       moveItemInArray(data, event.previousIndex, event.currentIndex);
@@ -58,17 +58,17 @@ export class MixingBoard implements OnInit {
     this.updateResults();
   }
 
-  private setSignalData(id: string, data: Group[]): void {
-    if (id === 'availableList') this.availableGroups.set(data);
+  private setSignalData(id: string, data: Tag[]): void {
+    if (id === 'availableList') this.availableTags.set(data);
     else if (id === 'mustList') this.mustHave.set(data);
     else if (id === 'canList') this.canHave.set(data);
     else if (id === 'notList') this.mustNotHave.set(data);
   }
 
   updateResults(): void {
-    const must = this.mustHave().map(g => g.groupId);
-    const can = this.canHave().map(g => g.groupId);
-    const not = this.mustNotHave().map(g => g.groupId);
+    const must = this.mustHave().map(t => t.tagId);
+    const can = this.canHave().map(t => t.tagId);
+    const not = this.mustNotHave().map(t => t.tagId);
 
     if (must.length === 0 && can.length === 0 && not.length === 0) {
       this.filteredTracks.set([]);
@@ -98,9 +98,9 @@ export class MixingBoard implements OnInit {
 
     this.apiService.createPlaylist(this.newPlaylistName, ids).subscribe({
       next: (res) => {
-        alert(`Playlist '${res.groupName}' created with ${ids.length} tracks!`);
+        alert(`Playlist '${res.tagName}' created with ${ids.length} tracks!`);
         this.newPlaylistName = '';
-        this.router.navigate(['/groups']);
+        this.router.navigate(['/tags']);
       },
       error: (err) => {
         console.error(err);

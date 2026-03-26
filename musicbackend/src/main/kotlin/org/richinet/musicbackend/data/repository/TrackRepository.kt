@@ -8,17 +8,17 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface TrackRepository : JpaRepository<Track, Long> {
-    @Query("SELECT t FROM Track t JOIN t.trackGroups tg WHERE tg.groupId = :groupId ORDER BY tg.sequence ASC")
-    fun findTracksByGroupId(@Param("groupId") groupId: Long): List<Track>
+    @Query("SELECT t FROM Track t JOIN t.trackTags tt WHERE tt.tagId = :tagId ORDER BY tt.sequence ASC")
+    fun findTracksByTagId(@Param("tagId") tagId: Long): List<Track>
 
     @Query(
         value = """
-        SELECT DISTINCT t.* FROM Track t
-        JOIN Track_Group tg ON t.Track_Id = tg.Track_Id
-        JOIN "groups" g ON tg.Group_Id = g.Group_Id
-        WHERE LOWER(t.Track_Name) = LOWER(:title)
-          AND g.Group_Type_Id = 2
-          AND LOWER(g.Group_Name) = LOWER(:artist)
+        SELECT DISTINCT t.* FROM track t
+        JOIN track_tag tt ON t.id = tt.track_id
+        JOIN tag tag ON tt.tag_id = tag.id
+        WHERE LOWER(t.name) = LOWER(:title)
+          AND tag.tag_type_id = 2
+          AND LOWER(tag.name) = LOWER(:artist)
         """,
         nativeQuery = true
     )
@@ -26,13 +26,13 @@ interface TrackRepository : JpaRepository<Track, Long> {
 
     @Query(
         value = """
-        SELECT DISTINCT t.* FROM Track t
-        LEFT JOIN Track_Group tg ON t.Track_Id = tg.Track_Id
-        LEFT JOIN "groups" g ON tg.Group_Id = g.Group_Id
-        WHERE LOWER(t.Track_Name) LIKE LOWER(CONCAT('%', :query, '%'))
-           OR LOWER(g.Group_Name) LIKE LOWER(CONCAT('%', :query, '%'))
-           OR SOUNDEX(t.Track_Name) = SOUNDEX(:query)
-           OR SOUNDEX(g.Group_Name) = SOUNDEX(:query)
+        SELECT DISTINCT t.* FROM track t
+        LEFT JOIN track_tag tt ON t.id = tt.track_id
+        LEFT JOIN tag tag ON tt.tag_id = tag.id
+        WHERE LOWER(t.name) LIKE LOWER(CONCAT('%', :query, '%'))
+           OR LOWER(tag.name) LIKE LOWER(CONCAT('%', :query, '%'))
+           OR SOUNDEX(t.name) = SOUNDEX(:query)
+           OR SOUNDEX(tag.name) = SOUNDEX(:query)
         """,
         nativeQuery = true
     )
@@ -40,11 +40,11 @@ interface TrackRepository : JpaRepository<Track, Long> {
 
     @Query(
         value = """
-        SELECT * FROM Track t WHERE t.Track_Id NOT IN (
-            SELECT tg.Track_Id FROM Track_Group tg
-            JOIN "groups" g ON tg.Group_Id = g.Group_Id
-            JOIN Group_Type gt ON g.Group_Type_Id = gt.Group_Type_Id
-            WHERE gt.Group_Type_Edit = 'S'
+        SELECT * FROM track t WHERE t.id NOT IN (
+            SELECT tt.track_id FROM track_tag tt
+            JOIN tag tag ON tt.tag_id = tag.id
+            JOIN tag_type tt_type ON tag.tag_type_id = tt_type.id
+            WHERE tt_type.edit = 'S'
         )
         """,
         nativeQuery = true

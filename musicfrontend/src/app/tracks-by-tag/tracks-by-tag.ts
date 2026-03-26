@@ -9,14 +9,14 @@ import { TrackList } from '../shared/track-list/track-list.component';
  * Component for displaying tracks by a group.
  */
 @Component({
-  selector: 'app-tracks-by-group',
+  selector: 'app-tracks-by-tag',
   standalone: true,
   imports: [CommonModule, TrackList],
-  templateUrl: './tracks-by-group.html',
-  styleUrls: ['./tracks-by-group.css']
+  templateUrl: './tracks-by-tag.html',
+  styleUrls: ['./tracks-by-tag.css']
 })
-export class TracksByGroup implements OnDestroy {
-  groupId = input<string>();
+export class TracksByTag implements OnDestroy {
+  tagId = input<string>();
   private apiService = inject(ApiService);
   private playbackService = inject(PlaybackService);
   private router = inject(Router);
@@ -26,20 +26,20 @@ export class TracksByGroup implements OnDestroy {
   playlistEntries = this.apiService.playlistEntries;
   currentTrackId = computed(() => this.playbackService.currentTrack()?.trackId || null);
 
-  currentGroupName = computed(() => {
-    const id = Number(this.groupId());
-    const groups = this.apiService.groups();
-    const group = groups.find(g => g.groupId === id);
-    return group?.groupName || 'Unknown';
+  currentTagName = computed(() => {
+    const id = Number(this.tagId());
+    const tags = this.apiService.tags();
+    const tag = tags.find(g => g.tagId === id);
+    return tag?.tagName || 'Unknown';
   });
 
-  currentGroupTitle = computed(() => {
-    const id = Number(this.groupId());
-    const groups = this.apiService.groups();
-    const group = groups.find(g => g.groupId === id);
+  currentTagTitle = computed(() => {
+    const id = Number(this.tagId());
+    const tags = this.apiService.tags();
+    const tag = tags.find(g => g.tagId === id);
 
-    const type = group?.groupTypeName || 'Group';
-    const name = group?.groupName || 'Unknown';
+    const type = tag?.tagTypeName || 'Tag';
+    const name = tag?.tagName || 'Unknown';
 
     return `${type}: ${name}`;
   });
@@ -52,7 +52,7 @@ export class TracksByGroup implements OnDestroy {
 
   constructor() {
     effect(() => {
-      const id = this.groupId();
+      const id = this.tagId();
       if (id) {
         this.apiService.loadPlaylistEntries(Number(id));
       }
@@ -76,24 +76,24 @@ export class TracksByGroup implements OnDestroy {
 
   playAll(): void {
     const playlist = this.playlistEntries();
-    const title = this.currentGroupTitle();
+    const title = this.currentTagTitle();
 
     console.log('Playing playlist:', title, playlist);
     this.playbackService.playPlaylist(playlist, title);
   }
 
-  deleteCurrentGroup(): void {
+  deleteCurrentTag(): void {
     this.showMenu.set(false); // Close menu
-    const id = Number(this.groupId());
-    const name = this.currentGroupName();
-    if (confirm(`Are you sure you want to delete the group "${name}"? This will NOT delete the tracks, only the group itself.`)) {
-      this.apiService.deleteGroup(id).subscribe({
+    const id = Number(this.tagId());
+    const name = this.currentTagName();
+    if (confirm(`Are you sure you want to delete the tag "${name}"? This will NOT delete the tracks, only the tag itself.`)) {
+      this.apiService.deleteTag(id).subscribe({
         next: () => {
-          this.router.navigate(['/groups']);
+          this.router.navigate(['/tags']);
         },
         error: (err) => {
           console.error(err);
-          alert('Failed to delete group.');
+          alert('Failed to delete tag.');
         }
       });
     }
@@ -107,12 +107,12 @@ export class TracksByGroup implements OnDestroy {
   }
 
   downloadM3u(): void {
-    console.log('Downloading M3U for group', this.groupId());
+    console.log('Downloading M3U for tag', this.tagId());
     this.showMenu.set(false);
-    const id = Number(this.groupId());
-    const filename = this.sanitizeFilename(this.currentGroupTitle());
+    const id = Number(this.tagId());
+    const filename = this.sanitizeFilename(this.currentTagTitle());
 
-    this.apiService.downloadGroupAsM3u(id).subscribe(blob => {
+    this.apiService.downloadTagAsM3u(id).subscribe(blob => {
       console.log('M3U download received');
       const a = document.createElement('a');
       const objectUrl = URL.createObjectURL(blob);
@@ -124,12 +124,12 @@ export class TracksByGroup implements OnDestroy {
   }
 
   downloadZip(): void {
-    console.log('Downloading ZIP for group', this.groupId());
+    console.log('Downloading ZIP for tag', this.tagId());
     this.showMenu.set(false);
-    const id = Number(this.groupId());
-    const filename = this.sanitizeFilename(this.currentGroupTitle());
+    const id = Number(this.tagId());
+    const filename = this.sanitizeFilename(this.currentTagTitle());
 
-    this.apiService.downloadGroupAsZip(id).subscribe(blob => {
+    this.apiService.downloadTagAsZip(id).subscribe(blob => {
       console.log('ZIP download received');
       const a = document.createElement('a');
       const objectUrl = URL.createObjectURL(blob);

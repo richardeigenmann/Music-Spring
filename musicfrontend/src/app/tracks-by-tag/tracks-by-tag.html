@@ -1,6 +1,6 @@
 <div class="background-box">
   <div class="header">
-    <h1>{{ currentGroupTitle() }}</h1>
+    <h1>{{ currentTagTitle() }}</h1>
     <div class="actions">
       <button class="play-all-btn" (click)="playAll()" title="Play All">
         <span class="play-icon"></span>
@@ -12,7 +12,7 @@
         <div class="dropdown-menu" *ngIf="showMenu()" (click)="onDropdownClick($event)">
           <a (click)="downloadM3u()">Download as .m3u</a>
           <a (click)="downloadZip()">Download as .zip</a>
-          <a (click)="deleteCurrentGroup()">Delete Group</a>
+          <a (click)="deleteCurrentTag()">Delete Tag</a>
         </div>
       </div>
     </div>

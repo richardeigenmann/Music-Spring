@@ -1,6 +1,6 @@
 app:
   defaults:
-    group-types:
+    tagTypes:
       - id: "1"
         name: "Media Name"
         edit: "T"
@@ -25,7 +25,7 @@ app:
       - id: "9"
         name: "Original Artist"
         edit: "T"
-    groups:
+    tags:
       # 5 is Rating
       - typeId: "5"
         name: "Excellent"

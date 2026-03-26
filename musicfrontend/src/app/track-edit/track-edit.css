@@ -6,7 +6,7 @@
   color: yellow; /* Ensure yellow text in the edit form */
 }
 
-.form-group label {
+.form-tag label {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
@@ -25,11 +25,11 @@
   box-sizing: border-box;
 }
 
-.group-section {
+.tag-section {
   margin-bottom: 1.5rem;
 }
 
-.group-row {
+.tag-row {
   margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
@@ -37,7 +37,7 @@
   flex-wrap: wrap;
 }
 
-.group-label {
+.tag-label {
   display: inline-flex;
   align-items: center;
   padding: 0.25em 0.6em;
@@ -48,9 +48,10 @@
   background-color: #007bff;
   border-radius: 0.25rem;
   margin: 2px;
+
 }
 
-.group-label.add {
+.tag-label.add {
     background-color: #17a2b8;
 }
 
@@ -83,7 +84,7 @@
   border-color: #007bff;
 }
 
-.no-groups {
+.no-tags {
     font-style: italic;
     color: #6c757d;
 }
@@ -153,7 +154,7 @@ hr {
     transform: translate(-50%, -50%) scale(1.1);
 }
 
-.array-group {
+.array-tags {
   margin-bottom: 1rem;
 }
 
@@ -183,7 +184,7 @@ hr {
     border-color: #6c757d;
 }
 
-.new-group-form {
+.new-tag-form {
   margin-top: 10px;
   display: flex;
   gap: 10px;

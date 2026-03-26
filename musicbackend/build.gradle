@@ -36,7 +36,8 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
-    runtimeOnly 'com.h2database:h2'
+    implementation 'com.h2database:h2'
+    implementation("org.springframework.boot:spring-boot-h2console:4.0.4")
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor 'org.projectlombok:lombok'
@@ -98,7 +99,7 @@ bootBuildImage {
 
 }
 
-task bootRunH2(type: org.springframework.boot.gradle.tasks.run.BootRun) {
+tasks.register ("bootRunH2", org.springframework.boot.gradle.tasks.run.BootRun) {
     group = "Application"
     description = "Runs the Spring Boot application with the default H2 database profile."
     mainClass.set("org.richinet.musicbackend.MusicbackendApplicationKt")
@@ -106,7 +107,7 @@ task bootRunH2(type: org.springframework.boot.gradle.tasks.run.BootRun) {
     args = ["--spring.profiles.active=dev-h2"]
 }
 
-task bootRunPg(type: org.springframework.boot.gradle.tasks.run.BootRun) {
+tasks.register ("bootRunPg", org.springframework.boot.gradle.tasks.run.BootRun) {
     group = "Application"
     description = "Runs the Spring Boot application with the 'dev-pg' (PostgreSQL) profile."
     mainClass.set("org.richinet.musicbackend.MusicbackendApplicationKt")

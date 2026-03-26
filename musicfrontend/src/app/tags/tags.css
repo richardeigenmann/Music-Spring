@@ -1,14 +1,14 @@
-.groups-page {
+.tags-page {
     padding: 20px;
     color: #ff0;
 }
 
-.groups-page h1 {
+.tags-page h1 {
     border-bottom: 1px solid #ff0;
     padding-bottom: 10px;
 }
 
-.groups-container {
+.tags-container {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -19,19 +19,19 @@
   border: 1px solid rgba(255, 255, 0, 0.3);
 }
 
-.group-type-section h2.type-header {
+.tag-type-section h2.type-header {
   margin: 10px 0;
   font-size: 1.2em;
   border: none;
 }
 
-.groups-list {
+.tags-list {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.group-pill {
+.tag-pill {
   background: #333;
   padding: 5px 12px;
   border-radius: 15px;
@@ -42,7 +42,7 @@
   color: #ff0;
 }
 
-.group-pill:hover {
+.tag-pill:hover {
   background: #ff0;
   color: #000;
 }

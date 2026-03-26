@@ -1,9 +1,9 @@
 <div class="stats-container">
   <h1>Library Statistics</h1>
 
-  <div class="detailed-stats" *ngIf="groupTypeCharts().length > 0">
+  <div class="detailed-stats" *ngIf="tagTypeCharts().length > 0">
     <div class="grid-container">
-      <div class="chart-section" *ngFor="let chart of groupTypeCharts(); let i = index" [attr.data-chart]="i">
+      <div class="chart-section" *ngFor="let chart of tagTypeCharts(); let i = index" [attr.data-chart]="i">
         <h3>{{ chart.typeName }}</h3>
         <div class="chart-wrapper">
           <canvas baseChart
@@ -17,7 +17,7 @@
     </div>
   </div>
 
-  <div *ngIf="groupTypeCharts().length === 0" class="loading">
+  <div *ngIf="tagTypeCharts().length === 0" class="loading">
     Loading statistics...
   </div>
 </div>

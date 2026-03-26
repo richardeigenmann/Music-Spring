@@ -1,99 +1,116 @@
 package org.richinet.musicbackend.config
 
-import org.richinet.musicbackend.data.entity.GroupType
-import org.richinet.musicbackend.data.entity.Groups
-import org.richinet.musicbackend.data.repository.GroupTypeRepository
-import org.richinet.musicbackend.data.repository.GroupsRepository
+import org.richinet.musicbackend.data.entity.TagType
+import org.richinet.musicbackend.data.entity.Tag
+import org.richinet.musicbackend.data.repository.TagTypeRepository
+import org.richinet.musicbackend.data.repository.TagRepository
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
-import org.springframework.core.annotation.Order
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
-import java.math.BigDecimal
-import java.sql.Timestamp
-import java.time.Instant
+import org.springframework.core.annotation.Order
+import javax.sql.DataSource // Import DataSource
 
 @Component
 open class DatabaseInitializer(
     private val appDefaults: AppDefaults,
     private val jdbcTemplate: JdbcTemplate,
-    private val groupTypeRepository: GroupTypeRepository,
-    private val groupsRepository: GroupsRepository
+    private val tagTypeRepository: TagTypeRepository,
+    private val tagRepository: TagRepository,
+    private val dataSource: DataSource // Inject DataSource
 ) {
 
     fun runInitialization() {
-        initGroupTypes()
-        initGroups()
+        println("Running DB initialisation (if required)...")
+        initTagTypes()
+        initTags()
     }
 
     @Bean
     @Order(0)
     fun initPostgresExtensions(): CommandLineRunner {
         return CommandLineRunner {
-            try {
-                println("Ensuring musicdatabase schema exists...")
-                jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS musicdatabase")
+            // Get the JDBC URL from the DataSource
+            val connectionUrl = (dataSource.connection.metaData.url ?: "").lowercase()
 
-                println("Ensuring fuzzystrmatch extension for SOUNDEX...")
-                jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch")
-            } catch (e: Exception) {
-                println("Warning: Database setup error (schema/extension). Error: ${e.message}")
+            if (connectionUrl.contains("postgresql")) {
+                println("Detected PostgreSQL. Running schema and extension setup...")
+                try {
+                    println("Ensuring musicdatabase schema exists...")
+                    jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS musicdatabase")
+
+                    println("Ensuring fuzzystrmatch extension for SOUNDEX...")
+                    jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch")
+                } catch (e: Exception) {
+                    println("Warning: Database setup error (schema/extension) for PostgreSQL. Error: ${e.message}")
+                }
+            } else if (connectionUrl.contains("h2")) {
+                println("Detected H2 database. Skipping PostgreSQL-specific schema and extension setup.")
+            } else {
+                println("Detected unknown database type (URL: $connectionUrl). Skipping PostgreSQL-specific schema and extension setup.")
             }
         }
-    }
-
-    fun initGroupTypes() {
-        println("DatabaseInitializer checking GroupType count...")
-        if (groupTypeRepository.count() > 0) {
-            println("GroupTypes already exist in database. Skipping initialization.")
-            return
         }
 
-        val defaultCount = appDefaults.groupTypes.size
-        println("Loaded $defaultCount GroupTypes from configuration.")
-
-        if (defaultCount == 0) {
-            println("WARNING: No GroupTypes found in configuration! Check if initial-data.yml is loaded.")
-            return
-        }
-
-        println("Initializing GroupTypes from defaults...")
-        val groupTypes = appDefaults.groupTypes.map { defaultType ->
-            GroupType().apply {
-                groupTypeId = BigDecimal(defaultType.id)
-                groupTypeName = defaultType.name
-                groupTypeEdit = defaultType.edit
+        @Bean
+        @Order(1) // Run after initPostgresExtensions (Order 0)
+        fun initializeData(): CommandLineRunner {
+            return CommandLineRunner {
+                println("Running data initialization...")
+                runInitialization() // This calls initTagTypes() and initTags()
             }
         }
-        groupTypeRepository.saveAll(groupTypes)
-        println("Successfully initialized ${groupTypes.size} GroupTypes.")
-    }
 
-    fun initGroups() {
-        println("DatabaseInitializer checking Groups count...")
-        if (groupsRepository.count() > 0) {
-            println("Groups already exist in database. Skipping initialization.")
-            return
-        }
-
-        val defaultCount = appDefaults.groups.size
-        println("Loaded $defaultCount Groups from configuration.")
-
-        if (defaultCount == 0) {
-            println("WARNING: No Groups found in configuration! Check if initial-data.yml is loaded.")
-            return
-        }
-
-        println("Initializing Groups from defaults...")
-        val groupsList = appDefaults.groups.map { defaultGroup ->
-            Groups().apply {
-                groupTypeId = BigDecimal(defaultGroup.typeId)
-                groupName = defaultGroup.name
-                lastModification = Timestamp.from(Instant.now())
+        fun initTagTypes() {
+            println("DatabaseInitializer checking TagType count...")
+            if (tagTypeRepository.count() > 0) {
+                println("TagTypes already exist in database. Skipping initialization.")
+                return
             }
+
+            val defaultCount = appDefaults.tagTypes.size
+            println("Loaded $defaultCount TagTypes from configuration.")
+
+            if (defaultCount == 0) {
+                println("WARNING: No TagTypes found in configuration! Check if initial-data.yml is loaded.")
+                return
+            }
+
+            println("Initializing TagTypes from defaults...")
+            val tagTypes = appDefaults.tagTypes.map { defaultType ->
+                TagType().apply {
+                    id = defaultType.id.toLong()
+                    name = defaultType.name
+                    edit = defaultType.edit
+                }
+            }
+            tagTypeRepository.saveAll(tagTypes)
+            println("Successfully initialized ${tagTypes.size} TagTypes.")
         }
-        groupsRepository.saveAll(groupsList)
-        println("Successfully initialized ${groupsList.size} Groups.")
-    }
-}
+
+        fun initTags() {
+            println("DatabaseInitializer checking Tags count...")
+            if (tagRepository.count() > 0) {
+                println("Tags already exist in database. Skipping initialization.")
+                return
+            }
+
+            val defaultCount = appDefaults.tags.size
+            println("Loaded $defaultCount Tags from configuration.")
+
+            if (defaultCount == 0) {
+                println("WARNING: No Tags found in configuration! Check if initial-data.yml is loaded.")
+                return
+            }
+
+            println("Initializing Tags from defaults...")
+            val tagsList = appDefaults.tags.map { defaultTag ->
+                Tag().apply {
+                    tagTypeId = defaultTag.typeId.toLong()
+                    name = defaultTag.name
+                }
+            }
+            tagRepository.saveAll(tagsList)
+            println("Successfully initialized ${tagsList.size} Tags.")
+        }
+        }

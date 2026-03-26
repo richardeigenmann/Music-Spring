@@ -3,7 +3,7 @@ package org.richinet.musicbackend.config
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.richinet.musicbackend.service.MusicImportService
 import org.springframework.boot.CommandLineRunner
-import org.springframework.core.annotation.Order
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.io.File
 
@@ -14,10 +14,13 @@ class StartupImportHandler(
     private val objectMapper: ObjectMapper
 ) : CommandLineRunner {
 
+    @Value("\${app.db.json-dump-path:/richi/ToDo/music.json}")
+    private lateinit var jsonDumpPath: String
+
     override fun run(vararg args: String) {
-        val file = File("/richi/ToDo/music.json")
+        val file = File(jsonDumpPath)
         if (file.exists()) {
-            println("Found music.json, starting import...")
+            println("Found $jsonDumpPath, starting import...")
             try {
                 val data = objectMapper.readValue(file, List::class.java) as List<Map<String, Any>>
                 musicImportService.importMusicData(data)
@@ -25,7 +28,7 @@ class StartupImportHandler(
                 e.printStackTrace()
             }
         } else {
-            println("music.json not found at /richi/ToDo/music.json")
+            println("JSON dump not found at $jsonDumpPath")
         }
     }
 }

@@ -7,9 +7,9 @@
             </div>
 
             <div class="track-info">
-                @if (getArtistGroupId(track); as artistId) {
+                @if (getArtistTagId(track); as artistId) {
                   <span class="track-artist clickable"
-                        [routerLink]="['/group', artistId]"
+                        [routerLink]="['/tag', artistId]"
                         (click)="$event.stopPropagation()">{{ track.artist }}</span>
                 } @else {
                   <span class="track-artist">{{ track.artist }}</span>
@@ -17,13 +17,13 @@
                 <span class="track-title">{{ track.title }}</span>
             </div>
 
-            <div class="group-pills">
-                @for (group of track.groupDetails; track group.groupId) {
-                    <span class="group-pill"
-                          [routerLink]="['/group', group.groupId]"
+            <div class="tag-pills">
+                @for (tag of track.tagDetails; track tag.tagId) {
+                    <span class="tag-pill"
+                          [routerLink]="['/tag', tag.tagId]"
                           (click)="$event.stopPropagation()"
-                          title="{{ group.groupTypeName }}">
-                        {{ group.groupName }}
+                          title="{{ tag.tagTypeName }}">
+                        {{ tag.tagName }}
                     </span>
                 }
             </div>

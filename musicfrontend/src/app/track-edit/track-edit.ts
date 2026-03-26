@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService, Group, Track, TrackEntry } from '../apiservice';
+import { ApiService, Tag, Track } from '../apiservice';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PlaybackService } from '../playback.service';
@@ -21,12 +21,12 @@ export class TrackEdit {
   private playbackService = inject(PlaybackService);
 
   track = signal<Track | null>(null);
-  allGroups = signal<Group[]>([]);
+  allTags = signal<Tag[]>([]);
   trackId = signal<number | null>(null);
 
-  // For creating new groups
-  creatingGroupForType = signal<string | null>(null);
-  newGroupName = signal<string>('');
+  // For creating new tags
+  creatingTagForType = signal<string | null>(null);
+  newTagName = signal<string>('');
 
   objectKeys = Object.keys;
 
@@ -47,8 +47,8 @@ export class TrackEdit {
       }
     });
 
-    this.apiService.getGroups().subscribe(groups => {
-      this.allGroups.set(groups);
+    this.apiService.getTags().subscribe(tags => {
+      this.allTags.set(tags);
     });
   }
 
@@ -67,142 +67,142 @@ export class TrackEdit {
       window.history.back();
   }
 
-  trackGroups = computed(() => {
+  trackTags = computed(() => {
     const track = this.track();
-    const allGroups = this.allGroups();
-    if (!track || !allGroups.length) {
+    const allTags = this.allTags();
+    if (!track || !allTags.length) {
       return {};
     }
 
-    const assignedGroupNames: { [groupType: string]: string[] } = {};
+    const assignedTagNames: { [tagType: string]: string[] } = {};
     for (const key in track) {
-      if (key !== 'TrackId' && key !== 'TrackName' && key !== 'Files') {
+      if (key !== 'trackId' && key !== 'trackName' && key !== 'files') {
         const value = track[key];
         if (Array.isArray(value)) {
-          assignedGroupNames[key] = value;
+          assignedTagNames[key] = value;
         } else if (typeof value === 'string' && value.length > 0) {
-          assignedGroupNames[key] = [value];
+          assignedTagNames[key] = [value];
         }
       }
     }
 
-    const trackGroups: { [groupType: string]: Group[] } = {};
-    for (const groupType in assignedGroupNames) {
-      const typeGroups: Group[] = [];
-      for (const groupName of assignedGroupNames[groupType]) {
-        const group = allGroups.find(g => g.groupTypeName === groupType && g.groupName === groupName);
+    const trackTags: { [tagType: string]: Tag[] } = {};
+    for (const tagType in assignedTagNames) {
+      const typeTags: Tag[] = [];
+      for (const tagName of assignedTagNames[tagType]) {
+        const tag = allTags.find(t => t.tagTypeName === tagType && t.tagName === tagName);
         // Only include if found AND it's an 'S' (Selection) type
-        if (group && group.groupTypeEdit === 'S') {
-          typeGroups.push(group);
+        if (tag && tag.tagTypeEdit === 'S') {
+          typeTags.push(tag);
         }
       }
-      if (typeGroups.length > 0) {
-        trackGroups[groupType] = typeGroups;
+      if (typeTags.length > 0) {
+        trackTags[tagType] = typeTags;
       }
     }
-    return trackGroups;
+    return trackTags;
   });
 
-  availableGroups = computed(() => {
-    const all = this.allGroups();
-    const current = this.trackGroups();
+  availableTags = computed(() => {
+    const all = this.allTags();
+    const current = this.trackTags();
     if (!all.length) {
       return {};
     }
 
-    // Only show group types that are marked as 'S' (Selection)
-    const allGrouped: { [key: string]: Group[] } = {};
-    for (const group of all) {
-      if (group.groupTypeEdit !== 'S') {
+    // Only show tag types that are marked as 'S' (Selection)
+    const allTagTypesGrouped: { [key: string]: Tag[] } = {};
+    for (const tag of all) {
+      if (tag.tagTypeEdit !== 'S') {
         continue;
       }
-      if (!allGrouped[group.groupTypeName]) {
-        allGrouped[group.groupTypeName] = [];
+      if (!allTagTypesGrouped[tag.tagTypeName]) {
+        allTagTypesGrouped[tag.tagTypeName] = [];
       }
-      allGrouped[group.groupTypeName].push(group);
+      allTagTypesGrouped[tag.tagTypeName].push(tag);
     }
 
-    const available: { [key: string]: Group[] } = {};
-    for (const groupType in allGrouped) {
-      const allInType = allGrouped[groupType];
-      const currentInType = current[groupType] || [];
-      available[groupType] = allInType.filter(g => !currentInType.find(c => c.groupId === g.groupId));
+    const available: { [key: string]: Tag[] } = {};
+    for (const tagType in allTagTypesGrouped) {
+      const allInType = allTagTypesGrouped[tagType];
+      const currentInType = current[tagType] || [];
+      available[tagType] = allInType.filter(t => !currentInType.find(c => c.tagId === t.tagId));
     }
 
     return available;
   });
 
-  addGroup(group: Group) {
+  addTag(tag: Tag) {
     this.track.update(currentTrack => {
       if (!currentTrack) {
         return null;
       }
       const newTrack = {...currentTrack};
-      const groupType = group.groupTypeName;
-      const groupName = group.groupName;
-      const existingValue = newTrack[groupType];
+      const tagType = tag.tagTypeName;
+      const tagName = tag.tagName;
+      const existingValue = newTrack[tagType];
 
       if (Array.isArray(existingValue)) {
-        if (!existingValue.includes(groupName)) {
-          newTrack[groupType] = [...existingValue, groupName];
+        if (!existingValue.includes(tagName)) {
+          newTrack[tagType] = [...existingValue, tagName];
         }
       } else if (typeof existingValue === 'string') {
-        if (existingValue !== groupName) {
-          newTrack[groupType] = [existingValue, groupName];
+        if (existingValue !== tagName) {
+          newTrack[tagType] = [existingValue, tagName];
         }
       } else {
-        newTrack[groupType] = [groupName];
+        newTrack[tagType] = [tagName];
       }
       return newTrack;
     });
   }
 
-  showCreateGroupForm(groupType: string) {
-    this.creatingGroupForType.set(groupType);
-    this.newGroupName.set('');
+  showCreateTagForm(tagType: string) {
+    this.creatingTagForType.set(tagType);
+    this.newTagName.set('');
   }
 
-  cancelCreateGroup() {
-    this.creatingGroupForType.set(null);
-    this.newGroupName.set('');
+  cancelCreateTag() {
+    this.creatingTagForType.set(null);
+    this.newTagName.set('');
   }
 
-  createGroup() {
-    const type = this.creatingGroupForType();
-    const name = this.newGroupName();
+  createTag() {
+    const type = this.creatingTagForType();
+    const name = this.newTagName();
     if (type && name.trim()) {
-      this.apiService.createGroup(type, name.trim()).subscribe({
-        next: (newGroup) => {
-          this.allGroups.update(groups => [...groups, newGroup]);
-          this.addGroup(newGroup);
-          this.cancelCreateGroup();
+      this.apiService.createTag(type, name.trim()).subscribe({
+        next: (newTag) => {
+          this.allTags.update(tags => [...tags, newTag]);
+          this.addTag(newTag);
+          this.cancelCreateTag();
         },
-        error: (error) => console.error('Error creating group', error)
+        error: (error) => console.error('Error creating tag', error)
       });
     }
   }
 
-  removeGroup(group: Group) {
+  removeTag(tag: Tag) {
     this.track.update(currentTrack => {
       if (!currentTrack) {
         return null;
       }
       const newTrack = {...currentTrack};
-      const groupType = group.groupTypeName;
-      const groupName = group.groupName;
-      const existingValue = newTrack[groupType];
+      const tagType = tag.tagTypeName;
+      const tagName = tag.tagName;
+      const existingValue = newTrack[tagType];
 
       if (Array.isArray(existingValue)) {
-        const newValues = existingValue.filter((g: string) => g !== groupName);
+        const newValues = existingValue.filter((t: string) => t !== tagName);
         if (newValues.length === 0) {
-          delete newTrack[groupType];
+          delete newTrack[tagType];
         } else if (newValues.length === 1) {
-          newTrack[groupType] = newValues[0];
+          newTrack[tagType] = newValues[0];
         } else {
-          newTrack[groupType] = newValues;
+          newTrack[tagType] = newValues;
         }
-      } else if (existingValue === groupName) {
-        delete newTrack[groupType];
+      } else if (existingValue === tagName) {
+        delete newTrack[tagType];
       }
       return newTrack;
     });

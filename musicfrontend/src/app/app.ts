@@ -1,6 +1,6 @@
 import { Component, OnDestroy, inject, signal, computed } from '@angular/core';
 import { Router, RouterOutlet, RouterLink } from '@angular/router';
-import { ApiService, Group } from './apiservice';
+import { ApiService, Tag } from './apiservice';
 import { CommonModule } from '@angular/common';
 import { TrackPlayer } from './track-player/track-player';
 
@@ -38,7 +38,7 @@ export class App implements OnDestroy {
   }
 
   goHome(): void {
-    this.router.navigate(['/groups']);
+    this.router.navigate(['/tags']);
   }
 
   goUnclassified(): void {

@@ -55,7 +55,7 @@ class MusicDumpController(
 
   @Operation(
     summary = "Clear all tables in the Music database",
-    description = "Clears all tables (TrackGroup, TrackFile, Track, Groups, GroupType)."
+    description = "Clears all tables (TrackTag, TrackFile, Track, Tag, TagType)."
   )
   @ApiResponses(
     value = [
@@ -65,7 +65,7 @@ class MusicDumpController(
   @PostMapping("/clear-db")
   fun clearDatabase(): String {
     databaseMaintenanceService.clearDatabase()
-    logger.info("Database cleared (including GroupType)")
-    return "Database cleared (including GroupType)"
+    logger.info("Database cleared (including TagType)")
+    return "Database cleared (including TagType)"
   }
 }

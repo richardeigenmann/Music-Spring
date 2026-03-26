@@ -9,6 +9,7 @@ import org.springframework.boot.CommandLineRunner
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import org.springframework.core.env.Environment
+import org.springframework.beans.factory.annotation.Value
 import java.io.File
 
 @Component
@@ -20,8 +21,11 @@ class StartupSyncHandler(
     private val objectMapper: ObjectMapper = jacksonObjectMapper()
 ) : CommandLineRunner {
 
-    private val sqlDumpPath = "/richi/ToDo/music_db.sql"
-    private val jsonDumpPath = "/richi/ToDo/music.json"
+    @Value("\${app.db.sql-dump-path:/richi/ToDo/music_db.sql}")
+    private lateinit var sqlDumpPath: String
+
+    @Value("\${app.db.json-dump-path:/richi/ToDo/music.json}")
+    private lateinit var jsonDumpPath: String
 
     override fun run(vararg args: String) {
         val jdbcUrl = environment.getProperty("spring.datasource.url") ?: ""

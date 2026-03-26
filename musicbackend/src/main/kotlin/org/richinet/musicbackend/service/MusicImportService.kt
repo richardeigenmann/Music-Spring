@@ -1,10 +1,10 @@
 package org.richinet.musicbackend.service
 
 import com.mpatric.mp3agic.Mp3File
-import org.richinet.musicbackend.data.entity.Groups
+import org.richinet.musicbackend.data.entity.Tag
 import org.richinet.musicbackend.data.entity.Track
 import org.richinet.musicbackend.data.entity.TrackFile
-import org.richinet.musicbackend.data.entity.TrackGroup
+import org.richinet.musicbackend.data.entity.TrackTag
 import org.richinet.musicbackend.data.repository.*
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -12,8 +12,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.io.File
 import java.math.BigDecimal
-import java.sql.Timestamp
-import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
 
 data class ScanProgress(
@@ -27,10 +25,10 @@ data class ScanProgress(
 @Service
 class MusicImportService(
     private val trackRepository: TrackRepository,
-    private val groupsRepository: GroupsRepository,
-    private val groupTypeRepository: GroupTypeRepository,
+    private val tagRepository: TagRepository,
+    private val tagTypeRepository: TagTypeRepository,
     private val trackFileRepository: TrackFileRepository,
-    private val trackGroupRepository: TrackGroupRepository,
+    private val trackTagRepository: TrackTagRepository,
     private val trackDataService: TrackDataService
 ) {
     private val logger = LoggerFactory.getLogger(MusicImportService::class.java)
@@ -46,7 +44,7 @@ class MusicImportService(
         var count = 0
         for (trackData in data) {
             val track = Track()
-            track.trackName = trackData["TrackName"] as? String
+            track.name = (trackData["trackName"] ?: trackData["TrackName"]) as? String
             trackRepository.save(track)
 
             processTrackData(track, trackData)
@@ -63,21 +61,22 @@ class MusicImportService(
     fun updateTrack(trackId: Long, trackData: Map<String, Any?>) {
         val track = trackRepository.findById(trackId).orElseThrow { RuntimeException("Track not found") }
 
-        if (trackData.containsKey("TrackName")) {
-            track.trackName = trackData["TrackName"] as? String
+        val trackNameKey = if (trackData.containsKey("trackName")) "trackName" else if (trackData.containsKey("TrackName")) "TrackName" else null
+        if (trackNameKey != null) {
+            track.name = trackData[trackNameKey] as? String
             trackRepository.save(track)
         }
 
-        val groupTypeCache = groupTypeRepository.findAll().associateBy { it.groupTypeName }
+        val tagTypeCache = tagTypeRepository.findAll().associateBy { it.name }
 
         for ((key, value) in trackData) {
-            if (key == "TrackName" || key == "TrackId") continue
+            if (key == "trackName" || key == "TrackName" || key == "trackId" || key == "TrackId") continue
 
-            if (key == "Files") {
+            if (key == "files" || key == "Files") {
                 val filesList = value as? List<Map<String, Any?>>
                 filesList?.forEach { fileData ->
-                    val fileId = (fileData["FileId"] as? Number)?.toLong() ?: return@forEach
-                    val newFileName = fileData["FileName"] as? String ?: return@forEach
+                    val fileId = ((fileData["fileId"] ?: fileData["FileId"]) as? Number)?.toLong() ?: return@forEach
+                    val newFileName = (fileData["fileName"] ?: fileData["FileName"]) as? String ?: return@forEach
 
                     val trackFile = trackFileRepository.findById(fileId).orElse(null) ?: return@forEach
 
@@ -109,15 +108,15 @@ class MusicImportService(
                 continue
             }
 
-            val groupType = groupTypeCache[key]
-            if (groupType != null && value != null) {
-                // Surgical delete: only delete mappings for this specific GroupType
-                trackGroupRepository.deleteByTrackIdAndGroupTypeId(trackId, groupType.groupTypeId!!)
+            val tagType = tagTypeCache[key]
+            if (tagType != null && value != null) {
+                // Surgical delete: only delete mappings for this specific TagType
+                trackTagRepository.deleteByTrackIdAndTagTypeId(trackId, tagType.id!!)
 
-                val groupNames = if (value is List<*>) value else listOf(value)
-                for (groupNameObj in groupNames) {
-                    val groupName = groupNameObj as? String ?: continue
-                    linkTrackToGroup(trackId, groupName, groupType.groupTypeId!!)
+                val tagNames = if (value is List<*>) value else listOf(value)
+                for (tagNameObj in tagNames) {
+                    val tagName = tagNameObj as? String ?: continue
+                    linkTrackToTag(trackId, tagName, tagType.id!!)
                 }
             }
         }
@@ -125,44 +124,42 @@ class MusicImportService(
 
     @Transactional
     fun deleteTrack(trackId: Long) {
-        trackGroupRepository.deleteByTrackId(trackId)
+        trackTagRepository.deleteByTrackId(trackId)
         trackFileRepository.deleteByTrackId(trackId)
         trackRepository.deleteById(trackId)
     }
 
     private fun processTrackData(track: Track, trackData: Map<String, Any?>) {
-        val groupTypeCache = groupTypeRepository.findAll().associateBy { it.groupTypeName }
+        val tagTypeCache = tagTypeRepository.findAll().associateBy { it.name }
 
         for ((key, value) in trackData) {
-            if (key == "TrackName" || key == "TrackId" || key == "Files") continue
+            if (key == "trackName" || key == "TrackName" || key == "trackId" || key == "TrackId" || key == "files" || key == "Files") continue
 
-            val groupType = groupTypeCache[key]
-            if (groupType != null && value != null) {
-                val groupNames = if (value is List<*>) value else listOf(value)
-                for (groupNameObj in groupNames) {
-                    val groupName = groupNameObj as? String ?: continue
-                    linkTrackToGroup(track.trackId!!, groupName, groupType.groupTypeId!!)
+            val tagType = tagTypeCache[key]
+            if (tagType != null && value != null) {
+                val tagNames = if (value is List<*>) value else listOf(value)
+                for (tagNameObj in tagNames) {
+                    val tagName = tagNameObj as? String ?: continue
+                    linkTrackToTag(track.id!!, tagName, tagType.id!!)
                 }
             }
         }
     }
 
-    private fun linkTrackToGroup(trackId: Long, groupName: String, groupTypeId: BigDecimal) {
-        var group = groupsRepository.findByGroupNameAndGroupTypeId(groupName, groupTypeId)
-        if (group == null) {
-            group = Groups()
-            group.groupTypeId = groupTypeId
-            group.groupName = groupName
-            group.lastModification = Timestamp(System.currentTimeMillis())
-            groupsRepository.save(group)
+    private fun linkTrackToTag(trackId: Long, tagName: String, tagTypeId: Long) {
+        var tag = tagRepository.findByNameAndTagTypeId(tagName, tagTypeId)
+        if (tag == null) {
+            tag = Tag()
+            tag.tagTypeId = tagTypeId
+            tag.name = tagName
+            tagRepository.save(tag)
         }
 
-        val trackGroup = TrackGroup()
-        trackGroup.trackId = trackId
-        trackGroup.groupId = group.groupId
-        trackGroup.sequence = BigDecimal.ZERO
-        trackGroup.lastModification = Timestamp(System.currentTimeMillis())
-        trackGroupRepository.save(trackGroup)
+        val trackTag = TrackTag()
+        trackTag.trackId = trackId
+        trackTag.tagId = tag.id
+        trackTag.sequence = 0
+        trackTagRepository.save(trackTag)
     }
 
     fun startMp3Scan() {
@@ -247,61 +244,57 @@ class MusicImportService(
             trackRepository.findByTitleAndArtist(title, artist)
         } else {
             // Fallback to title only if artist is blank
-            trackRepository.searchTracks(title).filter { it.trackName.equals(title, ignoreCase = true) }
+            trackRepository.searchTracks(title).filter { it.name.equals(title, ignoreCase = true) }
         }
         var track = existingTracks.firstOrNull()
 
         if (track == null) {
             track = Track()
-            track.trackName = title
+            track.name = title
             trackRepository.save(track)
 
             // Link metadata
             if (artist.isNotBlank()) {
-                linkTrackToGroup(track.trackId!!, artist, BigDecimal("2.00")) // Artist
+                linkTrackToTag(track.id!!, artist, 2L) // Artist
             }
             if (album.isNotBlank()) {
-                linkTrackToGroup(track.trackId!!, album, BigDecimal("1.00")) // Media Name
+                linkTrackToTag(track.id!!, album, 1L) // Media Name
             }
             if (genre.isNotBlank()) {
-                linkTrackToGroup(track.trackId!!, genre, BigDecimal("6.00")) // Music Style
+                linkTrackToTag(track.id!!, genre, 6L) // Genre
             }
         }
 
         val trackFile = TrackFile()
-        trackFile.trackId = track.trackId
+        trackFile.trackId = track.id
         trackFile.fileName = fileName
         trackFile.fileLocation = finalLocation
-        trackFile.fileOnline = "Y"
         trackFile.duration = duration
-        trackFile.backupDate = Timestamp(System.currentTimeMillis())
         trackFileRepository.save(trackFile)
 
         scanProgress.updateAndGet { it.copy(added = it.added + 1) }
     }
 
     @Transactional
-    fun createPlaylist(name: String, trackIds: List<Long>): Groups {
-        val playlistGroup = Groups()
-        playlistGroup.groupName = name
-        playlistGroup.groupTypeId = BigDecimal("4.00")
-        playlistGroup.lastModification = Timestamp(System.currentTimeMillis())
-        val saved = groupsRepository.save(playlistGroup)
+    fun createPlaylist(name: String, trackIds: List<Long>): Tag {
+        val playlistTag = Tag()
+        playlistTag.name = name
+        playlistTag.tagTypeId = 4L
+        val saved = tagRepository.save(playlistTag)
 
         trackIds.forEachIndexed { index, trackId ->
-            val tg = TrackGroup()
-            tg.trackId = trackId
-            tg.groupId = saved.groupId
-            tg.sequence = BigDecimal(index)
-            tg.lastModification = Timestamp(System.currentTimeMillis())
-            trackGroupRepository.save(tg)
+            val tt = TrackTag()
+            tt.trackId = trackId
+            tt.tagId = saved.id
+            tt.sequence = index
+            trackTagRepository.save(tt)
         }
         return saved
     }
 
     @Transactional
-    fun deleteGroup(groupId: Long) {
-        trackGroupRepository.deleteByGroupId(groupId)
-        groupsRepository.deleteById(groupId)
+    fun deleteTag(tagId: Long) {
+        trackTagRepository.deleteByTagId(tagId)
+        tagRepository.deleteById(tagId)
     }
 }

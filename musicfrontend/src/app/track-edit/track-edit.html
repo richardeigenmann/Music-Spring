@@ -1,17 +1,17 @@
 @if (track(); as track) {
   <div class="container background-box">
-    <h1>Edit Track: {{ track.TrackName }}</h1>
+    <h1>Edit Track: {{ track.trackName }}</h1>
 
           <div class="file-list">
-            @for (file of track.Files; track file.FileId) {
+            @for (file of track.files; track file.fileId) {
               <div class="file-item">
                 <div class="art-container">
-                    <img [src]="getImageUrl(file.FileId)" alt="Album Art for {{ file.FileName }}" class="album-art">
+                    <img [src]="getImageUrl(file.fileId)" alt="Album Art for {{ file.fileName }}" class="album-art">
                     <button type="button" class="play-btn-overlay" (click)="play()" title="Play Track">▶</button>
                 </div>
                 <div class="file-info">
-                    <input type="text" [(ngModel)]="file.FileName" [name]="'fileName_' + file.FileId" class="form-control file-name-input">
-                    <div class="file-duration">{{ formatDuration(file.Duration) }}</div>
+                    <input type="text" [(ngModel)]="file.fileName" [name]="'fileName_' + file.fileId" class="form-control file-name-input">
+                    <div class="file-duration">{{ formatDuration(file.duration) }}</div>
                 </div>
               </div>
             }
@@ -21,7 +21,7 @@
     <form (ngSubmit)="save()">
       <div class="form-group">
               <label for="trackName">Track Name:</label>
-              <input type="text" id="trackName" [(ngModel)]="track.TrackName" name="trackName" class="form-control">
+              <input type="text" id="trackName" [(ngModel)]="track.trackName" name="trackName" class="form-control">
             </div>
 
             <!-- Editable Array Fields -->
@@ -38,39 +38,39 @@
               </div>
             }
 
-            @for (groupType of objectKeys(availableGroups()); track groupType) {
-                <div class="group-section">
+            @for (tagType of objectKeys(availableTags()); track tagType) {
+                <div class="tag-section">
                   <hr>
-                  <h3>{{ groupType }}</h3>          <div class="group-row">
+                  <h3>{{ tagType }}</h3>          <div class="tag-row">
               <strong>Current:</strong>
-              @if (!trackGroups()[groupType] || trackGroups()[groupType].length === 0) {
-                <span class="no-groups">
+              @if (!trackTags()[tagType] || trackTags()[tagType].length === 0) {
+                <span class="no-tags">
                   none
                 </span>
               }
-              @for (group of trackGroups()[groupType]; track group.groupId) {
-                <span class="group-label">
-                  {{ group.groupName }}
-                  <button type="button" (click)="removeGroup(group)" class="btn-icon">🗑️</button>
+              @for (tag of trackTags()[tagType]; track tag.tagId) {
+                <span class="tag-label">
+                  {{ tag.tagName }}
+                  <button type="button" (click)="removeTag(tag)" class="btn-icon">🗑️</button>
                 </span>
               }
           </div>
-          <div class="group-row">
+          <div class="tag-row">
               <strong>Available:</strong>
-              @for (group of availableGroups()[groupType]; track group.groupId) {
-                <span class="group-label add">
-                  {{ group.groupName }}
-                  <button type="button" (click)="addGroup(group)" class="btn-icon">➕</button>
+              @for (tag of availableTags()[tagType]; track tag.tagId) {
+                <span class="tag-label add">
+                  {{ tag.tagName }}
+                  <button type="button" (click)="addTag(tag)" class="btn-icon">➕</button>
                 </span>
               }
-              <button type="button" class="btn btn-secondary btn-sm" style="margin-left: 5px;" (click)="showCreateGroupForm(groupType)">➕ New Group</button>
+              <button type="button" class="btn btn-secondary btn-sm" style="margin-left: 5px;" (click)="showCreateTagForm(tagType)">➕ New Tag</button>
           </div>
 
-          @if (creatingGroupForType() === groupType) {
-            <div class="new-group-form">
-              <input type="text" [ngModel]="newGroupName()" (ngModelChange)="newGroupName.set($event)" name="newGroupName" placeholder="Enter group name" class="form-control" style="width: auto; display: inline-block;">
-              <button type="button" class="btn btn-primary btn-sm" (click)="createGroup()">Create</button>
-              <button type="button" class="btn btn-secondary btn-sm" (click)="cancelCreateGroup()">Cancel</button>
+          @if (creatingTagForType() === tagType) {
+            <div class="new-tag-form">
+              <input type="text" [ngModel]="newTagName()" (ngModelChange)="newTagName.set($event)" name="newTagName" placeholder="Enter tag name" class="form-control" style="width: auto; display: inline-block;">
+              <button type="button" class="btn btn-primary btn-sm" (click)="createTag()">Create</button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="cancelCreateTag()">Cancel</button>
             </div>
           }
         </div>

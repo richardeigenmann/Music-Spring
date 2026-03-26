@@ -33,8 +33,8 @@ export class TrackList {
       this.router.navigate(['/track', trackId]);
   }
 
-  getArtistGroupId(track: TrackEntry): number | null {
-    const artistGroup = track.groupDetails.find(g => g.groupTypeName.toLowerCase() === 'artist');
-    return artistGroup ? artistGroup.groupId : null;
+  getArtistTagId(track: TrackEntry): number | null {
+    const artistTag = track.tagDetails.find(t => t.tagTypeName.toLowerCase() === 'artist');
+    return artistTag ? artistTag.tagId : null;
   }
 }
