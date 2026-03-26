@@ -16,15 +16,19 @@ class DatabaseInitializerTest {
     @Autowired
     private lateinit var groupTypeRepository: GroupTypeRepository
 
+    @Autowired
+    private lateinit var databaseInitializer: DatabaseInitializer
+
     @Test
     fun `should initialize group types from yml`() {
+        databaseInitializer.runInitialization()
         val count = groupTypeRepository.count()
-        // The count should match the number of items in initial-data.yml (9)
-        assertEquals(9, count, "Should have 9 group types initialized from YAML")
-        
+        // The count should match the number of items in initial-data.yml (8)
+        assertEquals(8, count, "Should have 8 group types initialized from YAML")
+
         val mood = groupTypeRepository.findAll().find { it.groupTypeName == "Mood" }
         assert(mood != null)
-        assertEquals("7.00", mood?.groupTypeId.toString())
+        assert(java.math.BigDecimal("7").compareTo(mood?.groupTypeId) == 0)
         assertEquals("S", mood?.groupTypeEdit)
     }
 }

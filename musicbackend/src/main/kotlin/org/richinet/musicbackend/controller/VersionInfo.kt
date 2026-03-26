@@ -14,8 +14,8 @@ data class VersionInfo(
     val environment: String,
     val totalTrackCount: Long,
     val dbConnected: Boolean,
-    val dbUrl: String?,
-    val dbUser: String?,
+    val dbUrl: String,
+    val dbUser: String,
     val musicDirectory: String,
-    val dbError: String? = null
+    val dbError: String = ""
 )

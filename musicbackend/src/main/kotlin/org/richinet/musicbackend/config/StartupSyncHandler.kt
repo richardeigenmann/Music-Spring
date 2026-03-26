@@ -1,6 +1,8 @@
 package org.richinet.musicbackend.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.richinet.musicbackend.service.DatabaseMaintenanceService
 import org.richinet.musicbackend.service.MusicImportService
 import org.springframework.boot.CommandLineRunner
@@ -14,8 +16,8 @@ import java.io.File
 class StartupSyncHandler(
     private val databaseMaintenanceService: DatabaseMaintenanceService,
     private val musicImportService: MusicImportService,
-    private val objectMapper: ObjectMapper,
-    private val environment: Environment
+    private val environment: Environment,
+    private val objectMapper: ObjectMapper = jacksonObjectMapper()
 ) : CommandLineRunner {
 
     private val sqlDumpPath = "/richi/ToDo/music_db.sql"

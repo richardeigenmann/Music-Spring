@@ -14,8 +14,8 @@ import org.richinet.musicbackend.data.repository.TrackRepository
 import org.richinet.musicbackend.service.MusicImportService
 import org.richinet.musicbackend.service.TrackDataService
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
@@ -23,34 +23,34 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import java.math.BigDecimal
 import java.util.*
 
-@WebMvcTest(MusicDbController::class)
+@WebMvcTest(MusicDbController::class, org.richinet.musicbackend.config.JacksonConfig::class)
 class MusicbackendApplicationTests {
 
     @Autowired
     private lateinit var mockMvc: MockMvc
 
-    @MockBean
+    @MockitoBean
     private lateinit var trackRepository: TrackRepository
 
-    @MockBean
+    @MockitoBean
     private lateinit var trackDataService: TrackDataService
 
-    @MockBean
+    @MockitoBean
     private lateinit var groupsRepository: GroupsRepository
 
-    @MockBean
+    @MockitoBean
     private lateinit var groupTypeRepository: GroupTypeRepository
 
-    @MockBean
+    @MockitoBean
     private lateinit var trackFileRepository: TrackFileRepository
 
-    @MockBean
+    @MockitoBean
     private lateinit var musicImportService: MusicImportService
 
-    @MockBean
+    @MockitoBean
     private lateinit var jdbcTemplate: org.springframework.jdbc.core.JdbcTemplate
 
-    @MockBean
+    @MockitoBean
     private lateinit var audioHandler: org.springframework.web.servlet.resource.ResourceHttpRequestHandler
 
 
@@ -86,6 +86,7 @@ class MusicbackendApplicationTests {
             override fun getGroupTypeName(): String = "Genre"
             override fun getGroupId(): Long = 100
             override fun getGroupName(): String = "Rock"
+            override fun getGroupTypeEdit(): String = "S"
         }
 
         `when`(groupsRepository.findAllEditableGroups()).thenReturn(listOf(projection))

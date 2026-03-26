@@ -49,20 +49,20 @@ class VersionController(
         }
 
         val versionInfo = VersionInfo(
-            group = buildProperties.group,
-            artifact = buildProperties.artifact,
-            name = buildProperties.name,
-            version = buildProperties.version,
+            group = buildProperties.group ?: "unknown",
+            artifact = buildProperties.artifact ?: "unknown",
+            name = buildProperties.name ?: "unknown",
+            version = buildProperties.version ?: "unknown",
             buildTime = buildProperties.time.toString(),
             runtime = System.getProperty("java.vm.name"),
             runtimeVersion = System.getProperty("java.version"),
             environment = if (File("/.dockerenv").exists() || System.getenv("KUBERNETES_SERVICE_HOST") != null) "container" else "ide/host",
             totalTrackCount = trackRepository.count(),
             dbConnected = dbConnected,
-            dbUrl = dbUrl,
-            dbUser = dbUser,
+            dbUrl = dbUrl ?: "unknown",
+            dbUser = dbUser ?: "unknown",
             musicDirectory = musicDirectory,
-            dbError = dbError
+            dbError = dbError ?: ""
         )
 
         return ResponseEntity.ok(versionInfo)

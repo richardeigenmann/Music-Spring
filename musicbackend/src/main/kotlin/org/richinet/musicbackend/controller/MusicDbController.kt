@@ -488,7 +488,7 @@ class MusicDbController(
     }
 
     val trackIds = jdbcTemplate.queryForList(sql.toString(), Long::class.java)
-    return ResponseEntity.ok(trackRepository.findAllById(trackIds).map { trackDataService.serializeTrack(it) })
+    return ResponseEntity.ok(trackRepository.findAllById(trackIds.filterNotNull()).map { trackDataService.serializeTrack(it) })
   }
 
   @Operation(summary = "Create a new playlist from a list of tracks")
