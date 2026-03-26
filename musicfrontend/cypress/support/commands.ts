@@ -43,13 +43,12 @@ Cypress.Commands.add('verifyDevEnvironment', () => {
   cy.log('--- STARTING SAFETY CHECK ---');
   return cy
     .visit('/status')
-    .contains('Backend URL:')
-    .next()
-    .invoke('text')
-    .then((text) => {
-      const cleanText = text.trim();
-      expect(cleanText).to.contain('8002');
-      cy.log(`Verified Backend: ${cleanText}`);
+    .contains('strong', 'Database URL:')
+    .parent()
+    .then(($el) => {
+      const fullText = $el.text();
+      expect(fullText).to.contain('jdbc:h2:mem:musicdb');
+      cy.log(`Verified Backend is connected to H2 database: ${fullText}`);
     });
 });
 

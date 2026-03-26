@@ -45,10 +45,9 @@
   font-weight: 700;
   line-height: 1;
   color: #fff;
-  background-color: #007bff;
+  background-color: #007bff;background-color: #007bff;
   border-radius: 0.25rem;
   margin: 2px;
-
 }
 
 .tag-label.add {
