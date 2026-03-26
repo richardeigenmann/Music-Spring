@@ -26,7 +26,9 @@
     <br>
     <strong>Health Status:</strong> <a href="{{ healthUrl() }}" target="_blank">{{ backendUrl() }}</a>
     <br>
-    <strong>Info:</strong> <a href="{{ infoUrl() }}" target="_blank">{{ backendUrl() }}</a>
+    <strong>Info:</strong> <a href="{{ infoUrl() }}" target="_blank">{{ infoUrl() }}</a>
+    <br>
+    <strong>Swagger API:</strong> <a href="{{ backendUrl() }}/swagger-ui/index.html" target="_blank">{{ backendUrl() }}/swagger-ui/index.html</a>
   </div>
 
     @if (versionInfo(); as info) {
@@ -34,13 +36,19 @@
         <strong>Backend Version:</strong> {{ info.version }}
       </div>
       <div class="status-item">
-        <strong>Build time:</strong> {{ info.time | date:'medium' }}
+        <strong>Total Tracks:</strong> {{ info.totalTrackCount }}
+      </div>
+      <div class="status-item">
+        <strong>Build time:</strong> {{ info.buildTime | date:'medium' }}
       </div>
       <div class="status-item">
         <strong>Runtime:</strong> {{ info.runtime }} ({{ info.runtimeVersion }})
       </div>
       <div class="status-item">
         <strong>Environment:</strong> {{ info.environment }}
+      </div>
+      <div class="status-item">
+        <strong>Music Directory:</strong> {{ info.musicDirectory }}
       </div>
       <div class="status-item">
         <strong>Database Connected:</strong> {{ info.dbConnected ? 'Yes' : 'No' }}

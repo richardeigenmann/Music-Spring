@@ -66,13 +66,53 @@ class MusicDbController(
   private val groupTypeRepository: GroupTypeRepository,
   private val trackFileRepository: TrackFileRepository,
   private val musicImportService: MusicImportService,
-  private val jdbcTemplate: JdbcTemplate
+  private val jdbcTemplate: JdbcTemplate,
+  private val objectMapper: com.fasterxml.jackson.databind.ObjectMapper
 ) {
   private val logger = LoggerFactory.getLogger(MusicDbController::class.java)
   private val imageExtractionSemaphore = Semaphore(4) // Only 4 concurrent image extractions allowed
 
   @Value("\${app.music-directory}")
   private lateinit var musicDirectory: String
+
+  @Operation(
+    summary = "Returns the Music database as a JSON string for download",
+    description = "Returns the entire Music database as a JSON file, suitable for downloading via browser or curl."
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "A JSON response with the contents of the Music Database")
+    ]
+  )
+  @GetMapping("/tracks/dump")
+  fun dumpMusicData(response: jakarta.servlet.http.HttpServletResponse): List<Map<String, Any?>> {
+    response.setHeader("Content-Disposition", "attachment; filename=\"tracks.json\"")
+    return trackRepository.findAll().map { trackDataService.serializeTrack(it) }
+  }
+
+  @Operation(
+    summary = "Import music data in bulk",
+    description = "Imports music data from an uploaded JSON file."
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "200", description = "Data imported successfully"),
+      ApiResponse(responseCode = "400", description = "Invalid request or file format"),
+      ApiResponse(responseCode = "500", description = "Failed to import data")
+    ]
+  )
+  @PostMapping("/tracks/bulk", consumes = ["multipart/form-data"])
+  fun importTracks(
+      @RequestPart file: org.springframework.web.multipart.MultipartFile
+  ): ResponseEntity<String> {
+    return try {
+      val fileData: List<Map<String, Any>> = objectMapper.readValue(file.inputStream, object : com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Any>>>() {})
+      musicImportService.importMusicData(fileData)
+      ResponseEntity.ok("Successfully imported data from file: ${file.originalFilename}")
+    } catch (e: Exception) {
+      ResponseEntity.status(500).body("Failed to parse or import data: ${e.message}")
+    }
+  }
 
   @Operation(summary = "Returns serialized track data including metadata.")
   @ApiResponses(
@@ -363,22 +403,7 @@ class MusicDbController(
     }
   }
 
-  @Operation(summary = "Get total count of tracks")
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200", description = "Count returned",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = Map::class))]
-      )
-    ]
-  )
-  @GetMapping("/totalTrackCount")
-  fun getTotalTrackCount(): ResponseEntity<Map<String, Long>> {
-    val count = trackRepository.count()
-    return ResponseEntity.ok(mapOf("count" to count))
-  }
-
-  @Operation(summary = "Start scanning for new MP3 files")
+  @Operation(summary = "Start scanning for new MP3 files in directory defined in property app.music-directory")
   @ApiResponses(
     value = [
       ApiResponse(responseCode = "200", description = "Scan started")

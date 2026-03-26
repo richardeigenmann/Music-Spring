@@ -57,7 +57,7 @@ export class ApiService {
   constructor(private http: HttpClient) {
     this.groupsPromise = new Promise(resolve => this.resolveGroups = resolve);
     this.initPromise = this.loadConfig().then(() => {
-      this.loadTotalTrackCount();
+      this.getVersion().subscribe();
       this.loadGroups();
     });
   }
@@ -73,15 +73,6 @@ export class ApiService {
       console.warn('Could not load dynamic config, falling back to default:', this.API_URL);
       this.initialized = true;
     }
-  }
-
-  loadTotalTrackCount(): void {
-    if (!this.initialized) { this.initPromise.then(() => this.loadTotalTrackCount()); return; }
-    this.http.get<{ count: number }>(`${this.API_URL}/api/totalTrackCount`)
-      .subscribe({
-        next: (data) => this._totalTrackCount.set(data.count),
-        error: (error) => console.error('Failed to load total track count', error)
-      });
   }
 
   loadPlaylistEntries(playlistId: number): void {
@@ -369,7 +360,13 @@ export class ApiService {
   getVersion(): Observable<any> {
     return new Observable(observer => {
       this.initPromise.then(() => {
-        this.http.get<any>(`${this.API_URL}/api/version`).subscribe(observer);
+        this.http.get<any>(`${this.API_URL}/api/version`).pipe(
+            tap(data => {
+                if (data.totalTrackCount !== undefined) {
+                    this._totalTrackCount.set(data.totalTrackCount);
+                }
+            })
+        ).subscribe(observer);
       });
     });
   }

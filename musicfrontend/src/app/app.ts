@@ -73,7 +73,7 @@ export class App implements OnDestroy {
           // After scan is done, show unclassified tracks
           this.goUnclassified();
           // Update total track count
-          this.apiService.loadTotalTrackCount();
+          this.apiService.getVersion().subscribe();
         }
       });
     }, 300);

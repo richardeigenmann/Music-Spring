@@ -101,6 +101,7 @@ task bootRunH2(type: org.springframework.boot.gradle.tasks.run.BootRun) {
     description = "Runs the Spring Boot application with the default H2 database profile."
     mainClass.set("org.richinet.musicbackend.MusicbackendApplicationKt")
     classpath = sourceSets.main.runtimeClasspath
+    args = ["--spring.profiles.active=dev-h2"]
 }
 
 task bootRunPg(type: org.springframework.boot.gradle.tasks.run.BootRun) {

@@ -9,12 +9,23 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.sql.Timestamp
 import java.time.Instant
 
-@Configuration
-open class DatabaseInitializer(private val appDefaults: AppDefaults, private val jdbcTemplate: JdbcTemplate) {
+@Component
+open class DatabaseInitializer(
+    private val appDefaults: AppDefaults,
+    private val jdbcTemplate: JdbcTemplate,
+    private val groupTypeRepository: GroupTypeRepository,
+    private val groupsRepository: GroupsRepository
+) {
+
+    fun runInitialization() {
+        initGroupTypes()
+        initGroups()
+    }
 
     @Bean
     @Order(0)
@@ -32,73 +43,57 @@ open class DatabaseInitializer(private val appDefaults: AppDefaults, private val
         }
     }
 
-    @Bean
-    @Order(1)
-    fun initGroupTypes(repository: GroupTypeRepository): CommandLineRunner {
-        return CommandLineRunner {
-            println("DatabaseInitializer checking GroupType count...")
-            if (repository.count() > 0) {
-                println("GroupTypes already exist in database. Skipping initialization.")
-                return@CommandLineRunner
-            }
-
-            val defaultCount = appDefaults.groupTypes.size
-            println("Loaded $defaultCount GroupTypes from configuration.")
-            
-            if (defaultCount == 0) {
-                println("WARNING: No GroupTypes found in configuration! Check if initial-data.yml is loaded.")
-                return@CommandLineRunner
-            }
-
-            println("Initializing GroupTypes from defaults...")
-            val groupTypes = appDefaults.groupTypes.map { defaultType ->
-                createGroupType(defaultType.id, defaultType.name, defaultType.edit)
-            }
-            repository.saveAll(groupTypes)
-            println("Successfully initialized ${groupTypes.size} GroupTypes.")
+    fun initGroupTypes() {
+        println("DatabaseInitializer checking GroupType count...")
+        if (groupTypeRepository.count() > 0) {
+            println("GroupTypes already exist in database. Skipping initialization.")
+            return
         }
-    }
 
-    @Bean
-    @Order(2)
-    fun initGroups(repository: GroupsRepository): CommandLineRunner {
-        return CommandLineRunner {
-            println("DatabaseInitializer checking Groups count...")
-            if (repository.count() > 0) {
-                println("Groups already exist in database. Skipping initialization.")
-                return@CommandLineRunner
-            }
+        val defaultCount = appDefaults.groupTypes.size
+        println("Loaded $defaultCount GroupTypes from configuration.")
 
-            val defaultCount = appDefaults.groups.size
-            println("Loaded $defaultCount Groups from configuration.")
-
-            if (defaultCount == 0) {
-                println("WARNING: No Groups found in configuration! Check if initial-data.yml is loaded.")
-                return@CommandLineRunner
-            }
-
-            println("Initializing Groups from defaults...")
-            val groupsList = appDefaults.groups.map { defaultGroup ->
-                createGroup(defaultGroup.typeId, defaultGroup.name)
-            }
-            repository.saveAll(groupsList)
-            println("Successfully initialized ${groupsList.size} Groups.")
+        if (defaultCount == 0) {
+            println("WARNING: No GroupTypes found in configuration! Check if initial-data.yml is loaded.")
+            return
         }
+
+        println("Initializing GroupTypes from defaults...")
+        val groupTypes = appDefaults.groupTypes.map { defaultType ->
+            GroupType().apply {
+                groupTypeId = BigDecimal(defaultType.id)
+                groupTypeName = defaultType.name
+                groupTypeEdit = defaultType.edit
+            }
+        }
+        groupTypeRepository.saveAll(groupTypes)
+        println("Successfully initialized ${groupTypes.size} GroupTypes.")
     }
 
-    private fun createGroupType(id: String, name: String, edit: String): GroupType {
-        val groupType = GroupType()
-        groupType.groupTypeId = BigDecimal(id)
-        groupType.groupTypeName = name
-        groupType.groupTypeEdit = edit
-        return groupType
-    }
+    fun initGroups() {
+        println("DatabaseInitializer checking Groups count...")
+        if (groupsRepository.count() > 0) {
+            println("Groups already exist in database. Skipping initialization.")
+            return
+        }
 
-    private fun createGroup(typeId: String, name: String): Groups {
-        val group = Groups()
-        group.groupTypeId = BigDecimal(typeId)
-        group.groupName = name
-        group.lastModification = Timestamp.from(Instant.now())
-        return group
+        val defaultCount = appDefaults.groups.size
+        println("Loaded $defaultCount Groups from configuration.")
+
+        if (defaultCount == 0) {
+            println("WARNING: No Groups found in configuration! Check if initial-data.yml is loaded.")
+            return
+        }
+
+        println("Initializing Groups from defaults...")
+        val groupsList = appDefaults.groups.map { defaultGroup ->
+            Groups().apply {
+                groupTypeId = BigDecimal(defaultGroup.typeId)
+                groupName = defaultGroup.name
+                lastModification = Timestamp.from(Instant.now())
+            }
+        }
+        groupsRepository.saveAll(groupsList)
+        println("Successfully initialized ${groupsList.size} Groups.")
     }
 }

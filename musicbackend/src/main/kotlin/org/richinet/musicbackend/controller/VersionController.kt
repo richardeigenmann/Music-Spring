@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import org.springframework.beans.factory.annotation.Value
+import org.richinet.musicbackend.data.repository.TrackRepository
 import org.springframework.boot.info.BuildProperties
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,38 +20,50 @@ import java.sql.Connection
 @RequestMapping("/api")
 class VersionController(
     private val buildProperties: BuildProperties,
-    private val dataSource: DataSource
+    private val dataSource: DataSource,
+    private val trackRepository: TrackRepository,
+    @Value("\${app.music-directory}") private val musicDirectory: String
 ) {
 
     @Operation(summary = "Get application version information")
     @ApiResponses(value = [
         ApiResponse(responseCode = "200", description = "Version info returned",
-            content = [Content(mediaType = "application/json", schema = Schema(implementation = Map::class))])
+            content = [Content(mediaType = "application/json", schema = Schema(implementation = VersionInfo::class))])
     ])
     @GetMapping("/version")
-    fun getVersion(): ResponseEntity<Map<String, Any>> {
-        val versionInfo = mutableMapOf<String, Any>(
-            "group" to buildProperties.group,
-            "artifact" to buildProperties.artifact,
-            "name" to buildProperties.name,
-            "version" to buildProperties.version,
-            "time" to buildProperties.time.toString(),
-            "runtime" to System.getProperty("java.vm.name"),
-            "runtimeVersion" to System.getProperty("java.version"),
-            "environment" to if (File("/.dockerenv").exists() || System.getenv("KUBERNETES_SERVICE_HOST") != null) "container" else "ide/host"
-        )
+    fun getVersion(): ResponseEntity<VersionInfo> {
+        var dbConnected = false
+        var dbUrl: String? = null
+        var dbUser: String? = null
+        var dbError: String? = null
 
         try {
             dataSource.connection.use { conn: Connection ->
                 val metaData = conn.metaData
-                versionInfo["dbConnected"] = true
-                versionInfo["dbUrl"] = metaData.url
-                versionInfo["dbUser"] = metaData.userName
+                dbConnected = true
+                dbUrl = metaData.url
+                dbUser = metaData.userName
             }
         } catch (e: Exception) {
-            versionInfo["dbConnected"] = false
-            versionInfo["dbError"] = e.message ?: "Unknown connection error"
+            dbError = e.message
         }
+
+        val versionInfo = VersionInfo(
+            group = buildProperties.group,
+            artifact = buildProperties.artifact,
+            name = buildProperties.name,
+            version = buildProperties.version,
+            buildTime = buildProperties.time.toString(),
+            runtime = System.getProperty("java.vm.name"),
+            runtimeVersion = System.getProperty("java.version"),
+            environment = if (File("/.dockerenv").exists() || System.getenv("KUBERNETES_SERVICE_HOST") != null) "container" else "ide/host",
+            totalTrackCount = trackRepository.count(),
+            dbConnected = dbConnected,
+            dbUrl = dbUrl,
+            dbUser = dbUser,
+            musicDirectory = musicDirectory,
+            dbError = dbError
+        )
 
         return ResponseEntity.ok(versionInfo)
     }

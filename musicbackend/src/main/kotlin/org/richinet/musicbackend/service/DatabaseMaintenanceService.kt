@@ -1,5 +1,6 @@
 package org.richinet.musicbackend.service
 
+import org.richinet.musicbackend.config.DatabaseInitializer
 import org.richinet.musicbackend.data.repository.*
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
@@ -13,7 +14,9 @@ class DatabaseMaintenanceService(
   private val trackGroupRepository: TrackGroupRepository,
   private val trackFileRepository: TrackFileRepository,
   private val trackRepository: TrackRepository,
-  private val groupsRepository: GroupsRepository
+  private val groupsRepository: GroupsRepository,
+  private val groupTypeRepository: GroupTypeRepository,
+  private val databaseInitializer: DatabaseInitializer
 ) {
 
   private val logger = LoggerFactory.getLogger(DatabaseMaintenanceService::class.java)
@@ -57,6 +60,8 @@ class DatabaseMaintenanceService(
     trackFileRepository.deleteAllInBatch()
     trackRepository.deleteAllInBatch()
     groupsRepository.deleteAllInBatch()
-    logger.info("Database cleared (except GroupType)")
+    groupTypeRepository.deleteAllInBatch()
+    logger.info("Database cleared (including GroupType)")
+    databaseInitializer.runInitialization()
   }
 }
