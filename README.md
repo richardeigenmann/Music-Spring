@@ -354,11 +354,12 @@ ng test
 # the backend tests
 ./gradlew test
 
-# Running end-to-end tests (when I get round to writing them)
+# Running end-to-end tests
+cd musicfrontend
 ng serve -o # ensure that the application is running on localhost:4200
 npx cypress open
 # Then click on "E2E Testing", pick a browser and "Start E2E Testing".
-# Then look for the spec.cy.js hypelink and click on it. The tests should run.
+# Then look for the add-tracks.cy.js hypelink and click on it. The tests should run.
 ```
 
 ## Upgrading the frontend
@@ -478,11 +479,6 @@ oc rsync /home/richi/ToDo/ rsync-helper:/richi/ToDo/
 oc exec rsync-helper -- du -sh /richi
 oc exec rsync-helper -- ls /richi/mp3
 oc delete pod rsync-helper --force --grace-period=0
-
-
-# Now hit
-
-
 ```
 
 ## Database Notes

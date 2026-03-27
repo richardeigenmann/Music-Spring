@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "cypress-schema-validator": "^1.0.1"
+  }
+}

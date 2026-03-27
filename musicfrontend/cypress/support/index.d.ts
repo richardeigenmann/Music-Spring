@@ -3,6 +3,7 @@ declare global {
     interface Chainable {
       verifyDevEnvironment(): Chainable<void>;
       verifyHomepageShowsUp(): Chainable<void>;
+      resetMusicDatabase(): Chainable<void>;
     }
   }
 }

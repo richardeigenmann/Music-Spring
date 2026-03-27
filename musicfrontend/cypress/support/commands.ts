@@ -67,3 +67,17 @@ Cypress.Commands.add('verifyHomepageShowsUp', () => {
       });
   });
 });
+
+Cypress.Commands.add('resetMusicDatabase', () => {
+  cy.log(`Hitting REST endpoint /api/clear-db to reset the database`);
+  // 1. Hit the clear database endpoint
+  // Note: Check your Swagger 'Try it out' to see if this is a POST or DELETE
+  cy.request('POST', 'http://localhost:8002/api/clear-db').then((response) => {
+    expect(response.status).to.eq(200);
+  });
+
+  // 2. Verify the count is now 0
+  cy.request('GET', 'http://localhost:8002/api/version').then((response) => {
+    expect(response.body).to.have.property('totalTrackCount', 0);
+  });
+});

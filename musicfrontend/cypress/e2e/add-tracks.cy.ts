@@ -5,6 +5,7 @@ before(() => {
     cy.verifyHomepageShowsUp();
     // Run the shared safety check before doing anything else
     cy.verifyDevEnvironment();
+    cy.resetMusicDatabase();
   });
 
   it('Should open the Hamburger Menu and should click on the Scan directories button', () => {
@@ -15,6 +16,9 @@ before(() => {
       .click();
 
     cy.get('.scan-progress-box', { timeout: 2500 }).should('be.visible');
+
+    cy.url({ timeout: 10000 }).should('include', '/unclassified');
+
   });
 
 });
