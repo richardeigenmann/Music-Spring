@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, Signal, signal } from '@angular/core';
-import { Observable, tap, firstValueFrom, interval, from, timer } from 'rxjs'; // Added interval, from
+import { Observable, tap, firstValueFrom, interval, from, timer, map } from 'rxjs'; // Added map
 import { switchMap, takeWhile } from 'rxjs/operators'; // Added switchMap, takeWhile
 
 export interface Tag {
@@ -66,7 +66,7 @@ export class ApiService {
     this.tagsPromise = new Promise((resolve) => (this.resolveTags = resolve));
     this.initPromise = this.loadConfig().then(() => {
       this.getVersion().subscribe();
-      this.loadTags();
+      this.loadTags().subscribe();
     });
   }
 
@@ -155,28 +155,25 @@ export class ApiService {
     });
   }
 
-  loadTags(): void {
+  loadTags(): Observable<Tag[]> {
     if (!this.initialized) {
-      this.initPromise.then(() => this.loadTags());
-      return;
+      return from(this.initPromise).pipe(switchMap(() => this.loadTags()));
     }
-    this.http.get<any[]>(`${this.API_URL}/api/tags`).subscribe({
-      next: (data) => {
-        const mapped = data.map((g) => ({
+    return this.http.get<any[]>(`${this.API_URL}/api/tags`).pipe(
+      map((data) =>
+        data.map((g) => ({
           tagId: g.tagId ?? g.tagId,
           tagName: g.tagName ?? g.tagName,
           tagTypeName: g.tagTypeName ?? g.tagTypeName,
           tagTypeId: g.tagTypeId ?? g.tagTypeId,
           tagTypeEdit: g.tagTypeEdit ?? g.tagTypeEdit,
-        }));
+        })),
+      ),
+      tap((mapped) => {
         this._tags.set(mapped);
         this.resolveTags();
-      },
-      error: (err) => {
-        console.error('Failed to load tags', err);
-        this.resolveTags(); // Still resolve to avoid hangs
-      },
-    });
+      }),
+    );
   }
 
   getTags(): Observable<Tag[]> {
@@ -339,16 +336,27 @@ export class ApiService {
       this.initPromise.then(() => {
         this.http.post<any>(`${this.API_URL}/api/tag`, { tagType, tagName, trackIds }).subscribe({
           next: (data) => {
-            observer.next({
+            const newTag: Tag = {
               tagId: data.tagId,
               tagName: data.tagName,
               tagTypeName: data.tagTypeName,
               tagTypeId: data.tagTypeId,
               tagTypeEdit: data.tagTypeEdit,
+            };
+            // Wait for refresh to complete before emitting newTag
+            this.loadTags().subscribe({
+              next: () => {
+                observer.next(newTag);
+                observer.complete();
+              },
+              error: (err) => {
+                console.error('Failed to reload tags after creation', err);
+                observer.next(newTag);
+                observer.complete();
+              },
             });
           },
           error: (err) => observer.error(err),
-          complete: () => observer.complete(),
         });
       });
     });
@@ -357,7 +365,23 @@ export class ApiService {
   deleteTag(tagId: number): Observable<void> {
     return new Observable((observer) => {
       this.initPromise.then(() => {
-        this.http.delete<void>(`${this.API_URL}/api/tag/${tagId}`).subscribe(observer);
+        this.http.delete<void>(`${this.API_URL}/api/tag/${tagId}`).subscribe({
+          next: () => {
+            // Wait for refresh to complete before emitting
+            this.loadTags().subscribe({
+              next: () => {
+                observer.next();
+                observer.complete();
+              },
+              error: (err) => {
+                console.error('Failed to reload tags after deletion', err);
+                observer.next();
+                observer.complete();
+              },
+            });
+          },
+          error: (err) => observer.error(err),
+        });
       });
     });
   }
