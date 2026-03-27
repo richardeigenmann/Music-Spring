@@ -334,23 +334,10 @@ export class ApiService {
     });
   }
 
-  createPlaylist(name: string, trackIds: number[]): Observable<{ tagId: number; tagName: string }> {
+  createTag(tagType: string, tagName: string, trackIds: number[] = []): Observable<Tag> {
     return new Observable((observer) => {
       this.initPromise.then(() => {
-        this.http
-          .post<{
-            tagId: number;
-            tagName: string;
-          }>(`${this.API_URL}/api/createPlaylist`, { name, trackIds })
-          .subscribe(observer);
-      });
-    });
-  }
-
-  createTag(groupType: string, tagName: string): Observable<Tag> {
-    return new Observable((observer) => {
-      this.initPromise.then(() => {
-        this.http.post<any>(`${this.API_URL}/api/tag`, { groupType, tagName }).subscribe({
+        this.http.post<any>(`${this.API_URL}/api/tag`, { tagType, tagName, trackIds }).subscribe({
           next: (data) => {
             observer.next({
               tagId: data.tagId,

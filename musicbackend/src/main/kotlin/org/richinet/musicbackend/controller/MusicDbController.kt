@@ -44,14 +44,10 @@ data class FilterRequest(
   val mustNotHaveIds: List<Long> = emptyList()
 )
 
-data class CreatePlaylistRequest(
-  val name: String,
-  val trackIds: List<Long>
-)
-
 data class CreateTagRequest(
   val tagType: String,
-  val tagName: String
+  val tagName: String,
+  val trackIds: List<Long> = emptyList()
 )
 
 @RestController
@@ -483,22 +479,7 @@ class MusicDbController(
     return ResponseEntity.ok(trackRepository.findAllById(trackIds.filterNotNull()).map { trackDataService.serializeTrack(it) })
   }
 
-  @Operation(summary = "Create a new playlist from a list of tracks")
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200", description = "Playlist created",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = Map::class))]
-      )
-    ]
-  )
-  @PostMapping("/createPlaylist")
-  fun createPlaylist(@RequestBody request: CreatePlaylistRequest): ResponseEntity<Map<String, Any?>> {
-    val tag = musicImportService.createPlaylist(request.name, request.trackIds)
-    return ResponseEntity.ok(mapOf("tagId" to tag.id, "tagName" to tag.name))
-  }
-
-  @Operation(summary = "Create a new tag under a specific tag type")
+  @Operation(summary = "Create a new tag under a specific tag type, optionally linking it to tracks")
   @ApiResponses(
     value = [
       ApiResponse(
@@ -513,12 +494,16 @@ class MusicDbController(
     val tagType = tagTypeRepository.findByName(request.tagType)
       ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
 
-    val newTag = Tag().apply {
-      this.name = request.tagName
-      this.tagTypeId = tagType.id
+    val savedTag = if (request.trackIds.isNotEmpty()) {
+      musicImportService.createTagWithTracks(request.tagName, tagType.id!!, request.trackIds)
+    } else {
+      val newTag = Tag().apply {
+        this.name = request.tagName
+        this.tagTypeId = tagType.id
+      }
+      tagRepository.save(newTag)
     }
 
-    val savedTag = tagRepository.save(newTag)
     return ResponseEntity.status(HttpStatus.CREATED).body(
       mapOf(
         "tagId" to savedTag.id,
@@ -559,6 +544,7 @@ class MusicDbController(
       tracks.forEach { track ->
         val serializedTrack = trackDataService.serializeTrack(track)
         val files = serializedTrack["files"] as? List<*>
+        @Suppress("UNCHECKED_CAST")
         val firstFile = files?.firstOrNull() as? Map<String, Any?>
 
         if (firstFile != null) {
@@ -603,10 +589,12 @@ class MusicDbController(
         appendLine("#EXTM3U")
         serializedTracks.forEach { serializedTrack ->
           val files = serializedTrack["files"] as? List<*>
+          @Suppress("UNCHECKED_CAST")
           val firstFile = files?.firstOrNull() as? Map<String, Any?>
 
           if (firstFile != null) {
-            val artist = (serializedTrack["Artist"] as? Any)?.let {
+            val artist = serializedTrack["Artist"]?.let {
+
               if (it is List<*>) it.joinToString(", ") else it.toString()
             } ?: "Unknown Artist"
             val title = serializedTrack["trackName"] as? String ?: "Unknown Track"
@@ -628,7 +616,9 @@ class MusicDbController(
       // 2. Add each MP3 file to the zip
       serializedTracks.forEach { serializedTrack ->
         val files = serializedTrack["files"] as? List<*>
-        (files?.firstOrNull() as? Map<String, Any?>)?.let { fileMap ->
+        @Suppress("UNCHECKED_CAST")
+        val firstFile = files?.firstOrNull() as? Map<String, Any?>
+        firstFile?.let { fileMap ->
           val fileLocation = fileMap["fileLocation"] as? String ?: ""
           val fileName = fileMap["fileName"] as? String ?: ""
           val file = if (fileLocation.trim('/').isEmpty()) {

@@ -96,7 +96,7 @@ export class MixingBoard implements OnInit {
       return;
     }
 
-    this.apiService.createPlaylist(this.newPlaylistName, ids).subscribe({
+    this.apiService.createTag('Playlist', this.newPlaylistName, ids).subscribe({
       next: (res) => {
         alert(`Playlist '${res.tagName}' created with ${ids.length} tracks!`);
         this.newPlaylistName = '';

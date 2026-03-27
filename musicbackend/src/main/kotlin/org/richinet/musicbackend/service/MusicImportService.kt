@@ -73,6 +73,7 @@ class MusicImportService(
             if (key == "trackName" || key == "TrackName" || key == "trackId" || key == "TrackId") continue
 
             if (key == "files" || key == "Files") {
+                @Suppress("UNCHECKED_CAST")
                 val filesList = value as? List<Map<String, Any?>>
                 filesList?.forEach { fileData ->
                     val fileId = ((fileData["fileId"] ?: fileData["FileId"]) as? Number)?.toLong() ?: return@forEach
@@ -276,11 +277,11 @@ class MusicImportService(
     }
 
     @Transactional
-    fun createPlaylist(name: String, trackIds: List<Long>): Tag {
-        val playlistTag = Tag()
-        playlistTag.name = name
-        playlistTag.tagTypeId = 4L
-        val saved = tagRepository.save(playlistTag)
+    fun createTagWithTracks(name: String, tagTypeId: Long, trackIds: List<Long>): Tag {
+        val tag = Tag()
+        tag.name = name
+        tag.tagTypeId = tagTypeId
+        val saved = tagRepository.save(tag)
 
         trackIds.forEachIndexed { index, trackId ->
             val tt = TrackTag()
