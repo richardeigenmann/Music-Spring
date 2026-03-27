@@ -1,6 +1,6 @@
 import { Component, OnDestroy, inject, signal, computed } from '@angular/core';
 import { Router, RouterOutlet, RouterLink } from '@angular/router';
-import { ApiService, Tag } from './apiservice';
+import { ApiService, ScanProgress, Tag } from './apiservice';
 import { CommonModule } from '@angular/common';
 import { TrackPlayer } from './track-player/track-player';
 
@@ -9,15 +9,15 @@ import { TrackPlayer } from './track-player/track-player';
   standalone: true,
   imports: [RouterOutlet, RouterLink, CommonModule, TrackPlayer],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrl: './app.css',
 })
 export class App implements OnDestroy {
   protected readonly title = signal('musicfrontend');
   private apiService = inject(ApiService);
   private router = inject(Router);
   totalTracks = this.apiService.totalTrackCount;
-  
-  scanProgress = signal<{ checked: number, added: number, totalEstimated: number, isDone: boolean, currentFile: string } | null>(null);
+
+  scanProgress = signal<ScanProgress | null>(null);
   showHamburgerMenu = signal(false);
   private pollInterval: any = null;
 
@@ -30,7 +30,7 @@ export class App implements OnDestroy {
   }
 
   toggleHamburgerMenu(): void {
-    this.showHamburgerMenu.update(v => !v);
+    this.showHamburgerMenu.update((v) => !v);
   }
 
   closeHamburgerMenu(): void {
@@ -61,21 +61,14 @@ export class App implements OnDestroy {
   }
 
   pollProgress(): void {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-    }
-    this.pollInterval = setInterval(() => {
-      this.apiService.getScanProgress().subscribe(progress => {
-        this.scanProgress.set(progress);
-        if (progress.isDone) {
-          clearInterval(this.pollInterval);
-          this.pollInterval = null;
-          // After scan is done, show unclassified tracks
-          this.goUnclassified();
-          // Update total track count
-          this.apiService.getVersion().subscribe();
-        }
-      });
-    }, 300);
+    this.apiService.getScanProgress().subscribe((progress) => {
+      this.scanProgress.set(progress);
+      if (progress.done) {
+        // After scan is done, show unclassified tracks
+        this.goUnclassified();
+        // Update total track count
+        this.apiService.getVersion().subscribe();
+      }
+    });
   }
 }
