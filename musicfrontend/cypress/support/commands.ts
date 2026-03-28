@@ -81,3 +81,17 @@ Cypress.Commands.add('resetMusicDatabase', () => {
     expect(response.body).to.have.property('totalTrackCount', 0);
   });
 });
+
+// I struggled with this a bit. Angular needs to see the mouse move at least 5 pixles on
+// the source object to trigger the drag. Likewise simply teleporting the mouse to the target
+// and releasing it doesn't get it to detect the "enter" into the drop event. So a 3 pixel move
+// helps trigger that.
+Cypress.Commands.add('cdkDragTo', { prevSubject: 'element' }, (subject, targetSelector) => {
+  cy.wrap(subject)
+    .realMouseDown({ position: 'center' })
+    .realMouseMove(5, 0, { position: 'center' }); // The "Unlock" move
+
+  cy.get(targetSelector)
+    .realMouseMove(3, 0, { position: 'center' }) // The "Entry" move
+    .realMouseUp({ position: 'center' });
+});
