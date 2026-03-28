@@ -1,0 +1,5 @@
+import './01_verify-api-spec.cy.ts'
+import './02_add-tracks.cy.ts'
+import './03_search-for-track.cy.ts'
+import './04_classify-some-tracks.cy.ts'
+import './05_create-playlist-from-mixer.cy.ts'

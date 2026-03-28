@@ -1,9 +1,7 @@
 describe('Start a Scan of the mp3 directory', () => {
 
 before(() => {
-    // Run the asset check to ensure the UI is rendered correctly
     cy.verifyHomepageShowsUp();
-    // Run the shared safety check before doing anything else
     cy.verifyDevEnvironment();
     cy.resetMusicDatabase();
   });

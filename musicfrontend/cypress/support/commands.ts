@@ -89,9 +89,59 @@ Cypress.Commands.add('resetMusicDatabase', () => {
 Cypress.Commands.add('cdkDragTo', { prevSubject: 'element' }, (subject, targetSelector) => {
   cy.wrap(subject)
     .realMouseDown({ position: 'center' })
-    .realMouseMove(5, 0, { position: 'center' }); // The "Unlock" move
+    .realMouseMove(10, 0, { position: 'center' }); // The "Unlock" move
 
   cy.get(targetSelector)
-    .realMouseMove(3, 0, { position: 'center' }) // The "Entry" move
+    .realMouseMove(10, 0, { position: 'center' }) // The "Entry" move
     .realMouseUp({ position: 'center' });
+});
+
+
+// types the searchText into the search box and ensures that the resulting tracks contain the searchText
+Cypress.Commands.add('searchForTrack', (searchText) => {
+    cy.get('input.search-input')
+      .should('be.visible')
+      .clear()
+      .type(`${searchText}{enter}`);
+
+    cy.url().should('include', '/search');
+
+    cy.get('app-track-list') // 1. Find the parent component
+      .find('span.track-title') // 2. Look inside it for the span
+      .should('be.visible') // 3. Assert it is there and visible
+      .and('contain', searchText); // 4. Check the text
+});
+
+
+Cypress.Commands.add('classifyTrack', (searchText, classificationType, classification) => {
+    cy.searchForTrack(searchText);
+
+    cy.get('app-track-list')
+      .find('span.track-title')
+      .should('be.visible')
+      .and('contain', searchText)
+      .click();
+
+    cy.url()
+      .should('include', '/track')
+      .then((url) => {
+        const trackId = url.split('/').pop();
+        cy.contains('span.tag-label', classification).find('button.btn-icon').click();
+
+        cy.contains('button', 'Save Changes').click();
+
+        // check in the api that the classification was saved correctly
+        cy.request({
+          method: 'GET',
+          url: `http://localhost:8002/api/track/${trackId}`,
+          headers: {
+            accept: 'application/json',
+          },
+        }).then((response) => {
+          expect(response.status).to.eq(200);
+
+          const genreData = response.body[classificationType];
+          expect(genreData).to.include(classification);
+        });
+      });
 });
