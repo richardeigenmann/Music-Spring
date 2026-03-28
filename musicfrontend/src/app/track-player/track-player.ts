@@ -1,5 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, effect, inject } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  effect,
+  inject,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../apiservice';
 import { PlaybackService } from '../playback.service';
@@ -12,7 +21,7 @@ import { PlaybackService } from '../playback.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './track-player.html',
-  styleUrls: ['./track-player.css']
+  styleUrls: ['./track-player.css'],
 })
 export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
   private apiService = inject(ApiService);
@@ -27,47 +36,37 @@ export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
   hasPrevious = this.playbackService.hasPrevious;
 
   constructor() {
-    // React to track changes to update audio source
     effect(() => {
       const track = this.currentTrack();
+      // We still grab the reference, but we don't set the .src here anymore
       const audio = this.audioPlayer?.nativeElement;
 
       if (track && audio) {
-        const newSrc = this.getTrackUrl(track.fileId);
-
-        // Check current source to avoid redundant loads
-        // We also check if it's the first time or a track skip
-        if (audio.src !== newSrc) {
-            console.log('Switching track source to:', newSrc);
-            audio.src = newSrc;
-            audio.load();
-
-            // Only autoplay if the audio element is ready and not already playing something else
-            // Use a slight timeout to ensure the DOM has updated and let previous requests settle
-            setTimeout(() => {
-                audio.play().catch(e => {
-                    if (e.name !== 'AbortError') {
-                        console.warn('Playback error:', e);
-                    }
-                });
-            }, 50);
-        }
+        // The template handles audio.src automatically now.
+        // We just ensure it plays if the track changes while the player is already open.
+        audio.load();
+        audio.play().catch((e) => {
+          if (e.name !== 'AbortError') console.warn('Playback error:', e);
+        });
       }
     });
   }
-
   ngOnInit(): void {}
 
   ngAfterViewInit(): void {
     if (this.audioPlayer) {
-        this.audioPlayer.nativeElement.addEventListener('ended', () => this.playbackService.nextTrack());
+      this.audioPlayer.nativeElement.addEventListener('ended', () =>
+        this.playbackService.nextTrack(),
+      );
     }
   }
 
   ngOnDestroy(): void {
     // Component is intended to be always-on, but good practice to clean up
     if (this.audioPlayer) {
-      this.audioPlayer.nativeElement.removeEventListener('ended', () => this.playbackService.nextTrack());
+      this.audioPlayer.nativeElement.removeEventListener('ended', () =>
+        this.playbackService.nextTrack(),
+      );
     }
   }
 
@@ -80,7 +79,6 @@ export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
   }
 
   openQueue() {
-      this.router.navigate(['/queue']);
+    this.router.navigate(['/queue']);
   }
 }
-

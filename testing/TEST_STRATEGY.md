@@ -19,7 +19,7 @@ The testing strategy for the Music-Spring application prioritizes functional cor
 - **Integration Testing:** Prioritize `MusicImportService` and `TrackDataService` to protect data import integrity.
 
 ### Phase 2: Functional E2E Testing
-- Focus on "Happy Path" scenarios using `Playwright` to ensure cross-layer functionality (e.g., successful import leading to UI updates).
+- Focus on "Happy Path" scenarios using `Cypress` to ensure cross-layer functionality (e.g., successful import leading to UI updates).
 
 ### Phase 3: Exploratory & Usability
 - Manual verification of edge cases in metadata/ID3 parsing and UI responsiveness.

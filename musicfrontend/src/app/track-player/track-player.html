@@ -13,7 +13,13 @@
         ⏮
       </button>
 
-      <audio #audioPlayer controls autoplay class="audio-element"></audio>
+      <!-- <audio #audioPlayer controls autoplay class="audio-element"></audio> -->
+      <audio #audioPlayer
+        [src]="getTrackUrl(track.fileId)"
+        controls
+        autoplay
+        class="audio-element">
+      </audio>
 
       <button class="control-btn" (click)="playbackService.nextTrack()" [disabled]="!hasNext()" title="Next Track">
         ⏭
