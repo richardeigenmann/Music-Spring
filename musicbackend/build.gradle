@@ -10,7 +10,7 @@ description = 'musicbackend'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(24)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -31,7 +31,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.jetbrains.kotlin:kotlin-reflect'
-    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    implementation 'tools.jackson.module:jackson-module-kotlin'
     implementation 'com.mpatric:mp3agic:0.9.1'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -92,7 +92,7 @@ bootBuildImage {
         buildpacks = ["paketo-buildpacks/java"]
         environment = [
             "BP_NATIVE_IMAGE": "false",
-            "BP_JVM_VERSION": "24",
+            "BP_JVM_VERSION": "25",
             "JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=256M"
         ]
     }

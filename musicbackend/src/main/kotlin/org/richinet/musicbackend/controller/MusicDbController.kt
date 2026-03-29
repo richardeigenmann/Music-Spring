@@ -61,7 +61,7 @@ class MusicDbController(
   private val trackFileRepository: TrackFileRepository,
   private val musicImportService: MusicImportService,
   private val jdbcTemplate: JdbcTemplate,
-  private val objectMapper: com.fasterxml.jackson.databind.ObjectMapper
+  private val jacksonJsonMapper: tools.jackson.databind.ObjectMapper
 ) {
   private val logger = LoggerFactory.getLogger(MusicDbController::class.java)
   private val imageExtractionSemaphore = Semaphore(4) // Only 4 concurrent image extractions allowed
@@ -100,7 +100,7 @@ class MusicDbController(
       @RequestPart file: org.springframework.web.multipart.MultipartFile
   ): ResponseEntity<String> {
     return try {
-      val fileData: List<Map<String, Any>> = objectMapper.readValue(file.inputStream, object : com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Any>>>() {})
+      val fileData: List<Map<String, Any>> = jacksonJsonMapper.readValue(file.inputStream, object : tools.jackson.core.type.TypeReference<List<Map<String, Any>>>() {})
       musicImportService.importMusicData(fileData)
       ResponseEntity.ok("Successfully imported data from file: ${file.originalFilename}")
     } catch (e: Exception) {

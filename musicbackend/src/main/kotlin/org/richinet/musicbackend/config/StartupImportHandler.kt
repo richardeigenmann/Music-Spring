@@ -1,7 +1,8 @@
 package org.richinet.musicbackend.config
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import org.richinet.musicbackend.service.MusicImportService
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.CommandLineRunner
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -11,7 +12,7 @@ import java.io.File
 //@Order(2)
 class StartupImportHandler(
     private val musicImportService: MusicImportService,
-    private val objectMapper: ObjectMapper
+    @Qualifier("jacksonJsonMapper") private val objectMapper: ObjectMapper
 ) : CommandLineRunner {
 
     @Value("\${app.db.json-dump-path:/richi/ToDo/music.json}")

@@ -1,8 +1,8 @@
 package org.richinet.musicbackend.config
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
 import org.richinet.musicbackend.service.DatabaseMaintenanceService
 import org.richinet.musicbackend.service.MusicImportService
 import org.springframework.boot.CommandLineRunner
@@ -18,7 +18,7 @@ class StartupSyncHandler(
     private val databaseMaintenanceService: DatabaseMaintenanceService,
     private val musicImportService: MusicImportService,
     private val environment: Environment,
-    private val objectMapper: ObjectMapper = jacksonObjectMapper()
+    private val jacksonJsonMapper: ObjectMapper
 ) : CommandLineRunner {
 
     @Value("\${app.db.sql-dump-path:/richi/ToDo/music_db.sql}")
@@ -51,7 +51,7 @@ class StartupSyncHandler(
             val jsonFile = File(jsonDumpPath)
             if (jsonFile.exists()) {
                 try {
-                    val data = objectMapper.readValue(jsonFile, List::class.java) as List<Map<String, Any>>
+                    val data = jacksonJsonMapper.readValue(jsonFile, List::class.java) as List<Map<String, Any>>
                     musicImportService.importMusicData(data)
                     println("JSON import successful from $jsonDumpPath")
                 } catch (e: Exception) {
@@ -64,3 +64,4 @@ class StartupSyncHandler(
         }
     }
 }
+
