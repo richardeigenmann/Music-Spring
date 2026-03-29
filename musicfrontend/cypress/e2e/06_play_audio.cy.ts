@@ -17,7 +17,7 @@ describe('Play a track', () => {
       .should('contain', trackTitle);
 
     cy.get('audio.audio-element').should(($audio) => {
-      const audioEl = $audio[0];
+      const audioEl= $audio[0] as HTMLAudioElement;
       audioEl.muted=true; // MUTE it immediately
       expect(audioEl.src).to.not.be.empty;
       expect(audioEl.src).to.contain('http');

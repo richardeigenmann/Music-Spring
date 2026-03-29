@@ -1,4 +1,5 @@
 import './commands';
+import 'cypress-real-events';
 declare global {
   namespace Cypress {
     interface Chainable {
@@ -8,6 +9,7 @@ declare global {
       cdkDragTo(targetSelector: string): Chainable<void>;
       searchForTrack(searchText: string): Chainable<Element>;
       classifyTrack(searchText: string, classificationType: string, classification: string): Chainable<Element>;
+      getTotalTrackCount(): Chainable<number>;
     }
   }
 }

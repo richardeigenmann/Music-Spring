@@ -27,7 +27,7 @@
   </div>
 
   @if (scanProgress(); as progress) {
-    @if (!progress.isDone) {
+    @if (!progress.done) {
       <div class="scan-progress-box">
         <div [title]="progress.currentFile">Scanning: {{ progress.currentFile }}</div>
         <div>Progress: {{ progress.checked }} / {{ progress.totalEstimated }} files</div>
