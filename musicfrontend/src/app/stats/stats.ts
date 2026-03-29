@@ -64,7 +64,7 @@ export class Stats implements OnInit {
   ngOnInit(): void {
     // Load detailed charts for each tag type using the single consolidated API
     this.apiService.getTagUsageStats().subscribe(stats => {
-      const grouped: { [key: string]: { labels: string[], data: number[], tagIds: number[] } } = {};
+      const grouped: Record<string, { labels: string[], data: number[], tagIds: number[] }> = {};
 
       stats.forEach(s => {
         if (s.count > 0) {

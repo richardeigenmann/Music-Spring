@@ -39,7 +39,7 @@ export interface ScanProgress {
   checked: number;
   added: number;
   totalEstimated: number;
-  done: boolean;
+  isDone: boolean;
   currentFile: string;
 }
 
@@ -242,11 +242,16 @@ export class ApiService {
   return from(this.initPromise).pipe(
     // timer(0, 1000) fires immediately, then every 1 second
     switchMap(() => timer(0, 1000)),
-    switchMap(() => this.http.get<ScanProgress>(`${this.API_URL}/api/scanProgress`)),
-    // Make absolutely sure your backend returns exactly "isDone"
-    // and not "is_done" or "isdone" (case sensitivity matters here)
-    takeWhile((progress) => !progress.done, true),
-    tap((progress) => console.log('Polling scan progress:', progress)),
+    switchMap(() => {
+      return this.http.get<any>(`${this.API_URL}/api/scanProgress`);
+    }),
+    map(p => ({
+      ...p,
+      isDone: p.isDone === true || p.done === true
+    }) as ScanProgress),
+    tap((progress) => console.log('Emitting progress:', progress)),
+    // Continue while NOT done, inclusive of the final 'done' emission
+    takeWhile((progress) => !progress.isDone, true),
   );
 }
 

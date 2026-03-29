@@ -44,7 +44,7 @@ export class TracksByTag implements OnDestroy {
     return `${type}: ${name}`;
   });
 
-  private clickListener = (event: Event) => {
+  private clickListener = () => {
     if (this.showMenu()) {
       this.showMenu.set(false);
     }

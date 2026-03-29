@@ -19,8 +19,6 @@ export class UnclassifiedTracks implements OnInit {
   tracks = signal<TrackEntry[]>([]);
   currentTrackId = computed(() => this.playbackService.currentTrack()?.trackId || null);
 
-  constructor() {}
-
   ngOnInit(): void {
     this.loadTracks();
   }

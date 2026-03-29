@@ -61,13 +61,23 @@ export class App implements OnDestroy {
   }
 
   pollProgress(): void {
-    this.apiService.getScanProgress().subscribe((progress) => {
-      this.scanProgress.set(progress);
-      if (progress.done) {
-        // After scan is done, show unclassified tracks
-        this.goUnclassified();
-        // Update total track count
-        this.apiService.getVersion().subscribe();
+    console.log('Starting progress polling...');
+    this.apiService.getScanProgress().subscribe({
+      next: (progress) => {
+        console.log('Progress update received:', progress);
+        this.scanProgress.set(progress);
+        if (progress.isDone) {
+          console.log('Scan completion detected in app.ts. Navigating to unclassified...');
+          // Update total track count first
+          this.apiService.getVersion().subscribe();
+          // Navigate
+          this.goUnclassified();
+        }
+      },
+      error: (err) => console.error('Error polling progress:', err),
+      complete: () => {
+        console.log('Progress polling observable completed.');
+        // Optional: clear progress after some time or keep it as "done"
       }
     });
   }

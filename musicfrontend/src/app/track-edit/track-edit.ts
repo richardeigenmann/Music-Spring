@@ -74,7 +74,7 @@ export class TrackEdit {
       return {};
     }
 
-    const assignedTagNames: { [tagType: string]: string[] } = {};
+    const assignedTagNames: Record<string, string[]> = {};
     for (const key in track) {
       if (key !== 'trackId' && key !== 'trackName' && key !== 'files') {
         const value = track[key];
@@ -86,7 +86,7 @@ export class TrackEdit {
       }
     }
 
-    const trackTags: { [tagType: string]: Tag[] } = {};
+    const trackTags: Record<string, Tag[]> = {};
     for (const tagType in assignedTagNames) {
       const typeTags: Tag[] = [];
       for (const tagName of assignedTagNames[tagType]) {
@@ -111,7 +111,7 @@ export class TrackEdit {
     }
 
     // Only show tag types that are marked as 'S' (Selection)
-    const allTagTypesGrouped: { [key: string]: Tag[] } = {};
+    const allTagTypesGrouped: Record<string, Tag[]> = {};
     for (const tag of all) {
       if (tag.tagTypeEdit !== 'S') {
         continue;
@@ -122,7 +122,7 @@ export class TrackEdit {
       allTagTypesGrouped[tag.tagTypeName].push(tag);
     }
 
-    const available: { [key: string]: Tag[] } = {};
+    const available: Record<string, Tag[]> = {};
     for (const tagType in allTagTypesGrouped) {
       const allInType = allTagTypesGrouped[tagType];
       const currentInType = current[tagType] || [];

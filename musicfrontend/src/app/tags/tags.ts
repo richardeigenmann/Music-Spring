@@ -18,7 +18,7 @@ export class Tags {
 
   groupedTags = computed(() => {
     const tags = this.allTags();
-    const grouped: { [key: string]: Tag[] } = {};
+    const grouped: Record<string, Tag[]> = {};
 
     console.log('Mapping tags, count:', tags.length);
     if (tags.length > 0) {

@@ -39,6 +39,8 @@ console.log('DEBUG: Commands.ts has been loaded!');
 //   }
 // }
 
+import { recurse } from 'cypress-recurse';
+
 
 Cypress.Commands.add('verifyDevEnvironment', () => {
   cy.log('--- STARTING SAFETY CHECK ---');
@@ -113,6 +115,7 @@ Cypress.Commands.add('searchForTrack', (searchText) => {
     .and('contain', searchText); // 4. Check the text
 });
 
+
 Cypress.Commands.add('classifyTrack', (searchText, classificationType, classification) => {
   cy.searchForTrack(searchText);
 
@@ -126,22 +129,31 @@ Cypress.Commands.add('classifyTrack', (searchText, classificationType, classific
     .should('include', '/track')
     .then((url) => {
       const trackId = url.split('/').pop();
-      cy.contains('span.tag-label', classification).find('button.btn-icon').click();
 
+      // UI Interactions
+      cy.contains('span.tag-label', classification).find('button.btn-icon').click();
       cy.contains('button', 'Save Changes').click();
 
-      // check in the api that the classification was saved correctly
-      cy.request({
-        method: 'GET',
-        url: `http://localhost:8002/api/track/${trackId}`,
-        headers: {
-          accept: 'application/json',
+      // The Recurse Pattern
+      recurse(
+        () =>
+          cy.request({
+            method: 'GET',
+            url: `http://localhost:8002/api/track/${trackId}`,
+            headers: { accept: 'application/json' },
+            failOnStatusCode: false, // Prevents early exit on 404/500
+          }),
+        (response) => {
+          console.log('DEBUG: API Response:', response.body);
+          const data = response.body[classificationType];
+          // Check for success status AND that the array contains our value
+          return response.status === 200 && data && data.includes(classification);
         },
-      }).then((response) => {
-        expect(response.status).to.eq(200);
-
-        const genreData = response.body[classificationType];
-        expect(genreData).to.include(classification);
-      });
+        {
+          limit: 10,
+          timeout: 5000,
+          delay: 500,
+        }
+      )
     });
 });

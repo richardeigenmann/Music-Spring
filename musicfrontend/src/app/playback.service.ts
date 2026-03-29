@@ -83,7 +83,7 @@ export class PlaybackService {
     });
   }
 
-  playPlaylist(playlist: TrackEntry[], name: string = 'Playlist') {
+  playPlaylist(playlist: TrackEntry[], name = 'Playlist') {
     // 1. Register tracks
     playlist.forEach(t => this.trackRegistry.set(t.trackId, t));
 
