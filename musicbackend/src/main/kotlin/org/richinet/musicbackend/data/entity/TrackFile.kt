@@ -10,7 +10,7 @@ import java.math.BigDecimal
 class TrackFile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "file_id")
     @Schema(description = "Unique identifier for the file")
     var id: Long? = null
 

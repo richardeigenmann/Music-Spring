@@ -199,15 +199,15 @@ Queries you can run:
 
 ```sql
 # Check the predefined classification types
-select * from public.group_type
+select * from public.tag_type
   
 # Check the available classifications:
-select * from musicdatabase.groups
+select * from musicdatabase.tag
 
 # remove all tables (including their content):
-drop table musicdatabase.track_group;
-drop table musicdatabase.groups;
-drop table musicdatabase.group_type;
+drop table musicdatabase.track_tag;
+drop table musicdatabase.tag;
+drop table musicdatabase.tag_type;
 drop table musicdatabase.track_file;
 drop table musicdatabase.track;         
 ```

@@ -134,7 +134,26 @@ class MusicImportService(
         val tagTypeCache = tagTypeRepository.findAll().associateBy { it.name }
 
         for ((key, value) in trackData) {
-            if (key == "trackName" || key == "TrackName" || key == "trackId" || key == "TrackId" || key == "files" || key == "Files") continue
+            if (key == "trackName" || key == "TrackName" || key == "trackId" || key == "TrackId") continue
+
+            if (key == "files" || key == "Files") {
+                @Suppress("UNCHECKED_CAST")
+                val filesList = value as? List<Map<String, Any?>>
+                filesList?.forEach { fileData ->
+                    val trackFile = TrackFile()
+                    trackFile.trackId = track.id
+                    trackFile.fileName = (fileData["fileName"] ?: fileData["FileName"]) as? String
+                    trackFile.fileLocation = (fileData["fileLocation"] ?: fileData["FileLocation"]) as? String
+
+                    val duration = fileData["duration"] ?: fileData["Duration"]
+                    if (duration is Number) {
+                        trackFile.duration = BigDecimal(duration.toDouble())
+                    }
+
+                    trackFileRepository.save(trackFile)
+                }
+                continue
+            }
 
             val tagType = tagTypeCache[key]
             if (tagType != null && value != null) {
@@ -166,9 +185,14 @@ class MusicImportService(
     fun startMp3Scan() {
         if (!scanProgress.get().isDone) return
 
+        // Reset progress synchronously before starting the thread
+        // This prevents the race condition where the frontend polls before the thread starts
+        scanProgress.set(ScanProgress(isDone = false, currentFile = "Initializing scan..."))
+
         val mp3Dir = File(musicDirectory)
         if (!mp3Dir.exists() || !mp3Dir.isDirectory) {
             logger.error("MP3 directory not found at $mp3Dir")
+            scanProgress.set(ScanProgress(isDone = true))
             return
         }
 
@@ -177,7 +201,7 @@ class MusicImportService(
                 logger.info("Starting MP3 scan in $mp3Dir")
                 val filesToScan = mp3Dir.walkTopDown().filter { it.isFile && it.extension.lowercase() == "mp3" }.toList()
                 val total = filesToScan.size
-                scanProgress.set(ScanProgress(totalEstimated = total))
+                scanProgress.set(ScanProgress(totalEstimated = total, isDone = false))
 
                 filesToScan.forEachIndexed { index, file ->
                     scanProgress.updateAndGet { it.copy(checked = index + 1, currentFile = file.name) }

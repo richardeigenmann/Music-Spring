@@ -22,7 +22,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import java.util.*
 
-@WebMvcTest(MusicDbController::class, org.richinet.musicbackend.config.JacksonConfig::class)
+@WebMvcTest(MusicDbController::class)
 class MusicbackendApplicationTests {
 
     @Autowired
