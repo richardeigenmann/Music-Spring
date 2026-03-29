@@ -29,4 +29,6 @@ Covered by 06_play-pause-skip.cy.ts
 
 ## 6. Export & Data Management
 - **US13: Export as ZIP/M3U:** As a user, I want to export a group or playlist as an M3U file or a ZIP archive, so that I can use my curated lists in other music software.
-- **US14: System Sync/Clear:** As a user, I want to trigger a manual database sync or clear the database, so that I can manage library refreshes or reset my state if corrupted.
+- **US14: System Sync/Clear:** As a user, I want to save my data and later resore it after the database has been wiped or rebuilt, so that I can don't lose my track classifications. Covered by Cypress test 07_save_and_restore.cy.ts
+
+
