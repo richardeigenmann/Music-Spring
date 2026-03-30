@@ -1,6 +1,6 @@
-import { Component, OnDestroy, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { Router, RouterOutlet, RouterLink } from '@angular/router';
-import { ApiService, ScanProgress, Tag } from './apiservice';
+import { ApiService, ScanProgress } from './apiservice';
 import { CommonModule } from '@angular/common';
 import { TrackPlayer } from './track-player/track-player';
 
@@ -11,7 +11,7 @@ import { TrackPlayer } from './track-player/track-player';
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App implements OnDestroy {
+export class App {
   protected readonly title = signal('musicfrontend');
   private apiService = inject(ApiService);
   private router = inject(Router);
@@ -19,15 +19,6 @@ export class App implements OnDestroy {
 
   scanProgress = signal<ScanProgress | null>(null);
   showHamburgerMenu = signal(false);
-  private pollInterval: any = null;
-
-  constructor() {}
-
-  ngOnDestroy(): void {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-    }
-  }
 
   toggleHamburgerMenu(): void {
     this.showHamburgerMenu.update((v) => !v);

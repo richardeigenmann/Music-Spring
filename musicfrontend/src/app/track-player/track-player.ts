@@ -4,7 +4,6 @@ import {
   Component,
   ElementRef,
   OnDestroy,
-  OnInit,
   ViewChild,
   effect,
   inject,
@@ -23,7 +22,7 @@ import { PlaybackService } from '../playback.service';
   templateUrl: './track-player.html',
   styleUrls: ['./track-player.css'],
 })
-export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
+export class TrackPlayer implements OnDestroy, AfterViewInit {
   private apiService = inject(ApiService);
   playbackService = inject(PlaybackService);
   private router = inject(Router);
@@ -51,7 +50,6 @@ export class TrackPlayer implements OnInit, OnDestroy, AfterViewInit {
       }
     });
   }
-  ngOnInit(): void {}
 
   ngAfterViewInit(): void {
     if (this.audioPlayer) {

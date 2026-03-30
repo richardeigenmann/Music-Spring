@@ -5,7 +5,7 @@
         <h2 class="type-header">{{ tagType }}</h2>
         <div class="tags-list">
           @for (tag of groupedTags()[tagType]; track tag.tagId) {
-            <span class="tag-pill" (click)="selectTag(tag.tagId)">
+            <span class="tag-pill" (click)="selectTag(tag.tagId)" (keydown.enter)="selectTag(tag.tagId)" (keydown.space)="selectTag(tag.tagId)" tabindex="0" role="button">
               {{ tag.tagName }}
             </span>
           }

@@ -77,9 +77,9 @@ export class TrackEdit {
     const assignedTagNames: Record<string, string[]> = {};
     for (const key in track) {
       if (key !== 'trackId' && key !== 'trackName' && key !== 'files') {
-        const value = track[key];
+        const value = track[key] as string | number | string[] | undefined;
         if (Array.isArray(value)) {
-          assignedTagNames[key] = value;
+          assignedTagNames[key] = value as string[];
         } else if (typeof value === 'string' && value.length > 0) {
           assignedTagNames[key] = [value];
         }
@@ -140,7 +140,7 @@ export class TrackEdit {
       const newTrack = {...currentTrack};
       const tagType = tag.tagTypeName;
       const tagName = tag.tagName;
-      const existingValue = newTrack[tagType];
+      const existingValue = newTrack[tagType] as string | string[] | undefined;
 
       if (Array.isArray(existingValue)) {
         if (!existingValue.includes(tagName)) {
@@ -190,7 +190,7 @@ export class TrackEdit {
       const newTrack = {...currentTrack};
       const tagType = tag.tagTypeName;
       const tagName = tag.tagName;
-      const existingValue = newTrack[tagType];
+      const existingValue = newTrack[tagType] as string | string[] | undefined;
 
       if (Array.isArray(existingValue)) {
         const newValues = existingValue.filter((t: string) => t !== tagName);
@@ -243,7 +243,7 @@ export class TrackEdit {
     if (!track) {
       return [];
     }
-    const value = track[field];
+    const value = track[field] as string | string[] | undefined;
     if (Array.isArray(value)) {
       return value;
     }
@@ -259,7 +259,7 @@ export class TrackEdit {
         return null;
       }
       const newTrack = { ...currentTrack };
-      const currentValue = newTrack[field];
+      const currentValue = newTrack[field] as string | string[] | undefined;
       if (Array.isArray(currentValue)) {
         newTrack[field] = [...currentValue, ''];
       } else if (typeof currentValue === 'string') {
@@ -277,7 +277,7 @@ export class TrackEdit {
         return null;
       }
       const newTrack = { ...currentTrack };
-      const currentValue = newTrack[field];
+      const currentValue = newTrack[field] as string | string[] | undefined;
       if (Array.isArray(currentValue)) {
         const newValues = currentValue.filter((_, i) => i !== index);
         if (newValues.length === 0) {
@@ -303,7 +303,7 @@ export class TrackEdit {
         return null;
       }
       const newTrack = { ...currentTrack };
-      const currentValue = newTrack[field];
+      const currentValue = newTrack[field] as string | string[] | undefined;
       if (Array.isArray(currentValue)) {
         const newValues = [...currentValue];
         newValues[index] = newValue;

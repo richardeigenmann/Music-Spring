@@ -95,9 +95,9 @@ export class Stats implements OnInit {
     });
   }
 
-  public chartClicked({ event, active }: { event?: ChartEvent, active?: {}[] }): void {
+  public chartClicked({ event, active }: { event?: ChartEvent, active?: object[] }): void {
     if (active && active.length > 0 && event && event.native) {
-      const clickedElement = active[0] as any;
+      const clickedElement = active[0] as { index: number };
       const chartIndex = clickedElement.index;
 
       const canvas = event.native.target as HTMLElement;

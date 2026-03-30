@@ -1,7 +1,7 @@
 @if (currentTrack(); as track) {
   <div class="player-bar">
     <div class="track-info">
-      <img [src]="getTrackImageUrl(track.fileId)" alt="Cover" class="cover-art" (click)="openQueue()">
+      <img [src]="getTrackImageUrl(track.fileId)" alt="Cover" class="cover-art" (click)="openQueue()" (keydown.enter)="openQueue()" (keydown.space)="openQueue()" tabindex="0" role="button">
       <div class="track-details">
         <div class="track-title" [title]="track.title">{{ track.title }}</div>
         <div class="track-artist" [title]="track.artist">{{ track.artist }}</div>

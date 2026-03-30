@@ -1,23 +1,29 @@
 <div class="stats-container">
   <h1>Library Statistics</h1>
 
-  <div class="detailed-stats" *ngIf="tagTypeCharts().length > 0">
-    <div class="grid-container">
-      <div class="chart-section" *ngFor="let chart of tagTypeCharts(); let i = index" [attr.data-chart]="i">
-        <h3>{{ chart.typeName }}</h3>
-        <div class="chart-wrapper">
-          <canvas baseChart
-                  (chartClick)="chartClicked($event)"
-                  [data]="chart.data"
-                  [options]="pieChartOptions"
-                  [type]="pieChartType">
-          </canvas>
-        </div>
+  @if (tagTypeCharts().length > 0) {
+    <div class="detailed-stats">
+      <div class="grid-container">
+        @for (chart of tagTypeCharts(); track chart.typeName; let i = $index) {
+          <div class="chart-section" [attr.data-chart]="i">
+            <h3>{{ chart.typeName }}</h3>
+            <div class="chart-wrapper">
+              <canvas baseChart
+                      (chartClick)="chartClicked($event)"
+                      [data]="chart.data"
+                      [options]="pieChartOptions"
+                      [type]="pieChartType">
+              </canvas>
+            </div>
+          </div>
+        }
       </div>
     </div>
-  </div>
+  }
 
-  <div *ngIf="tagTypeCharts().length === 0" class="loading">
-    Loading statistics...
-  </div>
+  @if (tagTypeCharts().length === 0) {
+    <div class="loading">
+      Loading statistics...
+    </div>
+  }
 </div>

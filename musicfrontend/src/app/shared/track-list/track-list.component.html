@@ -1,7 +1,7 @@
 <ul class="track-list">
     @for (track of tracks(); track track.trackId) {
-        <li [class.highlighted]="track.trackId === highlightId()" (click)="goToEdit(track.trackId)">
-            <div class="art-container" (click)="playSingleTrack($event, track)" title="Play this track">
+        <li [class.highlighted]="track.trackId === highlightId()" (click)="goToEdit(track.trackId)" (keydown.enter)="goToEdit(track.trackId)" (keydown.space)="goToEdit(track.trackId)" tabindex="0" role="button">
+            <div class="art-container" (click)="playSingleTrack($event, track)" (keydown.enter)="playSingleTrack($event, track)" (keydown.space)="playSingleTrack($event, track)" title="Play this track" tabindex="0" role="button">
                 <img [src]="getTrackImageUrl(track.fileId)" alt="Cover" class="list-cover" loading="lazy">
                 <div class="play-overlay">▶</div>
             </div>
@@ -10,7 +10,10 @@
                 @if (getArtistTagId(track); as artistId) {
                   <span class="track-artist clickable"
                         [routerLink]="['/tag', artistId]"
-                        (click)="$event.stopPropagation()">{{ track.artist }}</span>
+                        (click)="$event.stopPropagation()"
+                        (keydown.enter)="$event.stopPropagation()"
+                        (keydown.space)="$event.stopPropagation()"
+                        tabindex="0" role="button">{{ track.artist }}</span>
                 } @else {
                   <span class="track-artist">{{ track.artist }}</span>
                 }
@@ -22,7 +25,10 @@
                     <span class="tag-pill"
                           [routerLink]="['/tag', tag.tagId]"
                           (click)="$event.stopPropagation()"
-                          title="{{ tag.tagTypeName }}">
+                          (keydown.enter)="$event.stopPropagation()"
+                          (keydown.space)="$event.stopPropagation()"
+                          title="{{ tag.tagTypeName }}"
+                          tabindex="0" role="button">
                         {{ tag.tagName }}
                     </span>
                 }

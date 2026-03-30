@@ -9,11 +9,13 @@
         <button class="menu-btn" (click)="toggleMenu($event)" title="More options">
           <span class="menu-icon"></span>
         </button>
-        <div class="dropdown-menu" *ngIf="showMenu()" (click)="onDropdownClick($event)">
-          <a (click)="downloadM3u()">Download as .m3u</a>
-          <a (click)="downloadZip()">Download as .zip</a>
-          <a (click)="deleteCurrentTag()">Delete Tag</a>
-        </div>
+        @if (showMenu()) {
+          <div class="dropdown-menu" (click)="onDropdownClick($event)" (keydown)="onDropdownClick($event)" tabindex="-1" role="menu">
+            <button (click)="downloadM3u()" class="menu-item-btn" role="menuitem">Download as .m3u</button>
+            <button (click)="downloadZip()" class="menu-item-btn" role="menuitem">Download as .zip</button>
+            <button (click)="deleteCurrentTag()" class="menu-item-btn" role="menuitem">Delete Tag</button>
+          </div>
+        }
       </div>
     </div>
   </div>

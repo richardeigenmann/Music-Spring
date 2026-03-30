@@ -27,7 +27,7 @@
             <!-- Editable Array Fields -->
             @for(field of editableArrayFields; track field) {
               <div class="form-group array-group">
-                <label>{{ field }}</label>
+                <strong>{{ field }}</strong>
                 @for(item of getTrackFieldAsArray(field); track $index) {
                   <div class="array-item">
                     <input type="text" [value]="item" (input)="updateArrayItem(field, $index, $event)" class="form-control">

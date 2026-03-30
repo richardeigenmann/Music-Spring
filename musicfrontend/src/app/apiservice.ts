@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, Signal, signal } from '@angular/core';
-import { Observable, tap, firstValueFrom, interval, from, timer, map } from 'rxjs'; // Added map
+import { Injectable, Signal, signal, inject } from '@angular/core';
+import { Observable, tap, firstValueFrom, from, timer, map } from 'rxjs'; // Added map
 import { switchMap, takeWhile } from 'rxjs/operators'; // Added switchMap, takeWhile
 
 export interface Tag {
@@ -20,7 +20,7 @@ export interface TrackFile {
 export interface Track {
   trackId: number;
   trackName: string;
-  [key: string]: any;
+  [key: string]: string | number | string[] | TrackFile[] | undefined;
   files: TrackFile[];
 }
 
@@ -43,10 +43,25 @@ export interface ScanProgress {
   currentFile: string;
 }
 
+export interface BackendVersionInfo {
+  version: string;
+  totalTrackCount: number;
+  buildTime: string;
+  runtime: string;
+  runtimeVersion: string;
+  environment: string;
+  musicDirectory: string;
+  dbConnected: boolean;
+  dbUrl?: string;
+  dbUser?: string;
+  dbError?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class ApiService {
+  private readonly http = inject(HttpClient);
   //private API_URL = 'http://octan:8011'; // Docker backend container
   private API_URL = 'http://localhost:8002'; // backend bootRunPg or bootRunH2
   private initialized = false;
@@ -62,7 +77,7 @@ export class ApiService {
   readonly totalTrackCount: Signal<number> = this._totalTrackCount.asReadonly();
   readonly tags: Signal<Tag[]> = this._tags.asReadonly();
 
-  constructor(private http: HttpClient) {
+  constructor() {
     this.tagsPromise = new Promise((resolve) => (this.resolveTags = resolve));
     this.initPromise = this.loadConfig().then(() => {
       this.getVersion().subscribe();
@@ -77,7 +92,7 @@ export class ApiService {
       this.API_URL = config.apiUrl;
       console.log('API URL initialized to:', this.API_URL);
       this.initialized = true;
-    } catch (e) {
+    } catch {
       console.warn('Could not load dynamic config, falling back to default:', this.API_URL);
       this.initialized = true;
     }
@@ -98,16 +113,16 @@ export class ApiService {
     });
   }
 
-  mapToTrackEntry(track: any): TrackEntry {
+  mapToTrackEntry(track: Track): TrackEntry {
     const artistRaw = track['Artist'] || track['artist'];
-    const artist = Array.isArray(artistRaw) ? artistRaw.join(', ') : artistRaw || '';
+    const artist = Array.isArray(artistRaw) ? artistRaw.join(', ') : (artistRaw as string) || '';
 
     const tagDetails: { tagId: number; tagName: string; tagTypeName: string }[] = [];
     const allTags = this._tags();
 
     if (allTags.length > 0) {
       // Keys to ignore (not group types)
-      const internalKeys = ['trackId', 'trackName', 'files', 'trackId', 'trackName', 'files'];
+      const internalKeys = ['trackId', 'trackName', 'files'];
 
       for (const key in track) {
         if (!internalKeys.includes(key)) {
@@ -136,13 +151,13 @@ export class ApiService {
     }
 
     return {
-      trackId: track.trackId || track.trackId,
-      title: track.trackName || track.trackName,
-      trackName: track.trackName || track.trackName,
+      trackId: track.trackId,
+      title: track.trackName,
+      trackName: track.trackName,
       artist: artist,
-      album: track['Album'] || track['album'],
-      duration: track.files?.[0]?.duration || track.files?.[0]?.duration || 0,
-      fileId: track.files?.[0]?.fileId || track.files?.[0]?.fileId || 0,
+      album: (track['Album'] || track['album'] || '') as string,
+      duration: track.files?.[0]?.duration || 0,
+      fileId: track.files?.[0]?.fileId || 0,
       tagDetails: tagDetails,
     };
   }
@@ -159,14 +174,14 @@ export class ApiService {
     if (!this.initialized) {
       return from(this.initPromise).pipe(switchMap(() => this.loadTags()));
     }
-    return this.http.get<any[]>(`${this.API_URL}/api/tags`).pipe(
+    return this.http.get<Tag[]>(`${this.API_URL}/api/tags`).pipe(
       map((data) =>
         data.map((g) => ({
-          tagId: g.tagId ?? g.tagId,
-          tagName: g.tagName ?? g.tagName,
-          tagTypeName: g.tagTypeName ?? g.tagTypeName,
-          tagTypeId: g.tagTypeId ?? g.tagTypeId,
-          tagTypeEdit: g.tagTypeEdit ?? g.tagTypeEdit,
+          tagId: g.tagId,
+          tagName: g.tagName,
+          tagTypeName: g.tagTypeName,
+          tagTypeId: g.tagTypeId,
+          tagTypeEdit: g.tagTypeEdit,
         })),
       ),
       tap((mapped) => {
@@ -184,14 +199,14 @@ export class ApiService {
           observer.next(currentTags);
           observer.complete();
         } else {
-          this.http.get<any[]>(`${this.API_URL}/api/tags`).subscribe({
+          this.http.get<Tag[]>(`${this.API_URL}/api/tags`).subscribe({
             next: (data) => {
               const mapped = data.map((g) => ({
-                tagId: g.tagId ?? g.tagId,
-                tagName: g.tagName ?? g.tagName,
-                tagTypeName: g.tagTypeName ?? g.tagTypeName,
-                tagTypeId: g.tagTypeId ?? g.tagTypeId,
-                tagTypeEdit: g.tagTypeEdit ?? g.tagTypeEdit,
+                tagId: g.tagId,
+                tagName: g.tagName,
+                tagTypeName: g.tagTypeName,
+                tagTypeId: g.tagTypeId,
+                tagTypeEdit: g.tagTypeEdit,
               }));
               this._tags.set(mapped);
               observer.next(mapped);
@@ -243,7 +258,7 @@ export class ApiService {
     // timer(0, 1000) fires immediately, then every 1 second
     switchMap(() => timer(0, 1000)),
     switchMap(() => {
-      return this.http.get<any>(`${this.API_URL}/api/scanProgress`);
+      return this.http.get<ScanProgress & { done?: boolean }>(`${this.API_URL}/api/scanProgress`);
     }),
     map(p => ({
       ...p,
@@ -260,14 +275,14 @@ export class ApiService {
   > {
     return new Observable((observer) => {
       this.initPromise.then(() => {
-        this.http.get<any[]>(`${this.API_URL}/api/stats/tagUsage`).subscribe({
+        this.http.get<Record<string, string | number>[]>(`${this.API_URL}/api/stats/tagUsage`).subscribe({
           next: (data) => {
             observer.next(
               data.map((d) => ({
-                typeName: d.typeName ?? d.typename ?? d.TYPENAME,
-                tagName: d.tagName ?? d.groupname ?? d.GROUPNAME,
-                count: d.count ?? d.COUNT,
-                tagId: d.tagId ?? d.groupid ?? d.GROUPID,
+                typeName: (d['typeName'] ?? d['typename'] ?? d['TYPENAME'] ?? '') as string,
+                tagName: (d['tagName'] ?? d['groupname'] ?? d['GROUPNAME'] ?? '') as string,
+                count: (d['count'] ?? d['COUNT'] ?? 0) as number,
+                tagId: (d['tagId'] ?? d['groupid'] ?? d['GROUPID'] ?? 0) as number,
               })),
             );
           },
@@ -339,7 +354,7 @@ export class ApiService {
   createTag(tagType: string, tagName: string, trackIds: number[] = []): Observable<Tag> {
     return new Observable((observer) => {
       this.initPromise.then(() => {
-        this.http.post<any>(`${this.API_URL}/api/tag`, { tagType, tagName, trackIds }).subscribe({
+        this.http.post<Tag>(`${this.API_URL}/api/tag`, { tagType, tagName, trackIds }).subscribe({
           next: (data) => {
             const newTag: Tag = {
               tagId: data.tagId,
@@ -415,11 +430,11 @@ export class ApiService {
     return window.location.origin;
   }
 
-  getVersion(): Observable<any> {
+  getVersion(): Observable<BackendVersionInfo> {
     return new Observable((observer) => {
       this.initPromise.then(() => {
         this.http
-          .get<any>(`${this.API_URL}/api/version`)
+          .get<BackendVersionInfo>(`${this.API_URL}/api/version`)
           .pipe(
             tap((data) => {
               if (data.totalTrackCount !== undefined) {

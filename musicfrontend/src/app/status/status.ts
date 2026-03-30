@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit, ViewEncapsulation, VERSION as ANGULAR_VERSION } from '@angular/core';
-import { ApiService } from '../apiservice';
+import { ApiService, BackendVersionInfo } from '../apiservice';
 import { CommonModule } from '@angular/common';
 import { VERSION as PROJECT_VERSION, BUILD_DATE } from '../version';
 
@@ -19,7 +19,7 @@ export class Status implements OnInit {
   actuatorUrl = signal<string>('');
   healthUrl = signal<string>('');
   infoUrl = signal<string>('');
-  versionInfo = signal<any>(null);
+  versionInfo = signal<BackendVersionInfo | null>(null);
   angularVersion = ANGULAR_VERSION.full;
   projectVersion = PROJECT_VERSION;
   buildDate = BUILD_DATE;
@@ -36,7 +36,7 @@ export class Status implements OnInit {
         // Refresh URLs in case config loading finished
         this.updateUrls();
       },
-      error: (err) => {
+      error: () => {
         console.warn('Backend version check failed, but updating URLs anyway.');
         this.updateUrls();
       }

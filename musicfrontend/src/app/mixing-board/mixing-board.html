@@ -116,7 +116,7 @@
         <ul>
           @for (track of filteredTracks(); track track.trackId) {
             <li>
-              <img [src]="getTrackImageUrl(track.fileId)" class="small-art">
+              <img [src]="getTrackImageUrl(track.fileId)" class="small-art" alt="Track Art">
               {{ track.artist }} - {{ track.title }}
               <a [routerLink]="['/track', track.trackId]" class="btn-edit">✏️</a>
             </li>

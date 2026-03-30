@@ -74,14 +74,20 @@
   padding: 5px 0;
 }
 
-.dropdown-menu a {
+.menu-item-btn {
   padding: 10px 15px;
   text-decoration: none;
   color: yellow;
   display: block;
   cursor: pointer;
+  background: none;
+  border: none;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  font-size: 14px;
 }
 
-.dropdown-menu a:hover {
+.menu-item-btn:hover {
   background-color: #444;
 }

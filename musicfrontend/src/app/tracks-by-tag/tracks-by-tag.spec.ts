@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { TracksByGroup } from './tracks-by-group';
+import { TracksByTag } from './tracks-by-tag';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-describe('TracksByGroup', () => {
-  let component: TracksByGroup;
-  let fixture: ComponentFixture<TracksByGroup>;
+describe('TracksByTag', () => {
+  let component: TracksByTag;
+  let fixture: ComponentFixture<TracksByTag>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TracksByGroup, RouterTestingModule, HttpClientTestingModule],
+      imports: [TracksByTag, RouterTestingModule, HttpClientTestingModule],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(TracksByGroup);
+    fixture = TestBed.createComponent(TracksByTag);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
