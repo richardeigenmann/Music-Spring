@@ -7,7 +7,7 @@ android-targetSdk = "35"
 # Plugins & Kotlin
 kotlin = "2.3.20"
 compose-plugin = "1.9.3"
-agp = "8.8.0"
+agp = "9.1.0"
 
 # Libraries
 androidx-activity-compose = "1.9.3"
@@ -19,7 +19,7 @@ coroutines = "1.8.1"
 koin = "3.5.6"
 koin-compose = "1.1.5"
 coil = "2.7.0"
-voyager = "1.0.0"
+voyager = "1.1.0-beta03"
 kotlinx-serialization = "1.7.1"
 
 [libraries]

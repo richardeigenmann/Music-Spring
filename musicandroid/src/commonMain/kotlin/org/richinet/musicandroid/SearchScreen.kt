@@ -15,7 +15,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import org.koin.compose.koinInject
 
-class SearchScreen : Screen {
+data object SearchScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
@@ -32,7 +32,7 @@ class SearchScreen : Screen {
             Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
                 TextField(
                     value = query,
-                    onValueChange = { 
+                    onValueChange = {
                         query = it
                         viewModel.searchTracks(it)
                     },

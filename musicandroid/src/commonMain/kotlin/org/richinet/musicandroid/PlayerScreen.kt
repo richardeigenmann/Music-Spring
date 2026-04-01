@@ -14,7 +14,7 @@ import org.koin.compose.koinInject
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 
-class PlayerScreen : Screen {
+data object PlayerScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
@@ -54,19 +54,19 @@ class PlayerScreen : Screen {
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.secondary
                 )
-                
+
                 Spacer(modifier = Modifier.height(48.dp))
 
                 // Progress Bar
                 Slider(
                     value = playbackState.progress,
-                    onValueChange = { 
+                    onValueChange = {
                         val newPos = (it * playbackState.duration).toLong()
                         audioPlayer.seekTo(newPos)
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -86,7 +86,7 @@ class PlayerScreen : Screen {
                     IconButton(onClick = { audioPlayer.skipPrevious() }) {
                         Icon(Icons.Default.SkipPrevious, contentDescription = "Previous", modifier = Modifier.size(48.dp))
                     }
-                    
+
                     FilledIconButton(
                         onClick = { audioPlayer.togglePlayPause() },
                         modifier = Modifier.size(72.dp)

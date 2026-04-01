@@ -1,6 +1,5 @@
 package org.richinet.musicandroid
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -23,15 +22,13 @@ import org.koin.core.context.startKoin
 @Composable
 fun App() {
     KoinContext {
-        val audioPlayer = koinInject<AudioPlayer>()
-        val playbackState by audioPlayer.playbackState.collectAsState()
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val scope = rememberCoroutineScope()
 
         MaterialTheme(
             colorScheme = darkColorScheme()
         ) {
-            Navigator(HomeScreen()) { navigator ->
+            Navigator(HomeScreen) { navigator ->
                 ModalNavigationDrawer(
                     drawerState = drawerState,
                     drawerContent = {
@@ -40,7 +37,7 @@ fun App() {
                             NavigationDrawerItem(
                                 label = { Text("Tags") },
                                 selected = false,
-                                onClick = { 
+                                onClick = {
                                     navigator.popUntilRoot()
                                     scope.launch { drawerState.close() }
                                 }
@@ -48,16 +45,16 @@ fun App() {
                             NavigationDrawerItem(
                                 label = { Text("Search") },
                                 selected = false,
-                                onClick = { 
-                                    navigator.push(SearchScreen())
+                                onClick = {
+                                    navigator.push(SearchScreen)
                                     scope.launch { drawerState.close() }
                                 }
                             )
                             NavigationDrawerItem(
                                 label = { Text("Mixing Board") },
                                 selected = false,
-                                onClick = { 
-                                    navigator.push(MixerScreen())
+                                onClick = {
+                                    navigator.push(MixerScreen)
                                     scope.launch { drawerState.close() }
                                 }
                             )
@@ -78,9 +75,7 @@ fun App() {
                             }
                         },
                         bottomBar = {
-                            if (playbackState.track != null) {
-                                NowPlayingBar(playbackState, audioPlayer, navigator)
-                            }
+                            NowPlayingBarWrapper(navigator)
                         }
                     ) { paddingValues ->
                         Box(modifier = Modifier.padding(paddingValues)) {
@@ -94,13 +89,23 @@ fun App() {
 }
 
 @Composable
+fun NowPlayingBarWrapper(navigator: Navigator) {
+    val audioPlayer = koinInject<AudioPlayer>()
+    val playbackState by audioPlayer.playbackState.collectAsState()
+
+    if (playbackState.track != null) {
+        NowPlayingBar(playbackState, audioPlayer, navigator)
+    }
+}
+
+@Composable
 fun NowPlayingBar(state: PlaybackState, player: AudioPlayer, navigator: Navigator) {
     Surface(
         tonalElevation = 8.dp,
         modifier = Modifier
             .fillMaxWidth()
             .height(64.dp)
-            .clickable { navigator.push(PlayerScreen()) }
+            .clickable { navigator.push(PlayerScreen) }
     ) {
         Column {
             LinearProgressIndicator(

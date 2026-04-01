@@ -24,7 +24,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
-class MixerScreen : Screen {
+data object MixerScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
@@ -32,14 +32,14 @@ class MixerScreen : Screen {
         val apiService = koinInject<ApiService>()
         val audioPlayer = koinInject<AudioPlayer>()
         val scope = rememberCoroutineScope()
-        
+
         val tagsState by viewModel.tags.collectAsState()
         val filteredTracks by viewModel.filteredTracks.collectAsState()
-        
+
         var mustHave by remember { mutableStateOf(setOf<Tag>()) }
         var canHave by remember { mutableStateOf(setOf<Tag>()) }
         var mustNotHave by remember { mutableStateOf(setOf<Tag>()) }
-        
+
         var showSaveDialog by remember { mutableStateOf(false) }
         var playlistName by remember { mutableStateOf("") }
 
@@ -69,17 +69,17 @@ class MixerScreen : Screen {
                 BucketSection("MUST HAVE (AND)", mustHave, Color(0xFF2E7D32)) { mustHave = mustHave - it }
                 BucketSection("CAN HAVE (OR)", canHave, Color(0xFF1565C0)) { canHave = canHave - it }
                 BucketSection("MUST NOT HAVE (NOT)", mustNotHave, Color(0xFFC62828)) { mustNotHave = mustNotHave - it }
-                
+
                 HorizontalDivider()
-                
+
                 // Available Tags
                 Text("Available Tags", modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.titleSmall)
                 Box(modifier = Modifier.weight(1f)) {
                     when (val state = tagsState) {
                         is UiState.Success -> {
-                            val available = state.data.filter { 
-                                it.tagTypeEdit == "S" && 
-                                it !in mustHave && it !in canHave && it !in mustNotHave 
+                            val available = state.data.filter {
+                                it.tagTypeEdit == "S" &&
+                                it !in mustHave && it !in canHave && it !in mustNotHave
                             }
                             LazyColumn {
                                 items(available) { tag ->
@@ -88,14 +88,14 @@ class MixerScreen : Screen {
                                         supportingContent = { Text(tag.tagTypeName) },
                                         trailingContent = {
                                             Row {
-                                                IconButton(onClick = { mustHave = mustHave + tag }) { 
-                                                    Text("M", color = Color(0xFF2E7D32)) 
+                                                IconButton(onClick = { mustHave = mustHave + tag }) {
+                                                    Text("M", color = Color(0xFF2E7D32))
                                                 }
-                                                IconButton(onClick = { canHave = canHave + tag }) { 
-                                                    Text("C", color = Color(0xFF1565C0)) 
+                                                IconButton(onClick = { canHave = canHave + tag }) {
+                                                    Text("C", color = Color(0xFF1565C0))
                                                 }
-                                                IconButton(onClick = { mustNotHave = mustNotHave + tag }) { 
-                                                    Text("N", color = Color(0xFFC62828)) 
+                                                IconButton(onClick = { mustNotHave = mustNotHave + tag }) {
+                                                    Text("N", color = Color(0xFFC62828))
                                                 }
                                             }
                                         }
@@ -107,7 +107,7 @@ class MixerScreen : Screen {
                         else -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }
                 }
-                
+
                 // Results Preview
                 HorizontalDivider()
                 Text("Results Preview", modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.titleSmall)
