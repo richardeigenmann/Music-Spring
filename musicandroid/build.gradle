@@ -53,15 +53,15 @@ kotlin {
 }
 
 android {
-    namespace "org.richinet.musicandroid"
-    compileSdk libs.versions.android.compileSdk.get().toInteger()
+    namespace = "org.richinet.musicandroid"
+    compileSdk = libs.versions.android.compileSdk.get().toInteger()
 
     defaultConfig {
-        applicationId "org.richinet.musicandroid"
-        minSdk libs.versions.android.minSdk.get().toInteger()
-        targetSdk libs.versions.android.targetSdk.get().toInteger()
-        versionCode 1
-        versionName "1.0"
+        applicationId = "org.richinet.musicandroid"
+        minSdk = libs.versions.android.minSdk.get().toInteger()
+        targetSdk = libs.versions.android.targetSdk.get().toInteger()
+        versionCode = 1
+        versionName = "1.0"
     }
     packaging {
         resources {
@@ -70,12 +70,12 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_21
-        targetCompatibility JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 }
 

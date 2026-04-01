@@ -36,7 +36,7 @@ project(':musicfrontend') {
         nodeProjectDir = file("${project.projectDir}")
     }
 
-    task generateVersionFile {
+    tasks.register('generateVersionFile') {
         doLast {
             def versionFile = file("${project.projectDir}/src/app/version.ts")
             versionFile.text = """
@@ -50,7 +50,7 @@ export const BUILD_DATE = '${new Date().toLocaleString()}';
         }
     }
 
-    task buildFrontendDocker(type: Exec) {
+    tasks.register('buildFrontendDocker', Exec) {
         dependsOn 'generateVersionFile'
         dependsOn 'npmInstall'
         group = 'docker'
@@ -63,7 +63,7 @@ export const BUILD_DATE = '${new Date().toLocaleString()}';
         }
     }
 
-    task pushFrontendDocker(type: Exec) {
+    tasks.register('pushFrontendDocker', Exec) {
         dependsOn 'buildFrontendDocker'
         group = 'docker'
         commandLine 'sh', '-c', "docker push ${dockerHubUsername}/musicfrontend:${version} && docker push ${dockerHubUsername}/musicfrontend:latest"
@@ -75,14 +75,14 @@ project(':musicbackend') {
 }
 
 
-task pushBackendDocker(type: Exec) {
+tasks.register('pushBackendDocker', Exec) {
   dependsOn ':musicbackend:bootBuildImage'
   group = 'docker'
   commandLine 'sh', '-c', "docker push ${dockerHubUsername}/musicbackend:${version} && docker push ${dockerHubUsername}/musicbackend:latest"
 }
 
 
-task pushDockerContainers {
+tasks.register('pushDockerContainers') {
     dependsOn ':musicfrontend:pushFrontendDocker', ':pushBackendDocker'
     group = 'docker'
 }
