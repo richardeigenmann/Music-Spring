@@ -1,42 +1,47 @@
 package org.richinet.musicbackend.service
 
+import org.richinet.musicbackend.data.dto.TrackDto
+import org.richinet.musicbackend.data.dto.TrackFileDto
 import org.richinet.musicbackend.data.entity.Track
 import org.springframework.stereotype.Service
-import java.util.*
 
 @Service
 class TrackDataService {
 
-    fun serializeTrack(track: Track): Map<String, Any?> {
-        val trackData = LinkedHashMap<String, Any?>()
-        trackData["trackId"] = track.id
-        trackData["trackName"] = track.name
+    /**
+     * Serializes a Track entity into a TrackDto.
+     * Metadata (tags) are dynamically added to the DTO.
+     */
+    fun serializeTrack(track: Track): TrackDto {
+        val filesDtoList = track.trackFiles?.map { file ->
+            TrackFileDto(
+                fileId = file.id,
+                fileName = file.fileName,
+                fileLocation = file.fileLocation,
+                duration = file.duration
+            )
+        } ?: emptyList()
 
-        // Group by type name
+        val trackDto = TrackDto(
+            trackId = track.id,
+            trackName = track.name,
+            files = filesDtoList
+        )
+
+        // Dynamically add tags by their type name
         val tagsByType = track.trackTags?.mapNotNull { it.tag }?.groupBy { it.tagType?.name } ?: emptyMap()
 
         tagsByType.forEach { (typeName, tags) ->
             if (typeName != null) {
                 val tagNames = tags.mapNotNull { it.name }
                 if (tagNames.size == 1) {
-                    trackData[typeName] = tagNames[0]
+                    trackDto.addMetadata(typeName, tagNames[0])
                 } else if (tagNames.isNotEmpty()) {
-                    trackData[typeName] = tagNames
+                    trackDto.addMetadata(typeName, tagNames)
                 }
             }
         }
 
-        if (!track.trackFiles.isNullOrEmpty()) {
-            val filesData = ArrayList<Map<String, Any?>>()
-            track.trackFiles?.forEach { file ->
-                val fileInfo = LinkedHashMap<String, Any?>()
-                fileInfo["fileId"] = file.id
-                fileInfo["fileName"] = file.fileName
-                fileInfo["duration"] = file.duration
-                filesData.add(fileInfo)
-            }
-            trackData["files"] = filesData
-        }
-        return trackData
+        return trackDto
     }
 }

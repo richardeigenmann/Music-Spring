@@ -77,20 +77,27 @@ class MusicImportService(
                 val filesList = value as? List<Map<String, Any?>>
                 filesList?.forEach { fileData ->
                     val fileId = ((fileData["fileId"] ?: fileData["FileId"]) as? Number)?.toLong() ?: return@forEach
-                    val newFileName = (fileData["fileName"] ?: fileData["FileName"]) as? String ?: return@forEach
-
                     val trackFile = trackFileRepository.findById(fileId).orElse(null) ?: return@forEach
+                    val newFileName = (fileData["fileName"] ?: fileData["FileName"]) as? String ?: trackFile.fileName
+                    val newFileLocation = (fileData["fileLocation"] ?: fileData["FileLocation"]) as? String ?: trackFile.fileLocation
 
-                    if (trackFile.fileName != newFileName) {
+                    if (trackFile.fileName != newFileName || trackFile.fileLocation != newFileLocation) {
                         // Check if the new file actually exists on disk
-                        val baseDir = File(musicDirectory)
-                        val relativeLocation = trackFile.fileLocation?.trim('/') ?: ""
+                        val baseDir = File(musicDirectory).canonicalFile
+                        val relativeLocation = newFileLocation?.trim('/') ?: ""
                         val targetDir = if (relativeLocation.isEmpty()) baseDir else File(baseDir, relativeLocation)
-                        val newFile = File(targetDir, newFileName)
+                        val newFile = File(targetDir, newFileName ?: "")
 
                         if (newFile.exists() && newFile.isFile) {
-                            logger.info("Updating file mapping for ID $fileId to $newFileName")
+                            logger.info("Updating file mapping for ID $fileId. New name: $newFileName, New location: $newFileLocation")
                             trackFile.fileName = newFileName
+                            
+                            // Normalize newFileLocation
+                            val normalizedLocation = if (newFileLocation.isNullOrBlank()) "/" else {
+                                val trimmed = newFileLocation.trim('/')
+                                if (trimmed.isEmpty()) "/" else "/$trimmed/"
+                            }
+                            trackFile.fileLocation = normalizedLocation
 
                             // Update duration from the new file
                             try {
@@ -102,7 +109,7 @@ class MusicImportService(
 
                             trackFileRepository.save(trackFile)
                         } else {
-                            logger.warn("Ignoring filename change for ID $fileId: file ${newFile.absolutePath} not found")
+                            logger.warn("Ignoring file change for ID $fileId: file ${newFile.absolutePath} not found")
                         }
                     }
                 }
@@ -222,14 +229,19 @@ class MusicImportService(
 
     @Transactional
     fun processNewMp3File(file: File) {
-        val fullPath = file.absolutePath
-        val relPath = fullPath.substringAfter(musicDirectory)
-        val fileName = file.name
-        val fileLocation = relPath.substringBeforeLast(fileName)
-
+        val baseDir = File(musicDirectory).canonicalFile
+        val canonicalFile = file.canonicalFile
+        val relPath = canonicalFile.toRelativeString(baseDir)
+        val fileName = canonicalFile.name
+        
+        // Robust fileLocation calculation: get the directory part of the relative path
+        val parentPath = if (relPath == fileName) "" else relPath.substringBeforeLast(File.separator)
+        
         // Normalize fileLocation to start and end with /
-        val normalizedLocation = if (fileLocation.startsWith("/")) fileLocation else "/$fileLocation"
-        val finalLocation = if (normalizedLocation.endsWith("/")) normalizedLocation else "$normalizedLocation/"
+        val finalLocation = if (parentPath.isEmpty()) "/" else {
+            val startNormalized = if (parentPath.startsWith("/")) parentPath else "/$parentPath"
+            if (startNormalized.endsWith("/")) startNormalized else "$startNormalized/"
+        }
 
         val existingFiles = trackFileRepository.findByFileNameAndFileLocation(fileName, finalLocation)
         if (existingFiles.isNotEmpty()) {
@@ -237,7 +249,7 @@ class MusicImportService(
         }
 
         // It's a new file
-        logger.info("Processing new MP3 file: ${file.absolutePath}")
+        logger.info("Processing new MP3 file: ${canonicalFile.absolutePath} (Location: $finalLocation)")
         val mp3file = Mp3File(file)
         var artist = ""
         var title = ""
@@ -321,5 +333,23 @@ class MusicImportService(
     fun deleteTag(tagId: Long) {
         trackTagRepository.deleteByTagId(tagId)
         tagRepository.deleteById(tagId)
+    }
+
+    @Transactional
+    fun deleteBrokenFile(fileId: Long): Boolean {
+        val trackFile = trackFileRepository.findById(fileId).orElse(null) ?: return false
+        val trackId = trackFile.trackId
+
+        trackFileRepository.delete(trackFile)
+        logger.info("Deleted broken file record with ID $fileId")
+
+        if (trackId != null) {
+            val remainingFiles = trackFileRepository.findByTrackId(trackId)
+            if (remainingFiles.isEmpty()) {
+                logger.info("Track with ID $trackId has no more files. Deleting track and its tags.")
+                deleteTrack(trackId)
+            }
+        }
+        return true
     }
 }

@@ -69,6 +69,44 @@
       <p>Loading backend version info...</p>
     }
 
+  <h1>Database Integrity:</h1>
+  <div class="status-item">
+    <button (click)="checkIntegrity()" class="musicdb-button" [disabled]="checkingIntegrity()">
+      {{ checkingIntegrity() ? 'Checking...' : 'Check Database Integrity' }}
+    </button>
+  </div>
+
+  @if (integrityResult(); as result) {
+    <div class="status-item">
+      <strong>Total Files Checked:</strong> {{ result.totalFilesChecked }}
+    </div>
+    <div class="status-item">
+      <strong>Broken Files Found:</strong> {{ result.brokenFiles.length }}
+    </div>
+
+    @if (result.brokenFiles.length > 0) {
+      <div class="status-item">
+        <ul class="broken-files-list">
+          @for (file of result.brokenFiles; track file.fileId) {
+            <li>
+              <strong>Track ID:</strong> {{ file.trackId }} |
+              <strong>File ID:</strong> {{ file.fileId }} |
+              <strong>Name:</strong> {{ file.fileName }} <br>
+              <span class="error">Path: {{ file.absolutePath }}</span>
+              <button (click)="deleteBrokenFile(file.fileId)" class="musicdb-button" style="padding: 2px 8px; font-size: 0.8em; margin-top: 5px; background-color: #f44336;">
+                Delete Record
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    } @else if (!checkingIntegrity()) {
+      <div class="status-item success">
+        All files found on disk!
+      </div>
+    }
+  }
+
 
   <div style="margin-top: 20px;">
     <button (click)="goBack()" class="musicdb-button">Back</button>

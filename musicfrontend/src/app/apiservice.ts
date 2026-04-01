@@ -14,6 +14,7 @@ export interface Tag {
 export interface TrackFile {
   fileId: number;
   fileName: string;
+  fileLocation: string;
   duration: number;
 }
 
@@ -55,6 +56,19 @@ export interface BackendVersionInfo {
   dbUrl?: string;
   dbUser?: string;
   dbError?: string;
+}
+
+export interface BrokenFileDetails {
+  fileId: number;
+  trackId: number;
+  fileName: string;
+  fileLocation: string;
+  absolutePath: string;
+}
+
+export interface IntegrityCheckResult {
+  totalFilesChecked: number;
+  brokenFiles: BrokenFileDetails[];
 }
 
 @Injectable({
@@ -443,6 +457,22 @@ export class ApiService {
             }),
           )
           .subscribe(observer);
+      });
+    });
+  }
+
+  checkIntegrity(): Observable<IntegrityCheckResult> {
+    return new Observable((observer) => {
+      this.initPromise.then(() => {
+        this.http.get<IntegrityCheckResult>(`${this.API_URL}/api/checkIntegrity`).subscribe(observer);
+      });
+    });
+  }
+
+  deleteBrokenFile(id: number): Observable<void> {
+    return new Observable((observer) => {
+      this.initPromise.then(() => {
+        this.http.delete<void>(`${this.API_URL}/api/brokenFile/${id}`).subscribe(observer);
       });
     });
   }

@@ -10,7 +10,10 @@
                     <button type="button" class="play-btn-overlay" (click)="play()" title="Play Track">▶</button>
                 </div>
                 <div class="file-info">
+                    <label>File Name:</label>
                     <input type="text" [(ngModel)]="file.fileName" [name]="'fileName_' + file.fileId" class="form-control file-name-input">
+                    <label>Location:</label>
+                    <input type="text" [(ngModel)]="file.fileLocation" [name]="'fileLocation_' + file.fileId" class="form-control file-location-input">
                     <div class="file-duration">{{ formatDuration(file.duration) }}</div>
                 </div>
               </div>

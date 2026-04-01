@@ -5,7 +5,6 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.doThrow
 import org.richinet.musicbackend.controller.MusicDbController
-import org.richinet.musicbackend.data.dto.TrackDto
 import org.richinet.musicbackend.data.entity.Track
 import org.richinet.musicbackend.data.projection.TagProjection
 import org.richinet.musicbackend.data.repository.TagTypeRepository
@@ -23,7 +22,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import java.util.*
 
-@WebMvcTest(MusicDbController::class)
+@WebMvcTest(MusicDbController::class, properties = ["app.music-directory=/tmp/music"])
 class MusicbackendApplicationTests {
 
     @Autowired
@@ -56,15 +55,18 @@ class MusicbackendApplicationTests {
     @MockitoBean
     private lateinit var audioHandler: org.springframework.web.servlet.resource.ResourceHttpRequestHandler
 
+    @MockitoBean
+    private lateinit var jacksonJsonMapper: tools.jackson.databind.json.JsonMapper
+
 
     @Test
     fun `getTrack should return track data when found`() {
         val trackId = 1L
-        val track = Track().apply { this.id = trackId; this.name = "Test Track" }
-        val trackDto = TrackDto(trackId = trackId, trackName = "Test Track")
+        val track = Track().apply { this.id = trackId }
+        val trackData = mapOf("trackId" to trackId, "trackName" to "Test Track")
 
         `when`(trackRepository.findById(trackId)).thenReturn(Optional.of(track))
-        `when`(trackDataService.serializeTrack(track)).thenReturn(trackDto)
+        `when`(trackDataService.serializeTrack(track)).thenReturn(trackData)
 
         mockMvc.perform(get("/api/track/$trackId"))
             .andExpect(status().isOk)
@@ -104,11 +106,11 @@ class MusicbackendApplicationTests {
     @Test
     fun `getTracksByTag should return list of tracks`() {
         val tagId = 10L
-        val track = Track().apply { id = 1L; name = "Tag Track" }
-        val trackDto = TrackDto(trackId = 1L, trackName = "Tag Track")
+        val track = Track().apply { id = 1L }
+        val trackData = mapOf("trackId" to 1L, "trackName" to "Tag Track")
 
         `when`(trackRepository.findTracksByTagId(tagId)).thenReturn(listOf(track))
-        `when`(trackDataService.serializeTrack(track)).thenReturn(trackDto)
+        `when`(trackDataService.serializeTrack(track)).thenReturn(trackData)
 
         mockMvc.perform(get("/api/tracksByTag/$tagId"))
             .andExpect(status().isOk)
@@ -175,10 +177,10 @@ class MusicbackendApplicationTests {
     fun `searchTracks should return matching tracks`() {
         val query = "test"
         val track = Track().apply { id = 1L; name = "Test Song" }
-        val trackDto = TrackDto(trackId = 1L, trackName = "Test Song")
+        val trackData = mapOf("trackId" to 1L, "trackName" to "Test Song")
 
         `when`(trackRepository.searchTracks(query)).thenReturn(listOf(track))
-        `when`(trackDataService.serializeTrack(track)).thenReturn(trackDto)
+        `when`(trackDataService.serializeTrack(track)).thenReturn(trackData)
 
         mockMvc.perform(get("/api/trackSearch").param("query", query))
             .andExpect(status().isOk)

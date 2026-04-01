@@ -9,16 +9,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.richinet.musicbackend.data.dto.TrackDto
 import org.richinet.musicbackend.data.entity.Tag
 import org.richinet.musicbackend.data.projection.TagProjection
 import org.richinet.musicbackend.data.repository.TagTypeRepository
 import org.richinet.musicbackend.data.repository.TagRepository
 import org.richinet.musicbackend.data.repository.TrackFileRepository
 import org.richinet.musicbackend.data.repository.TrackRepository
-import org.richinet.musicbackend.service.MusicImportService
-import org.richinet.musicbackend.service.ScanProgress
-import org.richinet.musicbackend.service.TrackDataService
+import org.richinet.musicbackend.service.*
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -61,15 +58,14 @@ class MusicDbController(
   private val tagTypeRepository: TagTypeRepository,
   private val trackFileRepository: TrackFileRepository,
   private val musicImportService: MusicImportService,
-  private val databaseIntegrityService: org.richinet.musicbackend.service.DatabaseIntegrityService,
+  private val databaseIntegrityService: DatabaseIntegrityService,
   private val jdbcTemplate: JdbcTemplate,
-  private val jacksonJsonMapper: tools.jackson.databind.ObjectMapper
+  private val jacksonJsonMapper: tools.jackson.databind.json.JsonMapper,
+  private val audioHandler: ResourceHttpRequestHandler,
+  @Value("\${app.music-directory}") private val musicDirectory: String
 ) {
   private val logger = LoggerFactory.getLogger(MusicDbController::class.java)
   private val imageExtractionSemaphore = Semaphore(4) // Only 4 concurrent image extractions allowed
-
-  @Value("\${app.music-directory}")
-  private lateinit var musicDirectory: String
 
   @Operation(
     summary = "Returns the Music database as a JSON string for download",
@@ -81,7 +77,7 @@ class MusicDbController(
     ]
   )
   @GetMapping("/tracks/dump")
-  fun dumpMusicData(response: jakarta.servlet.http.HttpServletResponse): List<TrackDto> {
+  fun dumpMusicData(response: jakarta.servlet.http.HttpServletResponse): List<Map<String, Any?>> {
     response.setHeader("Content-Disposition", "attachment; filename=\"tracks.json\"")
     return trackRepository.findAll().map { trackDataService.serializeTrack(it) }
   }
@@ -116,7 +112,7 @@ class MusicDbController(
       ApiResponse(
         responseCode = "200", description = "Found the track",
         content = [Content(
-          mediaType = "application/json", schema = Schema(implementation = TrackDto::class), examples = [
+          mediaType = "application/json", schema = Schema(implementation = Map::class), examples = [
             ExampleObject(
               value = """
                 {
@@ -142,7 +138,7 @@ class MusicDbController(
     ]
   )
   @GetMapping("/track/{id}")
-  fun getTrack(@PathVariable id: Long): ResponseEntity<TrackDto> {
+  fun getTrack(@PathVariable id: Long): ResponseEntity<Map<String, Any?>> {
     val track = trackRepository.findById(id)
     return if (track.isPresent) {
       ResponseEntity.ok(trackDataService.serializeTrack(track.get()))
@@ -235,7 +231,7 @@ class MusicDbController(
     ]
   )
   @GetMapping("/tracksByTag/{id}")
-  fun getTracksByTag(@PathVariable id: Long): ResponseEntity<List<TrackDto>> {
+  fun getTracksByTag(@PathVariable id: Long): ResponseEntity<List<Map<String, Any?>>> {
     val tracks = trackRepository.findTracksByTagId(id)
     val serializedTracks = tracks.map { trackDataService.serializeTrack(it) }
     return ResponseEntity.ok(serializedTracks)
@@ -274,14 +270,11 @@ class MusicDbController(
     ]
   )
   @GetMapping("/trackSearch")
-  fun searchTracks(@RequestParam query: String): ResponseEntity<List<TrackDto>> {
+  fun searchTracks(@RequestParam query: String): ResponseEntity<List<Map<String, Any?>>> {
     val tracks = trackRepository.searchTracks(query)
     val serializedTracks = tracks.map { trackDataService.serializeTrack(it) }
     return ResponseEntity.ok(serializedTracks)
   }
-
-  @Autowired
-  lateinit var audioHandler: ResourceHttpRequestHandler
 
   @Operation(summary = "Stream audio file")
   @ApiResponses(
@@ -307,12 +300,7 @@ class MusicDbController(
       return
     }
 
-    val fileLocation = trackFile.fileLocation?.trim('/') ?: ""
-    val file = if (fileLocation.isEmpty()) {
-      File(musicDirectory, trackFile.fileName ?: "")
-    } else {
-      File(File(musicDirectory, fileLocation), trackFile.fileName ?: "")
-    }
+    val file = File(File(musicDirectory, trackFile.fileLocation ?: ""), trackFile.fileName ?: "")
 
     if (file.exists()) {
       val resource = FileSystemResource(file)
@@ -429,12 +417,12 @@ class MusicDbController(
     value = [
       ApiResponse(
         responseCode = "200", description = "Integrity check results returned",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = org.richinet.musicbackend.service.IntegrityCheckResult::class))]
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = IntegrityCheckResult::class))]
       )
     ]
   )
   @GetMapping("/checkIntegrity")
-  fun checkIntegrity(): ResponseEntity<org.richinet.musicbackend.service.IntegrityCheckResult> {
+  fun checkIntegrity(): ResponseEntity<IntegrityCheckResult> {
     return ResponseEntity.ok(databaseIntegrityService.checkFileIntegrity())
   }
 
@@ -469,7 +457,7 @@ class MusicDbController(
     ]
   )
   @GetMapping("/unclassifiedTracks")
-  fun getUnclassifiedTracks(): ResponseEntity<List<TrackDto>> {
+  fun getUnclassifiedTracks(): ResponseEntity<List<Map<String, Any?>>> {
     val tracks = trackRepository.findUnclassifiedTracks()
     val serializedTracks = tracks.map { trackDataService.serializeTrack(it) }
     return ResponseEntity.ok(serializedTracks)
@@ -485,7 +473,7 @@ class MusicDbController(
     ]
   )
   @PostMapping("/filterTracks")
-  fun filterTracks(@RequestBody request: FilterRequest): ResponseEntity<List<TrackDto>> {
+  fun filterTracks(@RequestBody request: FilterRequest): ResponseEntity<List<Map<String, Any?>>> {
     if (request.mustHaveIds.isEmpty() && request.canHaveIds.isEmpty() && request.mustNotHaveIds.isEmpty()) {
       return ResponseEntity.ok(emptyList())
     }
@@ -579,19 +567,18 @@ class MusicDbController(
     val m3uContent = buildString {
       appendLine("#EXTM3U")
       tracks.forEach { track ->
-        val trackDto = trackDataService.serializeTrack(track)
-        val firstFile = trackDto.files.firstOrNull()
+        val serializedTrack = trackDataService.serializeTrack(track)
+        val files = serializedTrack["files"] as? List<*>
+        @Suppress("UNCHECKED_CAST")
+        val firstFile = files?.firstOrNull() as? Map<String, Any?>
 
         if (firstFile != null) {
-          val artistValue = trackDto.getMetadata()["Artist"]
-          val artist = when (artistValue) {
-            is List<*> -> artistValue.joinToString(", ")
-            null -> "Unknown Artist"
-            else -> artistValue.toString()
-          }
-          val title = trackDto.trackName ?: "Unknown Track"
-          val duration = firstFile.duration?.toInt() ?: -1
-          val fileId = firstFile.fileId
+          val artist = (serializedTrack["Artist"])?.let {
+            if (it is List<*>) it.joinToString(", ") else it.toString()
+          } ?: "Unknown Artist"
+          val title = serializedTrack["trackName"] as? String ?: "Unknown Track"
+          val duration = (firstFile["duration"] as? Number)?.toInt() ?: -1
+          val fileId = firstFile["fileId"]
 
           appendLine("#EXTINF:$duration,$artist - $title")
           appendLine("$baseUrl/trackFile/$fileId")
@@ -625,19 +612,19 @@ class MusicDbController(
       // 1. Create and add the M3U file to the zip
       val m3uContent = buildString {
         appendLine("#EXTM3U")
-        serializedTracks.forEach { trackDto ->
-          val firstFile = trackDto.files.firstOrNull()
+        serializedTracks.forEach { serializedTrack ->
+          val files = serializedTrack["files"] as? List<*>
+          @Suppress("UNCHECKED_CAST")
+          val firstFile = files?.firstOrNull() as? Map<String, Any?>
 
           if (firstFile != null) {
-            val artistValue = trackDto.getMetadata()["Artist"]
-            val artist = when (artistValue) {
-              is List<*> -> artistValue.joinToString(", ")
-              null -> "Unknown Artist"
-              else -> artistValue.toString()
-            }
-            val title = trackDto.trackName ?: "Unknown Track"
-            val duration = firstFile.duration?.toInt() ?: -1
-            val fileName = firstFile.fileName
+            val artist = serializedTrack["Artist"]?.let {
+
+              if (it is List<*>) it.joinToString(", ") else it.toString()
+            } ?: "Unknown Artist"
+            val title = serializedTrack["trackName"] as? String ?: "Unknown Track"
+            val duration = (firstFile["duration"] as? Number)?.toInt() ?: -1
+            val fileName = firstFile["fileName"] as? String
 
             if (fileName != null) {
               appendLine("#EXTINF:$duration,$artist - $title")
@@ -652,15 +639,17 @@ class MusicDbController(
       zipOut.closeEntry()
 
       // 2. Add each MP3 file to the zip
-      serializedTracks.forEach { trackDto ->
-        val firstFile = trackDto.files.firstOrNull()
-        firstFile?.let { fileDto ->
-          val fileLocation = fileDto.fileLocation?.trim('/') ?: ""
-          val fileName = fileDto.fileName ?: ""
-          val file = if (fileLocation.isEmpty()) {
+      serializedTracks.forEach { serializedTrack ->
+        val files = serializedTrack["files"] as? List<*>
+        @Suppress("UNCHECKED_CAST")
+        val firstFile = files?.firstOrNull() as? Map<String, Any?>
+        firstFile?.let { fileMap ->
+          val fileLocation = fileMap["fileLocation"] as? String ?: ""
+          val fileName = fileMap["fileName"] as? String ?: ""
+          val file = if (fileLocation.trim('/').isEmpty()) {
             File(musicDirectory, fileName)
           } else {
-            File(File(musicDirectory, fileLocation), fileName)
+            File(File(musicDirectory, fileLocation.trim('/')), fileName)
           }
 
           if (file.exists()) {

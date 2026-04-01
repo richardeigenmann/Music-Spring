@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit, ViewEncapsulation, VERSION as ANGULAR_VERSION } from '@angular/core';
-import { ApiService, BackendVersionInfo } from '../apiservice';
+import { ApiService, BackendVersionInfo, IntegrityCheckResult } from '../apiservice';
 import { CommonModule } from '@angular/common';
 import { VERSION as PROJECT_VERSION, BUILD_DATE } from '../version';
 
@@ -23,6 +23,9 @@ export class Status implements OnInit {
   angularVersion = ANGULAR_VERSION.full;
   projectVersion = PROJECT_VERSION;
   buildDate = BUILD_DATE;
+
+  integrityResult = signal<IntegrityCheckResult | null>(null);
+  checkingIntegrity = signal<boolean>(false);
 
   ngOnInit() {
     this.frontendUrl.set(this.apiService.getFrontendUrl());
@@ -48,6 +51,36 @@ export class Status implements OnInit {
     this.actuatorUrl.set(this.apiService.getActuatorUrl());
     this.healthUrl.set(this.apiService.getHealthUrl());
     this.infoUrl.set(this.apiService.getInfoUrl());
+  }
+
+  checkIntegrity() {
+    this.checkingIntegrity.set(true);
+    this.integrityResult.set(null);
+    this.apiService.checkIntegrity().subscribe({
+      next: (result) => {
+        this.integrityResult.set(result);
+        this.checkingIntegrity.set(false);
+      },
+      error: (err) => {
+        console.error('Integrity check failed', err);
+        this.checkingIntegrity.set(false);
+      }
+    });
+  }
+
+  deleteBrokenFile(id: number) {
+    if (confirm('Are you sure you want to delete this file record? If this is the last file for the track, the track will also be deleted.')) {
+      this.apiService.deleteBrokenFile(id).subscribe({
+        next: () => {
+          // Refresh the integrity check
+          this.checkIntegrity();
+        },
+        error: (err) => {
+          console.error('Failed to delete broken file', err);
+          alert('Failed to delete record.');
+        }
+      });
+    }
   }
 
   goBack() {

@@ -23,3 +23,27 @@ pre {
   border-radius: 4px;
   overflow-x: auto;
 }
+
+.broken-files-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 10px;
+}
+
+.broken-files-list li {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left: 4px solid #f44336;
+}
+
+.error {
+  color: #f44336;
+  font-size: 0.9em;
+  display: block;
+}
+
+.success {
+  color: #4caf50;
+  font-weight: bold;
+}
