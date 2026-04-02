@@ -1,16 +1,16 @@
 package org.richinet.musicandroid
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable
 data class TrackFile(
     val fileId: Long,
     val fileName: String,
+    val fileLocation: String? = null,
     val duration: Double
 )
 
@@ -22,13 +22,21 @@ data class Track(
     val metadata: Map<String, JsonElement> = emptyMap()
 ) {
     fun getArtist(): String {
-        val artist = metadata["Artist"] ?: metadata["artist"]
-        return artist?.jsonPrimitive?.content ?: ""
+        val element = metadata["Artist"] ?: metadata["artist"]
+        return element.toSafeString()
     }
 
     fun getAlbum(): String {
-        val album = metadata["Album"] ?: metadata["album"]
-        return album?.jsonPrimitive?.content ?: ""
+        val element = metadata["Album"] ?: metadata["album"]
+        return element.toSafeString()
+    }
+
+    private fun JsonElement?.toSafeString(): String {
+        return when (this) {
+            is JsonPrimitive -> content
+            is JsonArray -> (firstOrNull() as? JsonPrimitive)?.content ?: ""
+            else -> ""
+        }
     }
 }
 

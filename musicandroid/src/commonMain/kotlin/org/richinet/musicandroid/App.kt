@@ -1,11 +1,13 @@
 package org.richinet.musicandroid
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +26,7 @@ fun App() {
     KoinContext {
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val scope = rememberCoroutineScope()
+        var forceShowPlayer by remember { mutableStateOf(true) }
 
         MaterialTheme(
             colorScheme = darkColorScheme()
@@ -58,6 +61,15 @@ fun App() {
                                     scope.launch { drawerState.close() }
                                 }
                             )
+                            NavigationDrawerItem(
+                                label = { Text("Open Player") },
+                                selected = false,
+                                onClick = {
+                                    forceShowPlayer = true
+                                    scope.launch { drawerState.close() }
+                                },
+                                icon = { Icon(Icons.Default.MusicNote, null) }
+                            )
                         }
                     }
                 ) {
@@ -75,7 +87,7 @@ fun App() {
                             }
                         },
                         bottomBar = {
-                            NowPlayingBarWrapper(navigator)
+                            NowPlayingBarWrapper(navigator, forceShowPlayer)
                         }
                     ) { paddingValues ->
                         Box(modifier = Modifier.padding(paddingValues)) {
@@ -89,11 +101,11 @@ fun App() {
 }
 
 @Composable
-fun NowPlayingBarWrapper(navigator: Navigator) {
+fun NowPlayingBarWrapper(navigator: Navigator, forceShow: Boolean) {
     val audioPlayer = koinInject<AudioPlayer>()
     val playbackState by audioPlayer.playbackState.collectAsState()
 
-    if (playbackState.track != null) {
+    if (playbackState.track != null || forceShow) {
         NowPlayingBar(playbackState, audioPlayer, navigator)
     }
 }
@@ -105,6 +117,14 @@ fun NowPlayingBar(state: PlaybackState, player: AudioPlayer, navigator: Navigato
         modifier = Modifier
             .fillMaxWidth()
             .height(64.dp)
+            .draggable(
+                orientation = Orientation.Vertical,
+                state = rememberDraggableState { delta ->
+                    if (delta < -20) { // Swipe up
+                        navigator.push(QueueScreen)
+                    }
+                }
+            )
             .clickable { navigator.push(PlayerScreen) }
     ) {
         Column {
@@ -115,12 +135,12 @@ fun NowPlayingBar(state: PlaybackState, player: AudioPlayer, navigator: Navigato
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
                     Text(
-                        text = state.track?.trackName ?: "",
+                        text = state.track?.trackName ?: "No track playing",
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1
                     )
@@ -130,11 +150,20 @@ fun NowPlayingBar(state: PlaybackState, player: AudioPlayer, navigator: Navigato
                         maxLines = 1
                     )
                 }
+
+                IconButton(onClick = { player.skipPrevious() }) {
+                    Icon(Icons.Default.SkipPrevious, contentDescription = "Previous")
+                }
+
                 IconButton(onClick = { player.togglePlayPause() }) {
                     Icon(
                         if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = "Play/Pause"
                     )
+                }
+
+                IconButton(onClick = { player.skipNext() }) {
+                    Icon(Icons.Default.SkipNext, contentDescription = "Next")
                 }
             }
         }

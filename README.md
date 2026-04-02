@@ -382,17 +382,66 @@ ng lint
 # Notes from setting up the frontend on local OpenShift
 
 ```bash
-crc console --credentials
-crc oc-env
+# nuke the cluster like when not having spun it up for 30 days and the certificates expire:
+# needs the "pull-secret" which I have in my home directory
+crc delete -f && crc cleanup && crc setup && crc start
+
+crc start # boots the virtual machine with the OpenShift cluster
+crc status
+crc oc-env # shows the command to source the oc CLI set-up
+eval $(crc oc-env) # sets up the PATH to oc
+export PATH=$PATH:/usr/sbin # adds the getcap visibility 
+crc console --credentials # lists the commands to login
 oc login -u developer -p developer https://api.crc.testing:6443 --insecure-skip-tls-verify=true
 
 # Create a new namespace/project
-oc new-project music-backend
-oc new-project music-backend-v2
+oc new-project music-database
+
+oc create -f - <<EOF
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: music-data-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+EOF
+
+# spin up a helper container with the PVC attached and use that to do the rsync
+oc run rsync-helper --image=quay.io/openshift/origin-cli --overrides='
+{
+  "spec": {
+    "securityContext": {
+      "runAsNonRoot": true,
+      "seccompProfile": { "type": "RuntimeDefault" }
+    },
+    "containers": [
+      {
+        "name": "helper",
+        "image": "quay.io/openshift/origin-cli",
+        "command": ["/bin/sh", "-c", sleep 3600"],
+        "volumeMounts": [{"name": "mp3", "mountPath": "/mp3"}],
+        "securityContext": {
+          "allowPrivilegeEscalation": false,
+          "capabilities": { "drop": ["ALL"] }
+        }
+      }
+    ],
+    "volumes": [{"name": "mp3", "persistentVolumeClaim": {"claimName": "music-data-pvc"}}]
+  }
+}'
+
+# Then 
+oc rsync /richi/mp3/ rsync-helper:/mp3/
+
+
 
 # Deploy the image from Docker Hub
-oc create service clusterip music-backend --tcp=8002:8002
-oc new-app --name=music-backend --image=docker.io/richardeigenmann/musicbackend:0.1.0-SNAPSHOT
+oc create service clusterip music-database --tcp=8002:8002
+oc new-app --name=music-backend --image=docker.io/richardeigenmann/musicbackend:latest
 
 oc set volume deployment/music-backend --add \
     --name=music-storage \
@@ -401,6 +450,8 @@ oc set volume deployment/music-backend --add \
     --mount-path=/richi
 oc set env deployment/music-backend \
     APP_CORS_ALLOWED_ORIGINS="http://music-frontend-default.apps-crc.testing"
+
+
 
 
 oc expose svc/music-frontend --port=80
@@ -425,7 +476,7 @@ curl music-backend-default.apps-crc.testing:8002/api/totalTrackCount
 curl music-backend-v2.apps-crc.testing/api/version
 
 # Update to new version:
-oc set image deployment/music-backend music-backend=docker.io/richardeigenmann/music-backend:0.1.0-SNAPSHOT
+oc set image deployment/music-backend music-backend=docker.io/richardeigenmann/music-backend:latest
 # Then, force a fresh pull just in case:
 oc patch deployment music-backend -p '{"spec":{"template":{"metadata":{"annotations":{"update-date":"'$(date +%s)'"}}}}}'
 
@@ -437,18 +488,6 @@ crc console --credentials
 
 oc label ns music-backend pod-security.kubernetes.io/enforce=privileged
 
-oc create -f - <<EOF
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: music-data-pvc
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 50Gi
-EOF
 
 oc set volume deployment/music-app --add \
   --name=music-data-volume \
@@ -456,24 +495,7 @@ oc set volume deployment/music-app --add \
   --claim-name=music-data-pvc \
   --mount-path=/richi
 
-# spin up a container with the PVC attached and use that to do the rsync
-oc run rsync-helper --image=registry.access.redhat.com/ubi9/ubi-minimal --overrides='
-{
-  "spec": {
-    "containers": [
-      {
-        "name": "helper",
-        "image": "registry.access.redhat.com/ubi9/ubi-minimal",
-        "command": ["/bin/sh", "-c", "microdnf install -y rsync && sleep 3600"],
-        "volumeMounts": [{"name": "richi", "mountPath": "/richi"}]
-      }
-    ],
-    "volumes": [{"name": "richi", "persistentVolumeClaim": {"claimName": "music-data-pvc"}}]
-  }
-}'
 
-# Then 
-oc rsync /richi/mp3/ rsync-helper:/richi/mp3/
 oc rsync /home/richi/ToDo/ rsync-helper:/richi/ToDo/
 
 oc exec rsync-helper -- du -sh /richi

@@ -3,16 +3,11 @@ package org.richinet.musicandroid
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.request.get
-import io.ktor.client.request.parameter
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
+import io.ktor.client.request.*
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.*
 
 class ApiService(private val baseUrl: String) {
     private val client = HttpClient {
@@ -28,6 +23,27 @@ class ApiService(private val baseUrl: String) {
     suspend fun getVersion(): BackendVersionInfo = client.get("$baseUrl/api/version").body()
 
     suspend fun getTags(): List<Tag> = client.get("$baseUrl/api/tags").body()
+
+    suspend fun getTrack(trackId: Long): Track {
+        val jsonObject = client.get("$baseUrl/api/track/$trackId").body<JsonObject>()
+        return parseTrack(jsonObject)
+    }
+
+    suspend fun saveTrack(track: Track): Track {
+        val jsonObject = buildJsonObject {
+            put("trackId", track.trackId)
+            put("trackName", track.trackName)
+            put("files", Json.encodeToJsonElement(track.files))
+            track.metadata.forEach { (key, value) ->
+                put(key, value)
+            }
+        }
+        val response = client.post("$baseUrl/api/track/${track.trackId}") {
+            contentType(ContentType.Application.Json)
+            setBody(jsonObject)
+        }.body<JsonObject>()
+        return parseTrack(response)
+    }
 
     suspend fun getTracksByTag(tagId: Long): List<Track> {
         val jsonList = client.get("$baseUrl/api/tracksByTag/$tagId").body<List<JsonObject>>()
@@ -65,8 +81,8 @@ class ApiService(private val baseUrl: String) {
     }
 
     private fun parseTrack(jsonObject: JsonObject): Track {
-        val trackId = jsonObject["trackId"]?.toString()?.toLong() ?: 0L
-        val trackName = jsonObject["trackName"]?.toString()?.trim('"') ?: ""
+        val trackId = jsonObject["trackId"]?.jsonPrimitive?.longOrNull ?: 0L
+        val trackName = jsonObject["trackName"]?.jsonPrimitive?.content ?: ""
         val filesJson = jsonObject["files"]?.let {
             Json.decodeFromJsonElement<List<TrackFile>>(it)
         } ?: emptyList()
@@ -78,4 +94,6 @@ class ApiService(private val baseUrl: String) {
     }
 
     fun getStreamUrl(fileId: Long): String = "$baseUrl/api/trackFile/$fileId"
+
+    fun getTrackImageUrl(fileId: Long): String = "$baseUrl/api/trackFileImage/$fileId"
 }

@@ -6,10 +6,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -53,13 +53,19 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
                     title = { Text(tagName) },
                     navigationIcon = {
                         IconButton(onClick = { navigator.pop() }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
                     actions = {
                         if (tracksState is UiState.Success) {
+                            val tracks = (tracksState as UiState.Success<List<Track>>).data
                             IconButton(onClick = {
-                                playlistSync.sync(tagName, (tracksState as UiState.Success<List<Track>>).data)
+                                audioPlayer.playPlaylist(tracks, tagName)
+                            }) {
+                                Icon(Icons.Default.PlayArrow, contentDescription = "Play All")
+                            }
+                            IconButton(onClick = {
+                                playlistSync.sync(tagName, tracks)
                             }) {
                                 Icon(Icons.Default.Sync, contentDescription = "Sync to Device")
                             }
@@ -76,13 +82,22 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
                         }
                     }
                     is UiState.Success -> {
+                        val tracks = state.data
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            items(state.data) { track ->
+                            itemsIndexed(tracks) { index, track ->
                                 ListItem(
                                     headlineContent = { Text(track.trackName) },
                                     supportingContent = { Text("${track.getArtist()} - ${track.getAlbum()}") },
                                     modifier = Modifier.clickable {
-                                        audioPlayer.playTrack(track)
+                                        navigator.push(TrackEditScreen(track.trackId))
+                                    },
+                                    trailingContent = {
+                                        IconButton(onClick = {
+                                            val playlist = tracks.drop(index)
+                                            audioPlayer.playPlaylist(playlist, tagName)
+                                        }) {
+                                            Icon(Icons.Default.PlayArrow, contentDescription = "Play")
+                                        }
                                     }
                                 )
                                 HorizontalDivider()

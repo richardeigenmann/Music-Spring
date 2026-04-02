@@ -1,9 +1,9 @@
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
-    alias(libs.plugins.jetbrainsCompose)
-    alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.kotlinSerialization)
+    id "org.jetbrains.kotlin.multiplatform"
+    id "org.jetbrains.compose"
+    id "org.jetbrains.kotlin.plugin.compose"
+    id "org.jetbrains.kotlin.plugin.serialization"
+    id "com.android.library"
 }
 
 kotlin {
@@ -53,32 +53,14 @@ kotlin {
 }
 
 android {
-    namespace = "org.richinet.musicandroid"
+    namespace = "org.richinet.musicandroid.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInteger()
 
     defaultConfig {
-        applicationId = "org.richinet.musicandroid"
         minSdk = libs.versions.android.minSdk.get().toInteger()
-        targetSdk = libs.versions.android.targetSdk.get().toInteger()
-        versionCode = 1
-        versionName = "1.0"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-    buildTypes {
-        release {
-            minifyEnabled = false
-        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-}
-
-dependencies {
-    debugImplementation compose.uiTooling
 }

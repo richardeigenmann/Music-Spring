@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import org.koin.compose.koinInject
 
 data object SearchScreen : Screen {
@@ -22,6 +25,7 @@ data object SearchScreen : Screen {
         val viewModel = getScreenModel<TrackViewModel>()
         val audioPlayer = koinInject<AudioPlayer>()
         val searchResults by viewModel.searchResults.collectAsState()
+        val navigator = LocalNavigator.currentOrThrow
         var query by remember { mutableStateOf("") }
 
         Scaffold(
@@ -53,7 +57,14 @@ data object SearchScreen : Screen {
                                     ListItem(
                                         headlineContent = { Text(track.trackName) },
                                         supportingContent = { Text(track.getArtist()) },
-                                        modifier = Modifier.clickable { audioPlayer.playTrack(track) }
+                                        modifier = Modifier.clickable {
+                                            navigator.push(TrackEditScreen(track.trackId))
+                                        },
+                                        trailingContent = {
+                                            IconButton(onClick = { audioPlayer.playTrack(track) }) {
+                                                Icon(Icons.Default.PlayArrow, contentDescription = "Play")
+                                            }
+                                        }
                                     )
                                     HorizontalDivider()
                                 }
