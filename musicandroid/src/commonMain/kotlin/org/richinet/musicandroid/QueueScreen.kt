@@ -14,9 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import coil.compose.AsyncImage
 import org.koin.compose.koinInject
 
 data object QueueScreen : Screen {
@@ -24,6 +26,7 @@ data object QueueScreen : Screen {
     @Composable
     override fun Content() {
         val audioPlayer = koinInject<AudioPlayer>()
+        val imageResolver = koinInject<ImageResolver>()
         val playbackState by audioPlayer.playbackState.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
         val queue = audioPlayer.getQueue()
@@ -76,6 +79,14 @@ data object QueueScreen : Screen {
                             )
                         },
                         supportingContent = { Text(track.getArtist()) },
+                        leadingContent = {
+                            AsyncImage(
+                                model = imageResolver.getTrackImageSource(track),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(56.dp)
+                            )
+                        },
                         modifier = Modifier.clickable {
                             navigator.push(TrackEditScreen(track.trackId))
                         },

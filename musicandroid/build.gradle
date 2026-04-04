@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.androidLibrary)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlinSerialization)
@@ -53,15 +53,17 @@ kotlin {
 }
 
 android {
-    namespace = "org.richinet.musicandroid"
+    namespace = "org.richinet.musicandroid.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInteger()
 
+    sourceSets {
+        main {
+            manifest.srcFile "src/androidMain/AndroidManifest.xml"
+        }
+    }
+
     defaultConfig {
-        applicationId = "org.richinet.musicandroid"
         minSdk = libs.versions.android.minSdk.get().toInteger()
-        targetSdk = libs.versions.android.targetSdk.get().toInteger()
-        versionCode = 1
-        versionName = "1.0"
     }
     packaging {
         resources {

@@ -12,9 +12,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.SlideTransition
+import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
@@ -112,6 +114,8 @@ fun NowPlayingBarWrapper(navigator: Navigator, forceShow: Boolean) {
 
 @Composable
 fun NowPlayingBar(state: PlaybackState, player: AudioPlayer, navigator: Navigator) {
+    val imageResolver = koinInject<ImageResolver>()
+    
     Surface(
         tonalElevation = 8.dp,
         modifier = Modifier
@@ -138,6 +142,23 @@ fun NowPlayingBar(state: PlaybackState, player: AudioPlayer, navigator: Navigato
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (state.track != null) {
+                    AsyncImage(
+                        model = imageResolver.getTrackImageSource(state.track),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .padding(4.dp)
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.MusicNote,
+                        null,
+                        modifier = Modifier.size(48.dp).padding(4.dp)
+                    )
+                }
+
                 Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
                     Text(
                         text = state.track?.trackName ?: "No track playing",
@@ -171,8 +192,8 @@ fun NowPlayingBar(state: PlaybackState, player: AudioPlayer, navigator: Navigato
 }
 
 // Function to start Koin outside Composable if needed (e.g. from Platform Application)
-fun initKoin(baseUrl: String, playlistSync: PlaylistSync, audioPlayer: AudioPlayer) {
+fun initKoin(baseUrl: String, playlistSync: PlaylistSync, audioPlayer: AudioPlayer, imageResolver: ImageResolver) {
     startKoin {
-        modules(createCommonModule(baseUrl, playlistSync, audioPlayer))
+        modules(createCommonModule(baseUrl, playlistSync, audioPlayer, imageResolver))
     }
 }

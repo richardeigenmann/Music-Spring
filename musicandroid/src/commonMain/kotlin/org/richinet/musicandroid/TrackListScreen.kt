@@ -1,10 +1,7 @@
 package org.richinet.musicandroid
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
@@ -27,10 +24,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import coil.compose.AsyncImage
 import org.koin.compose.koinInject
 
 data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
@@ -40,6 +40,7 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
         val viewModel = getScreenModel<TrackViewModel>()
         val playlistSync = koinInject<PlaylistSync>()
         val audioPlayer = koinInject<AudioPlayer>()
+        val imageResolver = koinInject<ImageResolver>()
         val tracksState by viewModel.tracks.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
 
@@ -88,6 +89,14 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
                                 ListItem(
                                     headlineContent = { Text(track.trackName) },
                                     supportingContent = { Text("${track.getArtist()} - ${track.getAlbum()}") },
+                                    leadingContent = {
+                                        AsyncImage(
+                                            model = imageResolver.getTrackImageSource(track),
+                                            contentDescription = null,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.size(56.dp)
+                                        )
+                                    },
                                     modifier = Modifier.clickable {
                                         navigator.push(TrackEditScreen(track.trackId))
                                     },

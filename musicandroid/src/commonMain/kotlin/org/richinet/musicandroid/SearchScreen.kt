@@ -11,11 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import coil.compose.AsyncImage
 import org.koin.compose.koinInject
 
 data object SearchScreen : Screen {
@@ -24,6 +26,7 @@ data object SearchScreen : Screen {
     override fun Content() {
         val viewModel = getScreenModel<TrackViewModel>()
         val audioPlayer = koinInject<AudioPlayer>()
+        val imageResolver = koinInject<ImageResolver>()
         val searchResults by viewModel.searchResults.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
         var query by remember { mutableStateOf("") }
@@ -57,6 +60,14 @@ data object SearchScreen : Screen {
                                     ListItem(
                                         headlineContent = { Text(track.trackName) },
                                         supportingContent = { Text(track.getArtist()) },
+                                        leadingContent = {
+                                            AsyncImage(
+                                                model = imageResolver.getTrackImageSource(track),
+                                                contentDescription = null,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.size(56.dp)
+                                            )
+                                        },
                                         modifier = Modifier.clickable {
                                             navigator.push(TrackEditScreen(track.trackId))
                                         },

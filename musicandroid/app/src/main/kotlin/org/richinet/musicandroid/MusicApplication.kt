@@ -14,11 +14,12 @@ class MusicApplication : Application() {
         val apiService = ApiService(baseUrl)
         val playlistSync = AndroidPlaylistSync(this, apiService)
         val audioPlayer = AndroidAudioPlayer(this, apiService)
+        val imageResolver = AndroidImageResolver(this, apiService)
 
         startKoin {
             androidContext(this@MusicApplication)
             androidLogger()
-            modules(createCommonModule(baseUrl, playlistSync, audioPlayer))
+            modules(createCommonModule(baseUrl, playlistSync, audioPlayer, imageResolver))
         }
     }
 }

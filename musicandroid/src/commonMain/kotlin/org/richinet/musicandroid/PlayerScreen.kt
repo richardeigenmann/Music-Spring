@@ -23,7 +23,7 @@ data object PlayerScreen : Screen {
     @Composable
     override fun Content() {
         val audioPlayer = koinInject<AudioPlayer>()
-        val apiService = koinInject<ApiService>()
+        val imageResolver = koinInject<ImageResolver>()
         val playbackState by audioPlayer.playbackState.collectAsState()
         val track = playbackState.track
         val navigator = LocalNavigator.currentOrThrow
@@ -88,10 +88,9 @@ data object PlayerScreen : Screen {
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    val file = track?.files?.firstOrNull()
-                    if (file != null) {
+                    if (track != null) {
                         AsyncImage(
-                            model = apiService.getTrackImageUrl(file.fileId),
+                            model = imageResolver.getTrackImageSource(track),
                             contentDescription = "Album Art",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize(),
