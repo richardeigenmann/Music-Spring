@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
@@ -34,7 +34,7 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        val viewModel = getScreenModel<TrackViewModel>()
+        val viewModel = koinScreenModel<TrackViewModel>()
         val playlistSync = koinInject<PlaylistSync>()
         val audioPlayer = koinInject<AudioPlayer>()
         val imageResolver = koinInject<ImageResolver>()

@@ -12,7 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
@@ -21,7 +21,7 @@ import org.koin.compose.koinInject
 data object HomeScreen : Screen {
     @Composable
     override fun Content() {
-        val viewModel = getScreenModel<TrackViewModel>()
+        val viewModel = koinScreenModel<TrackViewModel>()
         val audioPlayer = koinInject<AudioPlayer>()
         val apiService = koinInject<ApiService>()
         val tagsState by viewModel.tags.collectAsState()

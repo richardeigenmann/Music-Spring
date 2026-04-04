@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
@@ -28,7 +28,7 @@ data object MixerScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        val viewModel = getScreenModel<TrackViewModel>()
+        val viewModel = koinScreenModel<TrackViewModel>()
         val apiService = koinInject<ApiService>()
         val audioPlayer = koinInject<AudioPlayer>()
         val scope = rememberCoroutineScope()

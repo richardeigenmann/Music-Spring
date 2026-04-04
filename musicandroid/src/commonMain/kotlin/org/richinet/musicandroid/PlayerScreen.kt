@@ -2,8 +2,7 @@ package org.richinet.musicandroid
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,7 +38,7 @@ data object PlayerScreen : Screen {
                     },
                     actions = {
                         IconButton(onClick = { navigator.push(QueueScreen) }) {
-                            Icon(Icons.Default.List, contentDescription = "Queue")
+                            Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Queue")
                         }
                     }
                 )

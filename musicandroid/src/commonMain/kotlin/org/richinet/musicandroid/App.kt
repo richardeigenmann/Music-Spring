@@ -18,83 +18,80 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.SlideTransition
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
-import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
 import org.koin.core.context.startKoin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
-    KoinContext {
-        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-        val scope = rememberCoroutineScope()
-        var forceShowPlayer by remember { mutableStateOf(true) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    var forceShowPlayer by remember { mutableStateOf(true) }
 
-        MaterialTheme(
-            colorScheme = darkColorScheme()
-        ) {
-            Navigator(HomeScreen) { navigator ->
-                ModalNavigationDrawer(
-                    drawerState = drawerState,
-                    drawerContent = {
-                        ModalDrawerSheet {
-                            Spacer(Modifier.height(12.dp))
-                            NavigationDrawerItem(
-                                label = { Text("Tags") },
-                                selected = false,
-                                onClick = {
-                                    navigator.popUntilRoot()
-                                    scope.launch { drawerState.close() }
-                                }
-                            )
-                            NavigationDrawerItem(
-                                label = { Text("Search") },
-                                selected = false,
-                                onClick = {
-                                    navigator.push(SearchScreen)
-                                    scope.launch { drawerState.close() }
-                                }
-                            )
-                            NavigationDrawerItem(
-                                label = { Text("Mixing Board") },
-                                selected = false,
-                                onClick = {
-                                    navigator.push(MixerScreen)
-                                    scope.launch { drawerState.close() }
-                                }
-                            )
-                            NavigationDrawerItem(
-                                label = { Text("Open Player") },
-                                selected = false,
-                                onClick = {
-                                    forceShowPlayer = true
-                                    scope.launch { drawerState.close() }
-                                },
-                                icon = { Icon(Icons.Default.MusicNote, null) }
-                            )
-                        }
-                    }
-                ) {
-                    Scaffold(
-                        topBar = {
-                            if (navigator.size == 1) { // Only show drawer icon on root
-                                TopAppBar(
-                                    title = { Text("Music-Spring") },
-                                    navigationIcon = {
-                                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                            Icon(Icons.Default.Menu, contentDescription = "Menu")
-                                        }
-                                    }
-                                )
+    MaterialTheme(
+        colorScheme = darkColorScheme()
+    ) {
+        Navigator(HomeScreen) { navigator ->
+            ModalNavigationDrawer(
+                drawerState = drawerState,
+                drawerContent = {
+                    ModalDrawerSheet {
+                        Spacer(Modifier.height(12.dp))
+                        NavigationDrawerItem(
+                            label = { Text("Tags") },
+                            selected = false,
+                            onClick = {
+                                navigator.popUntilRoot()
+                                scope.launch { drawerState.close() }
                             }
-                        },
-                        bottomBar = {
-                            NowPlayingBarWrapper(navigator, forceShowPlayer)
+                        )
+                        NavigationDrawerItem(
+                            label = { Text("Search") },
+                            selected = false,
+                            onClick = {
+                                navigator.push(SearchScreen)
+                                scope.launch { drawerState.close() }
+                            }
+                        )
+                        NavigationDrawerItem(
+                            label = { Text("Mixing Board") },
+                            selected = false,
+                            onClick = {
+                                navigator.push(MixerScreen)
+                                scope.launch { drawerState.close() }
+                            }
+                        )
+                        NavigationDrawerItem(
+                            label = { Text("Open Player") },
+                            selected = false,
+                            onClick = {
+                                forceShowPlayer = true
+                                scope.launch { drawerState.close() }
+                            },
+                            icon = { Icon(Icons.Default.MusicNote, null) }
+                        )
+                    }
+                }
+            ) {
+                Scaffold(
+                    topBar = {
+                        if (navigator.size == 1) { // Only show drawer icon on root
+                            TopAppBar(
+                                title = { Text("Music-Spring") },
+                                navigationIcon = {
+                                    IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                                    }
+                                }
+                            )
                         }
-                    ) { paddingValues ->
-                        Box(modifier = Modifier.padding(paddingValues)) {
-                            SlideTransition(navigator)
-                        }
+                    },
+                    bottomBar = {
+                        NowPlayingBarWrapper(navigator, forceShowPlayer)
+                    }
+                ) { paddingValues ->
+                    Box(modifier = Modifier.padding(paddingValues)) {
+                        SlideTransition(navigator)
                     }
                 }
             }

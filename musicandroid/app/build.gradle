@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.androidApplication)
-    id "org.jetbrains.kotlin.android"
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
 }
@@ -36,5 +35,6 @@ dependencies {
     implementation(project(":musicandroid"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.koin.android)
+    implementation(libs.androidx.media3.session)
     debugImplementation compose.uiTooling
 }
