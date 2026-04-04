@@ -386,6 +386,16 @@ ng lint
 # needs the "pull-secret" which I have in my home directory
 crc delete -f && crc cleanup && crc setup && crc start
 
+# crc does some "interesting" things with the network stack, binding to port 80 and 443 on localhost. 
+# instead set up a br0 bridge:
+sudo nmcli con add type bridge ifname br0 con-name br0
+sudo nmcli con add type ethernet ifname eth0 con-name br0-slave master br0
+sudo nmcli con up br0
+crc config set network-mode system
+# Re-run setup to apply the network changes
+sudo mkdir -p /etc/NetworkManager/dnsmasq.d/
+crc setup
+
 crc start # boots the virtual machine with the OpenShift cluster
 crc status
 crc oc-env # shows the command to source the oc CLI set-up
@@ -422,7 +432,7 @@ oc run rsync-helper --image=quay.io/openshift/origin-cli --overrides='
       {
         "name": "helper",
         "image": "quay.io/openshift/origin-cli",
-        "command": ["/bin/sh", "-c", sleep 3600"],
+        "command": ["/bin/sh", "-c", "sleep 3600"],
         "volumeMounts": [{"name": "mp3", "mountPath": "/mp3"}],
         "securityContext": {
           "allowPrivilegeEscalation": false,
@@ -437,67 +447,64 @@ oc run rsync-helper --image=quay.io/openshift/origin-cli --overrides='
 # Then 
 oc rsync /richi/mp3/ rsync-helper:/mp3/
 
+# Create a service for the frontend Pod to reach the backend Pod on http://music-backend:8002
+oc create service clusterip music-backend --tcp=8002:8002
+# Create a route to the backend from outside the container
+oc expose svc/music-backend --port=8002
+# Force the selectors to match the exact 'deployment' label and nothing else
+oc patch svc music-backend -p '{"spec":{"selector":{"deployment":"music-backend","app":null}}}'
 
+
+# Get the routes to the new endpoint:
+oc get routes
 
 # Deploy the image from Docker Hub
-oc create service clusterip music-database --tcp=8002:8002
-oc new-app --name=music-backend --image=docker.io/richardeigenmann/musicbackend:latest
+oc new-app --name=music-backend --image=docker.io/richardeigenmann/musicbackend:latest \
+  -e APP_CORS_ALLOWED_ORIGINS="http://music-frontend-music-database.apps-crc.testing"
 
+# Check that the endpoints are connected
+oc get endpoints music-backend
+
+# Connect the PVC to the backend container
 oc set volume deployment/music-backend --add \
     --name=music-storage \
     --type=pvc \
     --claim-name=music-data-pvc \
-    --mount-path=/richi
+    --mount-path=/mp3
+
+# Set up the CORS policy (which restarts the pod)
 oc set env deployment/music-backend \
-    APP_CORS_ALLOWED_ORIGINS="http://music-frontend-default.apps-crc.testing"
+    APP_CORS_ALLOWED_ORIGINS="http://music-frontend-music-database.apps-crc.testing"
 
 
-
-
-oc expose svc/music-frontend --port=80
-
-oc get svc music-frontend
-
-# pull a fresh copy
-oc patch deployment music-frontend -p '{"spec":{"template":{"spec":{"containers":[{"name":"music-frontend","imagePullPolicy":"Always"}]}}}}'
-
-oc new-app --docker-image=docker.io/richardeigenmann/musicfrontend:0.0.1 \
+# set up the frontend
+oc new-app --docker-image=docker.io/richardeigenmann/musicfrontend:latest \
     --name=music-frontend \
-    -e BACKEND_URL=http://music-backend.default.svc.cluster.local:8002/
+    -e BACKEND_URL=http://music-backend-music-database.apps-crc.testing/ \
+    -e PORT=4200
 
-# hit http://music-frontend-default.apps-crc.testing/
+# set up and expose a service so we can reach the frontend
+oc create service clusterip music-frontend --tcp=4200:4200
+oc expose svc/music-frontend --port=4200
+# Fix the Frontend Service
+oc patch svc music-frontend -p '{"spec":{"selector":{"deployment":"music-frontend","app":null}}}'
 
-oc expose deployment/music-backend --port=8002 --target-port=8002
-oc expose svc/music-backend --hostname=music-backend-v2.apps-crc.testing
+# Check the endpoints:
+oc get endpoints music-backend music-frontend
 
-curl music-backend-default.apps-crc.testing:8002/api/version
-curl music-backend-default.apps-crc.testing/api/version
-curl music-backend-default.apps-crc.testing:8002/api/totalTrackCount
-curl music-backend-v2.apps-crc.testing/api/version
 
-# Update to new version:
-oc set image deployment/music-backend music-backend=docker.io/richardeigenmann/music-backend:latest
-# Then, force a fresh pull just in case:
-oc patch deployment music-backend -p '{"spec":{"template":{"metadata":{"annotations":{"update-date":"'$(date +%s)'"}}}}}'
+# you can connect to the frontend on http://music-frontend-music-database.apps-crc.testing/
+# and you can hit the backend on http://music-backend-music-database.apps-crc.testing/
+
 
 # Describe Volume Mounts
 oc describe deployment music-app | grep -A 10 Volumes
 
-# Need to do this ad admin
+# Need to do this as admin
 crc console --credentials
 
-oc label ns music-backend pod-security.kubernetes.io/enforce=privileged
-
-
-oc set volume deployment/music-app --add \
-  --name=music-data-volume \
-  --type=pvc \
-  --claim-name=music-data-pvc \
-  --mount-path=/richi
-
-
-oc rsync /home/richi/ToDo/ rsync-helper:/richi/ToDo/
-
+# To run the helper:
+oc run rsync-helper --image=quay.io/openshift/origin-cli -it --rm -- /bin/bash
 oc exec rsync-helper -- du -sh /richi
 oc exec rsync-helper -- ls /richi/mp3
 oc delete pod rsync-helper --force --grace-period=0
