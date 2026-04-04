@@ -18,10 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -44,8 +41,16 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
         val tracksState by viewModel.tracks.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
 
+        var shuffledTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
+
         LaunchedEffect(tagId) {
             viewModel.loadTracksByTag(tagId)
+        }
+
+        LaunchedEffect(tracksState) {
+            if (tracksState is UiState.Success) {
+                shuffledTracks = (tracksState as UiState.Success<List<Track>>).data.shuffled()
+            }
         }
 
         Scaffold(
@@ -58,15 +63,17 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
                         }
                     },
                     actions = {
-                        if (tracksState is UiState.Success) {
-                            val tracks = (tracksState as UiState.Success<List<Track>>).data
+                        if (shuffledTracks.isNotEmpty()) {
                             IconButton(onClick = {
-                                audioPlayer.playPlaylist(tracks, tagName)
+                                audioPlayer.playPlaylist(shuffledTracks, tagName)
                             }) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = "Play All")
+                                Icon(Icons.Default.PlayArrow, contentDescription = "Play All (Shuffled)")
                             }
                             IconButton(onClick = {
-                                playlistSync.sync(tagName, tracks)
+                                if (tracksState is UiState.Success) {
+                                    val originalTracks = (tracksState as UiState.Success<List<Track>>).data
+                                    playlistSync.sync(tagName, originalTracks)
+                                }
                             }) {
                                 Icon(Icons.Default.Sync, contentDescription = "Sync to Device")
                             }
@@ -83,9 +90,8 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
                         }
                     }
                     is UiState.Success -> {
-                        val tracks = state.data
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            itemsIndexed(tracks) { index, track ->
+                            itemsIndexed(shuffledTracks) { index, track ->
                                 ListItem(
                                     headlineContent = { Text(track.trackName) },
                                     supportingContent = { Text("${track.getArtist()} - ${track.getAlbum()}") },
@@ -102,7 +108,7 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
                                     },
                                     trailingContent = {
                                         IconButton(onClick = {
-                                            val playlist = tracks.drop(index)
+                                            val playlist = shuffledTracks.drop(index)
                                             audioPlayer.playPlaylist(playlist, tagName)
                                         }) {
                                             Icon(Icons.Default.PlayArrow, contentDescription = "Play")
