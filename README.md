@@ -474,7 +474,16 @@ oc set volume deployment/music-backend --add \
 
 # Set up the CORS policy (which restarts the pod)
 oc set env deployment/music-backend \
-    APP_CORS_ALLOWED_ORIGINS="http://music-frontend-music-database.apps-crc.testing"
+  APP_CORS_ALLOWED_ORIGINS="http://music-frontend-music-database.apps-crc.testing"
+
+# set up the connection to the externally running postgres database:
+oc set env deployment/music-backend \
+  APP_CORS_ALLOWED_ORIGINS="http://music-frontend-music-database.apps-crc.testing" \
+  SPRING_DATASOURCE_URL=jdbc:postgresql://octan:5432/musicdb?currentSchema=musicdatabase,public \
+  SPRING_DATASOURCE_USERNAME=musicuser \
+  SPRING_DATASOURCE_PASSWORD=musicpass \
+  SPRING_JPA_HIBERNATE_DDL_AUTO=update \
+  SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA=musicdatabase
 
 
 # set up the frontend
