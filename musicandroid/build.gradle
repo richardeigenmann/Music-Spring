@@ -35,6 +35,7 @@ kotlin {
                 implementation libs.voyager.navigator
                 implementation libs.voyager.transitions
                 implementation libs.voyager.koin
+                implementation libs.androidx.datastore.preferences
             }
         }
         androidMain {
@@ -47,6 +48,10 @@ kotlin {
                 implementation libs.androidx.media3.exoplayer
                 implementation libs.androidx.media3.session
                 implementation libs.androidx.media3.ui
+                implementation libs.google.mlkit.barcode.scanning
+                implementation libs.androidx.camera.camera2
+                implementation libs.androidx.camera.lifecycle
+                implementation libs.androidx.camera.view
             }
         }
     }

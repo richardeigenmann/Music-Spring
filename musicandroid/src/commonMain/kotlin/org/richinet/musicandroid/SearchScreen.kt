@@ -26,11 +26,19 @@ data object SearchScreen : Screen {
     override fun Content() {
         val viewModel = koinScreenModel<TrackViewModel>()
         val audioPlayer = koinInject<AudioPlayer>()
+        val apiService = koinInject<ApiService>()
 
         val imageResolver = koinInject<ImageResolver>()
         val searchResults by viewModel.searchResults.collectAsState()
+        val currentBaseUrl by apiService.baseUrlFlow.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
         var query by remember { mutableStateOf("") }
+
+        LaunchedEffect(currentBaseUrl) {
+            if (query.isNotBlank()) {
+                viewModel.searchTracks(query)
+            }
+        }
 
         Scaffold(
             topBar = {

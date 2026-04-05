@@ -25,8 +25,14 @@ data object HomeScreen : Screen {
         val audioPlayer = koinInject<AudioPlayer>()
         val apiService = koinInject<ApiService>()
         val tagsState by viewModel.tags.collectAsState()
+        val currentBaseUrl by apiService.baseUrlFlow.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
         val scope = rememberCoroutineScope()
+
+        // Refresh tags when baseUrl changes
+        LaunchedEffect(currentBaseUrl) {
+            viewModel.refresh()
+        }
 
         Scaffold { paddingValues ->
             Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {

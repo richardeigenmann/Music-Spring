@@ -24,6 +24,10 @@ class TrackViewModel(private val apiService: ApiService) : ScreenModel {
         loadTags()
     }
 
+    fun refresh() {
+        loadTags()
+    }
+
     fun loadTags() {
         screenModelScope.launch {
             _tags.value = UiState.Loading

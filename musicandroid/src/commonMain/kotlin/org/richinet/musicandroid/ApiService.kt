@@ -7,9 +7,16 @@ import io.ktor.client.request.*
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
 
-class ApiService(private val baseUrl: String) {
+class ApiService(private val settingsRepository: SettingsRepository) {
     private val client = HttpClient {
         install(ContentNegotiation) {
             json(Json {
@@ -20,12 +27,24 @@ class ApiService(private val baseUrl: String) {
         }
     }
 
-    suspend fun getVersion(): BackendVersionInfo = client.get("$baseUrl/api/version").body()
+    private val _baseUrl = MutableStateFlow("http://octan:8011")
+    val baseUrlFlow: StateFlow<String> = _baseUrl.asStateFlow()
+    val baseUrl: String get() = _baseUrl.value
 
-    suspend fun getTags(): List<Tag> = client.get("$baseUrl/api/tags").body()
+    init {
+        CoroutineScope(Dispatchers.Main).launch {
+            settingsRepository.baseUrl.collectLatest {
+                _baseUrl.value = it
+            }
+        }
+    }
+
+    suspend fun getVersion(): BackendVersionInfo = client.get("${baseUrl}/api/version").body()
+
+    suspend fun getTags(): List<Tag> = client.get("${baseUrl}/api/tags").body()
 
     suspend fun getTrack(trackId: Long): Track {
-        val jsonObject = client.get("$baseUrl/api/track/$trackId").body<JsonObject>()
+        val jsonObject = client.get("${baseUrl}/api/track/$trackId").body<JsonObject>()
         return parseTrack(jsonObject)
     }
 
@@ -38,7 +57,7 @@ class ApiService(private val baseUrl: String) {
                 put(key, value)
             }
         }
-        val response = client.post("$baseUrl/api/track/${track.trackId}") {
+        val response = client.post("${baseUrl}/api/track/${track.trackId}") {
             contentType(ContentType.Application.Json)
             setBody(jsonObject)
         }.body<JsonObject>()
@@ -46,18 +65,18 @@ class ApiService(private val baseUrl: String) {
     }
 
     suspend fun getTracksByTag(tagId: Long): List<Track> {
-        val jsonList = client.get("$baseUrl/api/tracksByTag/$tagId").body<List<JsonObject>>()
+        val jsonList = client.get("${baseUrl}/api/tracksByTag/$tagId").body<List<JsonObject>>()
         return jsonList.map { parseTrack(it) }
     }
 
     suspend fun searchTracks(query: String): List<Track> {
-        val jsonList = client.get("$baseUrl/api/trackSearch") {
+        val jsonList = client.get("${baseUrl}/api/trackSearch") {
             parameter("query", query)
         }.body<List<JsonObject>>()
         return jsonList.map { parseTrack(it) }
     }
 
-    suspend fun getTagUsageStats(): List<TagUsage> = client.get("$baseUrl/api/stats/tagUsage").body()
+    suspend fun getTagUsageStats(): List<TagUsage> = client.get("${baseUrl}/api/stats/tagUsage").body()
 
     suspend fun filterTracks(
         mustHaveIds: List<Long>,
@@ -65,7 +84,7 @@ class ApiService(private val baseUrl: String) {
         mustNotHaveIds: List<Long>
     ): List<Track> {
         val request = FilterRequest(mustHaveIds, canHaveIds, mustNotHaveIds)
-        val jsonList = client.post("$baseUrl/api/filterTracks") {
+        val jsonList = client.post("${baseUrl}/api/filterTracks") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body<List<JsonObject>>()
@@ -74,7 +93,7 @@ class ApiService(private val baseUrl: String) {
 
     suspend fun createTag(tagType: String, tagName: String, trackIds: List<Long> = emptyList()): Tag {
         val request = CreateTagRequest(tagType, tagName, trackIds)
-        return client.post("$baseUrl/api/tags") {
+        return client.post("${baseUrl}/api/tags") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body()
@@ -93,7 +112,7 @@ class ApiService(private val baseUrl: String) {
         return Track(trackId, trackName, filesJson, metadata)
     }
 
-    fun getStreamUrl(fileId: Long): String = "$baseUrl/api/trackFile/$fileId"
+    fun getStreamUrl(fileId: Long): String = "${baseUrl}/api/trackFile/$fileId"
 
-    fun getTrackImageUrl(fileId: Long): String = "$baseUrl/api/trackFileImage/$fileId"
+    fun getTrackImageUrl(fileId: Long): String = "${baseUrl}/api/trackFileImage/$fileId"
 }

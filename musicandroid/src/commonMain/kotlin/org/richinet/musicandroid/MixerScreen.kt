@@ -34,7 +34,13 @@ data object MixerScreen : Screen {
         val scope = rememberCoroutineScope()
 
         val tagsState by viewModel.tags.collectAsState()
+        val currentBaseUrl by apiService.baseUrlFlow.collectAsState()
         val filteredTracks by viewModel.filteredTracks.collectAsState()
+
+        // Refresh tags when baseUrl changes
+        LaunchedEffect(currentBaseUrl) {
+            viewModel.loadTags()
+        }
 
         var mustHave by remember { mutableStateOf(setOf<Tag>()) }
         var canHave by remember { mutableStateOf(setOf<Tag>()) }

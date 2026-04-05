@@ -19,7 +19,6 @@ import cafe.adriel.voyager.transitions.SlideTransition
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-import org.koin.core.context.startKoin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,6 +68,15 @@ fun App() {
                                 scope.launch { drawerState.close() }
                             },
                             icon = { Icon(Icons.Default.MusicNote, null) }
+                        )
+                        NavigationDrawerItem(
+                            label = { Text("Settings") },
+                            selected = false,
+                            onClick = {
+                                navigator.push(SettingsScreen)
+                                scope.launch { drawerState.close() }
+                            },
+                            icon = { Icon(Icons.Default.Settings, null) }
                         )
                     }
                 }
@@ -185,12 +193,5 @@ fun NowPlayingBar(state: PlaybackState, player: AudioPlayer, navigator: Navigato
                 }
             }
         }
-    }
-}
-
-// Function to start Koin outside Composable if needed (e.g. from Platform Application)
-fun initKoin(baseUrl: String, playlistSync: PlaylistSync, audioPlayer: AudioPlayer, imageResolver: ImageResolver) {
-    startKoin {
-        modules(createCommonModule(baseUrl, playlistSync, audioPlayer, imageResolver))
     }
 }

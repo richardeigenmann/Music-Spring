@@ -38,12 +38,14 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
         val playlistSync = koinInject<PlaylistSync>()
         val audioPlayer = koinInject<AudioPlayer>()
         val imageResolver = koinInject<ImageResolver>()
+        val apiService = koinInject<ApiService>()
         val tracksState by viewModel.tracks.collectAsState()
+        val currentBaseUrl by apiService.baseUrlFlow.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
 
         var shuffledTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
 
-        LaunchedEffect(tagId) {
+        LaunchedEffect(tagId, currentBaseUrl) {
             viewModel.loadTracksByTag(tagId)
         }
 
