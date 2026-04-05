@@ -11,6 +11,16 @@
   font-size: 1.1em;
 }
 
+.qr-code-container {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  display: block;
+  background: white;
+  padding: 10px;
+  width: fit-content;
+  border-radius: 4px;
+}
+
 .status-section {
   margin-top: 20px;
   padding-top: 20px;

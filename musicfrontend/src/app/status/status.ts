@@ -2,11 +2,12 @@ import { Component, inject, signal, OnInit, ViewEncapsulation, VERSION as ANGULA
 import { ApiService, BackendVersionInfo, IntegrityCheckResult } from '../apiservice';
 import { CommonModule } from '@angular/common';
 import { VERSION as PROJECT_VERSION, BUILD_DATE } from '../version';
+import { QRCodeComponent } from 'angularx-qrcode';
 
 @Component({
   selector: 'app-status',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, QRCodeComponent],
   templateUrl: './status.html',
   styleUrl: './status.css',
   encapsulation: ViewEncapsulation.None

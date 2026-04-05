@@ -21,6 +21,11 @@
 
   <div class="status-item">
     <strong>Backend URL:</strong> <a href="{{ backendUrl() }}" target="_blank">{{ backendUrl() }}</a>
+    @if (backendUrl()) {
+      <div class="qr-code-container">
+        <qrcode [qrdata]="backendUrl()" [width]="150" [errorCorrectionLevel]="'M'"></qrcode>
+      </div>
+    }
     <br>
     <strong>Actuator:</strong> <a href="{{ actuatorUrl() }}" target="_blank">{{ backendUrl() }}</a>
     <br>
