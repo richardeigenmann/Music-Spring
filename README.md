@@ -38,7 +38,8 @@ graph LR
     Android["📱 Android App"]
     
     subgraph Browser ["🌐 Chrome Browser"]
-        App["🅰️ Angular App"]
+        App["🅰️ Angular App\nhttp://hostname:8010"]
+        Swagger["Swagger UI\nhttp://hostname:8011\n/swagger-ui.html"]
     end
 
     subgraph Docker ["🐳 Docker Containers"]
@@ -51,14 +52,14 @@ graph LR
         %%FE ~~~ BE
         
         subgraph BE ["Backend Container"]
-            Backend["🎯 Kotlin Backend"]
+            Backend["🎯 Kotlin Backend\nhttp://hostname:8011"]
         end
     end
 
     DB[("🐘 Postgres")]
     Files[["🎵 MP3 Directory"]]
    
-    User -->|http://hostname:8010| Browser
+    User --> Browser
     
     User --> Android
 
@@ -66,9 +67,9 @@ graph LR
     App <-.-|Frontend\nhttp:/hostname:8010| WS
     
     %% Standard flow to the backend
-    App -->|REST API\nhttp://hostname:8011| Backend
-    
-    Android -->|REST API\nhttp://hostname:8011| Backend
+    App -->|REST API| Backend
+    Swagger -->|REST API| Backend
+    Android -->|REST API| Backend
 
     %% Backend data flow
     Backend -->|postgres:5432| DB
