@@ -57,9 +57,7 @@ graph LR
 
     DB[("🐘 Postgres")]
     Files[["🎵 MP3 Directory"]]
-
-    %% --- THE CONNECTIONS (The "Physics" Fix) ---
-    
+   
     User -->|http://hostname:8010| Browser
     
     User --> Android
@@ -70,7 +68,7 @@ graph LR
     %% Standard flow to the backend
     App -->|REST API\nhttp://hostname:8011| Backend
     
-    Android -->|REST API\nhttp://hostname:8011| Backend
+    %% Android -->|REST API\nhttp://hostname:8011| Backend
 
     %% Backend data flow
     Backend -->|postgres:5432| DB
@@ -391,6 +389,7 @@ ng lint
 
 # Notes from setting up the frontend on a local OpenShift Kubernetes cluster
 
+
 ```bash
 # nuke the cluster like when not having spun it up for 30 days and the certificates expire:
 # needs the "pull-secret" which I have in my home directory
@@ -540,3 +539,4 @@ To disable the H2 console, set the following property in your `application.prope
 `SPRING_H2_CONSOLE_ENABLED=false`
 
 In the provided `application.properties`, this is currently set to `false` by default.
+
