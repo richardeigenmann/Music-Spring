@@ -1,31 +1,31 @@
 # Music-Spring Application
 
-This project is a "full-stack" music management application with an Agnular frontend,
+This project is a "full-stack" music management application with an Angular frontend,
 An Android client and a Spring Boot Kotlin backend. The build system uses Gradle and 
 I've chosen to use a Postgres database.
 
-You can use it to host your collection of mp3 music files.
-Once you have imported your mp3 files you can organise your tracks into playlists.
+You can use it to host your collection of MP3 music files.
+Once you have imported your MP3 files you can organise your tracks into playlists.
 You also have the ability to associate many other classifications such as Music Styles, 
 Mood, Rating, etc. to your tracks. You can use the "Mixer" to combine tracks based on these
-attributes to new playlists.
+attributes into new playlists.
 
-The tracks, playlists or groups can be played directly in the browser or on your Android phone.
+The tracks, playlists, or groups can be played directly in the browser or on your Android phone.
 
 ## Requirements
 
-The app is designed around a backend. You can run this locally on your laptop, a home media server 
-or you can rent a computer in a "cloud". In a local set-up I find "Docker Compose" does a good job. 
+The app is designed around a backend. You can run this locally on your laptop, a home media server, 
+or you can rent a computer in the "cloud". In a local set-up I find "Docker Compose" does a good job. 
 It can spin up the Frontend Container, the Backend Container and a Postgres Database container.
 
-To use this app you need an open connection to the backend. If you are listening from your Laptop and serving
-the app there that works fine. It will work just as well if you are in the same network and you are running
+To use this app, you need an open connection to the backend. If you are listening from your Laptop and serving
+the app there, that works fine. It will work just as well if you are in the same network and you are running
 a "media server". If you leave that network, a VPN connection to that network can bridge the gap. This 
 could be a cheap solution to have the Android client connect back to your home VPN.
 
-Kubernetes clusters will also work nicely. The thing to think through is the storage for the mp3 files.
-If you are on Docker Compose you can mount a local directory as a volume into the backend container. 
-If you are on K8S you can copy your mp3 files into the container or mount some sort of network shared
+Kubernetes clusters will also work nicely. The thing to think through is the storage for the MP3 files.
+If you are on Docker Compose, you can mount a local directory as a volume into the backend container. 
+If you are on K8S, you can copy your MP3 files into the container or mount some sort of network shared
 drive as a PVC into the container.
 
 ## Architecture Diagram
@@ -98,11 +98,11 @@ To get the application up and running quickly using Docker Compose, follow these
 
 ### Prerequisites
 - Docker needs to be installed on your host machine
-- Think through the network connectivity from your browser to the containers
+- Think through the network connectivity from your browser to the containers.
   Will you use `localhost` as the server name (which you can only reach from a browser 
-  running on itself) or does the host have a name associated with it's address? Which 
-  ports are free and can the browser reach them (firewalls)?
-- Where are the mp3 files? How much storage do they consume? They will need to be visible 
+  running on itself), or does the host have a name associated with its address? Which 
+  ports are free, and can the browser reach them (firewalls)?
+- Where are the MP3 files? How much storage do they consume? They will need to be visible 
   on the `/mp3/` path in the backend container.
 
 ### Get the `docker-compose.yml file`
@@ -127,13 +127,13 @@ Before running the application, you **must** update the `docker-compose.yaml` fi
   If you want to use a different port, change it here and be sure to change it in the BACKEND_URL variable 
   discussed above.
 
-- **APP_CORS_ALLOWED_ORIGINS:** The browser is started off by connecting to the frontend webserver but will quickly switch to 
+- **APP_CORS_ALLOWED_ORIGINS:** The browser is started off by connecting to the frontend webserver, but will quickly switch to 
   making REST requests from the backend container. The browser and Spring Boot will conspire to disallow this
   for security reasons unless you tell the backend container that requests that came from the Angular app
-  running on the frontend URL are OK. That's what goes into the `APP_CORS_ALLOWED_ORIGINS`environment variable.
+  running on the frontend URL are OK. That's what goes into the `APP_CORS_ALLOWED_ORIGINS` environment variable.
 
 - **Paths:** Ensure the host paths that map to `/mp3` and `/admin` inside the backend container exist on your machine.
-  Whatever directory you put to the left of the backend volume for `:/mp3` should have readable mp3 files.
+  Whatever directory you put to the left of the backend volume for `:/mp3` should have readable MP3 files.
   The directory to the left of the `:/admin` is where database backups will be stored.
 
 - **Initial configuration** The `./config` path is for a `initial-data.yml` file that populates criteria in a blank
@@ -151,7 +151,7 @@ docker compose up -d
 
 If you do a `docker ps` you should see 3 containers: `music-frontend`, `music-backend`, `music-db`.
 
-To kill them all and clean up everything do:
+To kill them all and clean up everything, do:
 
 ```bash
 # kills the containers
@@ -169,7 +169,7 @@ docker rmi richardeigenmann/musicbackend:latest-native
 docker rmi postgres:15
 # They should all be gone:
 docker ps
-# remember to remove the directory you created and the docker-compose.yml file
+# Remember to remove the directory you created and the docker-compose.yml file
 ```
 
 ### Access the Application
@@ -180,32 +180,32 @@ docker ps
 
 ## Connecting the Android client
 
-I have not (yet) registered as a Dev with Google so I can't publish to the App-Store. To
-deploy the Android app you need to download Android Studio, open the project, build and deploy
+I have not (yet) registered as a Dev with Google, so I can't publish to the App-Store. To
+deploy the Android app, you need to download Android Studio, open the project, build and deploy
 it to your device. Once the device is there you need to tell it where to find the backend.
 Open the frontend on a device and hit the Status menu.
 That will display a QR code for the bakend URL.
-On the Android Device open the menu, go to settings and use the scan button
+On the Android Device open the menu, go to settings, and use the scan button
 to read the QR code to get the backend URL into the device.
 
 ## Setting up the PgAdmin Database GUI
 
-The `docker-compose.yml` contains a section for the pgadmin container which is serves
-a UI for the Postgres database. If you don't want this you can remove the ection from
-the YAML file. (Don't remove the `volumes` section or Postgres won't persit anything 
+The `docker-compose.yml` contains a section for the pgadmin container, which serves
+a UI for the Postgres database. If you don't want this you can remove the section from
+the YAML file. (Don't remove the `volumes` section or Postgres won't persist anything 
 between restarts.)
-file (before the `volumes:` section, remember to intent by 2 spaces):
+file (before the `volumes:` section, remember to indent by 2 spaces):
 
 - **PgAdmin:** [http://hostname:8012](http://hostname:8012) Use the PGADMIN_DEFAULT_EMAIL and PGADMIN_DEFAULT_PASSWORD 
 environment variable values from the `docker-compose.yml file` to login. Default values are: 
 - `admin@admin.com` and `adminpass`
 
 Once the page has opened, right-click on the `Servers` icon and `Register` the database server. 
-You can Name it `Music Database`. On the `Connection` tab you need to give it the name inside the docker compase network.
-This is from the docker-compose.yml file where I named it `music-db`. Obviously the Username and Password are the
+You can name it `Music Database`. On the `Connection` tab, you need to give it the name inside the docker compose network.
+This is from the docker-compose.yml file where I named it `music-db`. Obviously, the Username and Password are the
 ones associated with the database as set up in the docker-compose.yml file.
 
-One you have the server registered you can click on the Query Tool Workspace icon on the left margin and connect to
+Once you have the server registered, you can click on the Query Tool Workspace icon on the left margin and connect to
 the Music Database.
 
 Queries you can run:
@@ -227,15 +227,15 @@ drop table musicdatabase.track;
 
 ## Using the application
 
-After you spun up all the container successfully you have an empty music database.
+After you spun up all the containers successfully you have an empty music database.
 
 ![Initial Screen](doc/InitialScreenshot.png)
 
-Add music by hitting the Menu > Scan mp3 directoy.
-If you need some tracks to get started check out this site with royalty fee house tracks:
+Add music by hitting the Menu > Scan MP3 directoy.
+If you need some tracks to get started, check out this site with royalty-free house tracks:
 https://elevenlabs.io/music/house
 
-After importing your tracks it may look like this:
+After importing your tracks, it may look like this:
 
 ![Unclassified Tracks](doc/UnclassifiedTracks.png)
 
@@ -243,23 +243,23 @@ You can now click on the track icon to open the player at
 the bottom of the screen and play tracks individually or play the 
 whole list.
 
-If you click on the name of the track you open the 
+If you click on the name of the track, you open the 
 editor window and can assign the Mood, Genre and Rating
 
 ## Publishing a new version
 
 If you are Richard, use the `pushDockerContainers` Gradle task in the `docker` group to publish new versions.
-This sill call the `pushDockerFrontend` task and the `pushDockerBackend` tasks. These tasks will run other tasks
+This will call the `pushDockerFrontend` task and the `pushDockerBackend` tasks. These tasks will run other tasks
 that read the `gradle.properties` file from where the `version` variable propagates.
 
 The `bootBuildImage` task looks at the `gradle.properties` `native` property to decide if a slow GraalVM or faster Java build should be done. The GraalVM build is much faster at runtime.
 
-- check `gradle.properties`
-- increment version number
-- native build?
-- run pushDockerContainers
+- Check `gradle.properties`
+- Increment version number
+- Native build?
+- Run pushDockerContainers
 - cd to directory where the `docker-compose.yml? file is located
-- run `docker compose up -d` to refresh the containers
+- Run `docker compose up -d` to refresh the containers
 
 ## Running in development mode
 
@@ -274,7 +274,7 @@ If the backend is running from the `application:bootRunPg` task in Gradle then t
 comes from `musicbackend/src/main/resources/application.properties` 
 where you need to add the frontend URL to the `app.cors.allowed-origins` property.
 
-You will also need to define where the directory with the mp3 files is located in the
+You will also need to define where the directory with the MP3 files is located in the
 `application-dev-pg.properties` file under the key `app.music-directory`.
 
 ```mermaid
@@ -368,7 +368,7 @@ cd musicfrontend
 ng serve -o # ensure that the application is running on localhost:4200
 npx cypress open
 # Then click on "E2E Testing", pick a browser and "Start E2E Testing".
-# Then look for the add-tracks.cy.js hypelink and click on it. The tests should run.
+# Then look for the add-tracks.cy.js hyperlink and click on it. The tests should run.
 ```
 
 ## Upgrading the frontend
