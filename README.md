@@ -1,6 +1,8 @@
 # Music-Spring Application
 
-This project is a "full-stack" music management application with an Agnular frontend and a Spring Boot Kotlin backend.
+This project is a "full-stack" music management application with an Agnular frontend,
+An Android client and a Spring Boot Kotlin backend. The build system uses Gradle and 
+I've chosen to use a Postgres database.
 
 You can use it to host your collection of mp3 music files.
 Once you have imported your mp3 files you can organise your tracks into playlists.
@@ -8,7 +10,7 @@ You also have the ability to associate many other classifications such as Music 
 Mood, Rating, etc. to your tracks. You can use the "Mixer" to combine tracks based on these
 attributes to new playlists.
 
-The tracks, playlists or groups can be played directly in the browser.
+The tracks, playlists or groups can be played directly in the browser or on your Android phone.
 
 ## Requirements
 
@@ -18,7 +20,8 @@ It can spin up the Frontend Container, the Backend Container and a Postgres Data
 
 To use this app you need an open connection to the backend. If you are listening from your Laptop and serving
 the app there that works fine. It will work just as well if you are in the same network and you are running
-a "media server". If you leave that network, a VPN connection to that network can bridge the gap.
+a "media server". If you leave that network, a VPN connection to that network can bridge the gap. This 
+could be a cheap solution to have the Android client connect back to your home VPN.
 
 Kubernetes clusters will also work nicely. The thing to think through is the storage for the mp3 files.
 If you are on Docker Compose you can mount a local directory as a volume into the backend container. 
@@ -31,6 +34,8 @@ drive as a PVC into the container.
 graph LR
     %% Entity Definitions
     User["👤 User"]
+
+    Android["📱 Android App"]
     
     subgraph Browser ["🌐 Chrome Browser"]
         App["🅰️ Angular App"]
@@ -57,12 +62,16 @@ graph LR
     
     User -->|http://hostname:8010| Browser
     
+    User --> Android
+
     %% Reverse the arrow syntax to force WS to the RIGHT of App
     App <-.-|Frontend\nhttp:/hostname:8010| WS
     
     %% Standard flow to the backend
     App -->|REST API\nhttp://hostname:8011| Backend
     
+    Android -->|REST API\nhttp://hostname:8011| Backend
+
     %% Backend data flow
     Backend -->|postgres:5432| DB
     Backend --> Files
@@ -82,11 +91,7 @@ Architecture Notes
 
 ## Future enhancement ideas
 
-- Android app that connects to the back-end
-- Ability to create playlists on an Android phone and download the files to phone for local playing
-- Cleaned up documentation
-- An End 2 End testing script
-
+Implemented (for now)
 
 ## Quick Start with Docker Compose
 
@@ -96,7 +101,7 @@ To get the application up and running quickly using Docker Compose, follow these
 - Docker needs to be installed on your host machine
 - Think through the network connectivity from your browser to the containers
   Will you use `localhost` as the server name (which you can only reach from a browser 
-  running on itsel) or does the host have a name associated with it's address? Which 
+  running on itself) or does the host have a name associated with it's address? Which 
   ports are free and can the browser reach them (firewalls)?
 - Where are the mp3 files? How much storage do they consume? They will need to be visible 
   on the `/mp3/` path in the backend container.
@@ -106,7 +111,6 @@ To get the application up and running quickly using Docker Compose, follow these
 ```bash
 mkdir musicdatabase
 cd musicdatabase
-# Note doesn't work while the repo is in private mode
 wget https://raw.githubusercontent.com/richardeigenmann/Music-Spring/main/docker-compose.yaml
 ```
 
@@ -114,7 +118,7 @@ wget https://raw.githubusercontent.com/richardeigenmann/Music-Spring/main/docker
 
 Before running the application, you **must** update the `docker-compose.yaml` file with your specific configuration:
 
-- **BACKEND_URL:** Where will the frontend container find the backend container? 
+- **BACKEND_URL:** Where will the frontend container or the Android client find the backend container?
   You need to correct the `BACKEND_URL` in the `environment` section of the frontend.
 
 - **Backend PORT:** On which port will the backend container be listening? This is declared in the line
@@ -175,6 +179,16 @@ docker ps
 - **Backend API:** [http://octan:8011/api](http://octan:8011/api) (with Swagger at `/swagger-ui.html`)
 - **Status page:** [http://octan:8010/status](http://octan:8010/status)
 
+## Connecting the Android client
+
+I have not (yet) registered as a Dev with Google so I can't publish to the App-Store. To
+deploy the Android app you need to download Android Studio, open the project, build and deploy
+it to your device. Once the device is there you need to tell it where to find the backend.
+Open the frontend on a device and hit the Status menu.
+That will display a QR code for the bakend URL.
+On the Android Device open the menu, go to settings and use the scan button
+to read the QR code to get the backend URL into the device.
+
 ## Setting up the PgAdmin Database GUI
 
 The `docker-compose.yml` contains a section for the pgadmin container which is serves
@@ -183,7 +197,7 @@ the YAML file. (Don't remove the `volumes` section or Postgres won't persit anyt
 between restarts.)
 file (before the `volumes:` section, remember to intent by 2 spaces):
 
-- **PgAdmin:** [http://octan:8012](http://octan:8012) Use the PGADMIN_DEFAULT_EMAIL and PGADMIN_DEFAULT_PASSWORD 
+- **PgAdmin:** [http://hostname:8012](http://hostname:8012) Use the PGADMIN_DEFAULT_EMAIL and PGADMIN_DEFAULT_PASSWORD 
 environment variable values from the `docker-compose.yml file` to login. Default values are: 
 - `admin@admin.com` and `adminpass`
 
@@ -233,8 +247,6 @@ whole list.
 If you click on the name of the track you open the 
 editor window and can assign the Mood, Genre and Rating
 
-
-
 ## Publishing a new version
 
 If you are Richard, use the `pushDockerContainers` Gradle task in the `docker` group to publish new versions.
@@ -249,7 +261,6 @@ The `bootBuildImage` task looks at the `gradle.properties` `native` property to 
 - run pushDockerContainers
 - cd to directory where the `docker-compose.yml? file is located
 - run `docker compose up -d` to refresh the containers
-
 
 ## Running in development mode
 
@@ -304,7 +315,6 @@ graph LR
 Starting it all up
 
 ```bash
-
 # Prerequisites: You need to have NodeJs and Angular 21 installed
 su - # not sure: you may need to be root to install Angular globally.
 npm install -g @angular/cli
@@ -344,7 +354,7 @@ When you define the property in `application.properties` like this:
 
 The `@Value` annotation injects this into the `allowedOrigins: Array<String>`, and Spring automatically splits the comma-separated string into an array of individual origins. The `allowedOrigins(*allowedOrigins)` call then correctly registers each one.
 
-## Running the tests
+## Running the Cypress End-2-End tests
 
 ```bash
 # How to run the frontend unit tests
@@ -379,7 +389,7 @@ cd musicfrontend
 ng lint
 ```
 
-# Notes from setting up the frontend on local OpenShift
+# Notes from setting up the frontend on a local OpenShift Kubernetes cluster
 
 ```bash
 # nuke the cluster like when not having spun it up for 30 days and the certificates expire:
@@ -478,7 +488,6 @@ oc set env deployment/music-backend \
 
 # set up the connection to the externally running postgres database:
 oc set env deployment/music-backend \
-  APP_CORS_ALLOWED_ORIGINS="http://music-frontend-music-database.apps-crc.testing" \
   SPRING_DATASOURCE_URL=jdbc:postgresql://octan:5432/musicdb?currentSchema=musicdatabase,public \
   SPRING_DATASOURCE_USERNAME=musicuser \
   SPRING_DATASOURCE_PASSWORD=musicpass \
@@ -531,4 +540,3 @@ To disable the H2 console, set the following property in your `application.prope
 `SPRING_H2_CONSOLE_ENABLED=false`
 
 In the provided `application.properties`, this is currently set to `false` by default.
-
