@@ -68,7 +68,7 @@ graph LR
     %% Standard flow to the backend
     App -->|REST API\nhttp://hostname:8011| Backend
     
-    %% Android -->|REST API\nhttp://hostname:8011| Backend
+    Android -->|REST API\nhttp://hostname:8011| Backend
 
     %% Backend data flow
     Backend -->|postgres:5432| DB
