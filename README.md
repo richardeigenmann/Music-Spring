@@ -541,3 +541,10 @@ To disable the H2 console, set the following property in your `application.prope
 
 In the provided `application.properties`, this is currently set to `false` by default.
 
+## Updating the Android subproject
+
+```bash
+cd musicfrontend
+ng update
+npx npm-check-updates
+```
