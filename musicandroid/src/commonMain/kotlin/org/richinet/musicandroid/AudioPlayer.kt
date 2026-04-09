@@ -12,7 +12,8 @@ data class PlaybackState(
     val hasPrevious: Boolean = false,
     val playlistName: String = "",
     val historyIndex: Int = -1,
-    val historySize: Int = 0
+    val historySize: Int = 0,
+    val cacheProgress: Float = 0f // 0.0 to 1.0
 )
 
 interface AudioPlayer {
@@ -29,4 +30,9 @@ interface AudioPlayer {
     fun goBackHistory()
     fun goForwardHistory()
     fun getQueue(): List<Track>
+
+    // Cache methods
+    fun isCached(track: Track): Boolean
+    fun cacheTrack(track: Track)
+    fun cacheQueue()
 }

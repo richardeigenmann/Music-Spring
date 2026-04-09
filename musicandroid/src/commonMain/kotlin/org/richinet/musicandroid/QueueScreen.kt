@@ -7,6 +7,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.DownloadForOffline
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -48,6 +51,24 @@ data object QueueScreen : Screen {
                         }
                     },
                     actions = {
+                        val progress = playbackState.cacheProgress
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(end = 8.dp)) {
+                            CircularProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier.size(32.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            )
+                            IconButton(onClick = { audioPlayer.cacheQueue() }) {
+                                Icon(
+                                    Icons.Default.DownloadForOffline,
+                                    contentDescription = "Cache All",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
                         IconButton(
                             onClick = { audioPlayer.goBackHistory() },
                             enabled = playbackState.historyIndex > 0
@@ -91,12 +112,22 @@ data object QueueScreen : Screen {
                             navigator.push(TrackEditScreen(track.trackId))
                         },
                         trailingContent = {
-                            IconButton(onClick = { audioPlayer.jumpToQueueItem(index) }) {
-                                Icon(
-                                    Icons.Default.PlayArrow,
-                                    contentDescription = "Play immediately",
-                                    tint = if (isCurrent) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                                )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                val isCached = audioPlayer.isCached(track)
+                                IconButton(onClick = { audioPlayer.cacheTrack(track) }) {
+                                    Icon(
+                                        if (isCached) Icons.Default.CheckCircle else Icons.Default.Download,
+                                        contentDescription = if (isCached) "Cached" else "Cache",
+                                        tint = if (isCached) Color(0xFF4CAF50) else LocalContentColor.current
+                                    )
+                                }
+                                IconButton(onClick = { audioPlayer.jumpToQueueItem(index) }) {
+                                    Icon(
+                                        Icons.Default.PlayArrow,
+                                        contentDescription = "Play immediately",
+                                        tint = if (isCurrent) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                                    )
+                                }
                             }
                         }
                     )

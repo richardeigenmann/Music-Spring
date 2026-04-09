@@ -7,6 +7,9 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +29,7 @@ class AndroidAudioPlayer(
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
     private val scope = CoroutineScope(Dispatchers.Main + Job())
+    private val workManager = WorkManager.getInstance(context)
 
     private val _playbackState = MutableStateFlow(PlaybackState())
     override val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
@@ -60,6 +64,9 @@ class AndroidAudioPlayer(
         val trackId = currentMediaItem?.mediaId?.toLongOrNull()
         val track = currentPlaylist.find { it.trackId == trackId }
 
+        val cachedCount = currentPlaylist.count { isCached(it) }
+        val cacheProgress = if (currentPlaylist.isNotEmpty()) cachedCount.toFloat() / currentPlaylist.size.toFloat() else 0f
+
         _playbackState.value = _playbackState.value.copy(
             track = track,
             isPlaying = player.isPlaying,
@@ -69,7 +76,8 @@ class AndroidAudioPlayer(
             hasPrevious = player.hasPreviousMediaItem(),
             playlistName = currentPlaylistName,
             historyIndex = historyIndex,
-            historySize = history.size
+            historySize = history.size,
+            cacheProgress = cacheProgress
         )
     }
 
@@ -134,6 +142,9 @@ class AndroidAudioPlayer(
         player.prepare()
         player.play()
         updateState()
+
+        // Cache the first few tracks
+        tracks.take(3).forEach { cacheTrack(it) }
     }
 
     private fun findLocalUri(fileName: String): android.net.Uri? {
@@ -158,6 +169,31 @@ class AndroidAudioPlayer(
             // Log error
         }
         return null
+    }
+
+    override fun isCached(track: Track): Boolean {
+        val file = track.files.firstOrNull() ?: return false
+        return findLocalUri(file.fileName) != null
+    }
+
+    override fun cacheTrack(track: Track) {
+        if (isCached(track)) return
+
+        val file = track.files.firstOrNull() ?: return
+        val downloadRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
+            .setInputData(Data.Builder()
+                .putLong("trackId", track.trackId)
+                .putLong("fileId", file.fileId)
+                .putString("fileName", file.fileName)
+                .putString("url", apiService.getStreamUrl(file.fileId))
+                .build())
+            .build()
+        
+        workManager.enqueue(downloadRequest)
+    }
+
+    override fun cacheQueue() {
+        currentPlaylist.forEach { cacheTrack(it) }
     }
 
     override fun togglePlayPause() {
@@ -238,5 +274,16 @@ class AndroidAudioPlayer(
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         updateState()
+
+        // Lookahead caching: cache the next 3 tracks
+        val currentIndex = controller?.currentMediaItemIndex ?: return
+        if (currentIndex >= 0) {
+            for (i in 1..3) {
+                val nextIndex = currentIndex + i
+                if (nextIndex < currentPlaylist.size) {
+                    cacheTrack(currentPlaylist[nextIndex])
+                }
+            }
+        }
     }
 }
