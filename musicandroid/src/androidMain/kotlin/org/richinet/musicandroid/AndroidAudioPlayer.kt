@@ -39,6 +39,10 @@ class AndroidAudioPlayer(
     private var currentPlaylist = listOf<Track>()
     private var currentPlaylistName = ""
 
+    // Cache for local URIs to avoid hammering MediaStore
+    private val localUriCache = mutableMapOf<String, android.net.Uri>()
+    private var cacheUpdateJob: Job? = null
+
     init {
         val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
         controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
@@ -64,9 +68,6 @@ class AndroidAudioPlayer(
         val trackId = currentMediaItem?.mediaId?.toLongOrNull()
         val track = currentPlaylist.find { it.trackId == trackId }
 
-        val cachedCount = currentPlaylist.count { isCached(it) }
-        val cacheProgress = if (currentPlaylist.isNotEmpty()) cachedCount.toFloat() / currentPlaylist.size.toFloat() else 0f
-
         _playbackState.value = _playbackState.value.copy(
             track = track,
             isPlaying = player.isPlaying,
@@ -76,9 +77,27 @@ class AndroidAudioPlayer(
             hasPrevious = player.hasPreviousMediaItem(),
             playlistName = currentPlaylistName,
             historyIndex = historyIndex,
-            historySize = history.size,
-            cacheProgress = cacheProgress
+            historySize = history.size
         )
+
+        // Update cache progress asynchronously to avoid blocking Main thread
+        // Cancel previous job if it exists to avoid piled up background work
+        cacheUpdateJob?.cancel()
+        cacheUpdateJob = scope.launch(Dispatchers.IO) {
+            updateCacheProgress()
+        }
+    }
+
+    private fun updateCacheProgress() {
+        if (currentPlaylist.isEmpty()) {
+            _playbackState.value = _playbackState.value.copy(cacheProgress = 0f)
+            return
+        }
+
+        val cachedCount = currentPlaylist.count { isCached(it) }
+        val progress = cachedCount.toFloat() / currentPlaylist.size.toFloat()
+
+        _playbackState.value = _playbackState.value.copy(cacheProgress = progress)
     }
 
     private fun updateProgress() {
@@ -117,37 +136,45 @@ class AndroidAudioPlayer(
         player.stop()
         player.clearMediaItems()
 
-        val mediaItems = tracks.map { track ->
-            val file = track.files.firstOrNull()
-            val metadata = MediaMetadata.Builder()
-                .setTitle(track.trackName)
-                .setArtist(track.getArtist())
-                .setAlbumTitle(track.getAlbum())
-                .build()
+        // Move media item creation to background thread
+        scope.launch(Dispatchers.Default) {
+            val mediaItems = tracks.map { track ->
+                val file = track.files.firstOrNull()
+                val metadata = MediaMetadata.Builder()
+                    .setTitle(track.trackName)
+                    .setArtist(track.getArtist())
+                    .setAlbumTitle(track.getAlbum())
+                    .build()
 
-            val uri = if (file != null) {
-                findLocalUri(file.fileName) ?: android.net.Uri.parse(apiService.getStreamUrl(file.fileId))
-            } else {
-                android.net.Uri.EMPTY
+                val uri = if (file != null) {
+                    findLocalUri(file.fileName) ?: android.net.Uri.parse(apiService.getStreamUrl(file.fileId))
+                } else {
+                    android.net.Uri.EMPTY
+                }
+
+                MediaItem.Builder()
+                    .setMediaId(track.trackId.toString())
+                    .setUri(uri)
+                    .setMediaMetadata(metadata)
+                    .build()
             }
 
-            MediaItem.Builder()
-                .setMediaId(track.trackId.toString())
-                .setUri(uri)
-                .setMediaMetadata(metadata)
-                .build()
+            launch(Dispatchers.Main) {
+                player.addMediaItems(mediaItems)
+                player.prepare()
+                player.play()
+                updateState()
+
+                // Cache the first few tracks
+                tracks.take(3).forEach { cacheTrack(it) }
+            }
         }
-
-        player.addMediaItems(mediaItems)
-        player.prepare()
-        player.play()
-        updateState()
-
-        // Cache the first few tracks
-        tracks.take(3).forEach { cacheTrack(it) }
     }
 
     private fun findLocalUri(fileName: String): android.net.Uri? {
+        // Check cache first
+        localUriCache[fileName]?.let { return it }
+
         val collection = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             android.provider.MediaStore.Audio.Media.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY)
         } else {
@@ -162,7 +189,9 @@ class AndroidAudioPlayer(
             context.contentResolver.query(collection, projection, selection, selectionArgs, null)?.use { cursor ->
                 if (cursor.moveToFirst()) {
                     val id = cursor.getLong(cursor.getColumnIndexOrThrow(android.provider.MediaStore.Audio.Media._ID))
-                    return android.content.ContentUris.withAppendedId(collection, id)
+                    val uri = android.content.ContentUris.withAppendedId(collection, id)
+                    localUriCache[fileName] = uri
+                    return uri
                 }
             }
         } catch (e: Exception) {
@@ -188,7 +217,7 @@ class AndroidAudioPlayer(
                 .putString("url", apiService.getStreamUrl(file.fileId))
                 .build())
             .build()
-        
+
         workManager.enqueue(downloadRequest)
     }
 
