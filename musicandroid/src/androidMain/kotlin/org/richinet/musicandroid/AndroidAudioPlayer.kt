@@ -23,7 +23,9 @@ import kotlinx.coroutines.launch
 
 class AndroidAudioPlayer(
     private val context: Context,
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    private val localFileResolver: LocalFileResolver,
+    private val queueManager: DownloadQueueManager
 ) : AudioPlayer, Player.Listener {
 
     private var controllerFuture: ListenableFuture<MediaController>? = null
@@ -39,8 +41,6 @@ class AndroidAudioPlayer(
     private var currentPlaylist = listOf<Track>()
     private var currentPlaylistName = ""
 
-    // Cache for local URIs to avoid hammering MediaStore
-    private val localUriCache = mutableMapOf<String, android.net.Uri>()
     private var cacheUpdateJob: Job? = null
 
     init {
@@ -51,6 +51,33 @@ class AndroidAudioPlayer(
             controller?.addListener(this)
             updateState()
         }, MoreExecutors.directExecutor())
+
+        // Observe LocalFileResolver for cache changes
+        scope.launch {
+            localFileResolver.foundFileNames.collect { names ->
+                _playbackState.value = _playbackState.value.copy(
+                    cachedFileNames = names,
+                    cacheNonce = _playbackState.value.cacheNonce + 1
+                )
+                updateCacheProgress()
+            }
+        }
+
+        // Observe WorkManager for downloads
+        scope.launch {
+            workManager.getWorkInfosByTagFlow("track_download").collect { workInfos ->
+                val isDownloading = workInfos.any { it.state == androidx.work.WorkInfo.State.ENQUEUED || it.state == androidx.work.WorkInfo.State.RUNNING }
+
+                // Refresh local file resolver cache if any download succeeded
+                if (workInfos.any { it.state == androidx.work.WorkInfo.State.SUCCEEDED }) {
+                    localFileResolver.refreshCache()
+                }
+
+                _playbackState.value = _playbackState.value.copy(
+                    isDownloading = isDownloading
+                )
+            }
+        }
 
         scope.launch {
             while (true) {
@@ -147,7 +174,7 @@ class AndroidAudioPlayer(
                     .build()
 
                 val uri = if (file != null) {
-                    findLocalUri(file.fileName) ?: android.net.Uri.parse(apiService.getStreamUrl(file.fileId))
+                    localFileResolver.findLocalUri(file.fileName) ?: android.net.Uri.parse(apiService.getStreamUrl(file.fileId))
                 } else {
                     android.net.Uri.EMPTY
                 }
@@ -171,54 +198,62 @@ class AndroidAudioPlayer(
         }
     }
 
-    private fun findLocalUri(fileName: String): android.net.Uri? {
-        // Check cache first
-        localUriCache[fileName]?.let { return it }
+    private fun playHistoryPlaylist(tracks: List<Track>) {
+        val player = controller ?: return
+        currentPlaylist = tracks
+        // We don't change the name for now, or could store it in history
 
-        val collection = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            android.provider.MediaStore.Audio.Media.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        } else {
-            android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        player.stop()
+        player.clearMediaItems()
+        val mediaItems = tracks.map { track ->
+            val file = track.files.firstOrNull()
+            val uri = if (file != null) {
+                localFileResolver.findLocalUri(file.fileName) ?: android.net.Uri.parse(apiService.getStreamUrl(file.fileId))
+            } else { android.net.Uri.EMPTY }
+
+            MediaItem.Builder()
+                .setMediaId(track.trackId.toString())
+                .setUri(uri)
+                .build()
         }
-
-        val projection = arrayOf(android.provider.MediaStore.Audio.Media._ID)
-        val selection = "${android.provider.MediaStore.Audio.Media.DISPLAY_NAME} = ?"
-        val selectionArgs = arrayOf(fileName)
-
-        try {
-            context.contentResolver.query(collection, projection, selection, selectionArgs, null)?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val id = cursor.getLong(cursor.getColumnIndexOrThrow(android.provider.MediaStore.Audio.Media._ID))
-                    val uri = android.content.ContentUris.withAppendedId(collection, id)
-                    localUriCache[fileName] = uri
-                    return uri
-                }
-            }
-        } catch (e: Exception) {
-            // Log error
-        }
-        return null
+        player.addMediaItems(mediaItems)
+        player.prepare()
+        player.play()
+        updateState()
     }
 
     override fun isCached(track: Track): Boolean {
         val file = track.files.firstOrNull() ?: return false
-        return findLocalUri(file.fileName) != null
+        val uri = localFileResolver.findLocalUri(file.fileName)
+        return uri != null
     }
 
     override fun cacheTrack(track: Track) {
-        if (isCached(track)) return
+        if (isCached(track)) {
+            updateState()
+            return
+        }
 
-        val file = track.files.firstOrNull() ?: return
+        queueManager.enqueue(listOf(track))
+        startWork()
+    }
+
+    private fun startWork() {
         val downloadRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
+            .addTag("track_download")
             .setInputData(Data.Builder()
-                .putLong("trackId", track.trackId)
-                .putLong("fileId", file.fileId)
-                .putString("fileName", file.fileName)
-                .putString("url", apiService.getStreamUrl(file.fileId))
+                .putString("baseUrl", apiService.baseUrl)
                 .build())
             .build()
 
-        workManager.enqueue(downloadRequest)
+        // Start 3 parallel workers
+        for (i in 1..3) {
+            workManager.enqueueUniqueWork(
+                "downloader_$i",
+                androidx.work.ExistingWorkPolicy.KEEP,
+                downloadRequest
+            )
+        }
     }
 
     override fun cacheQueue() {
@@ -264,30 +299,6 @@ class AndroidAudioPlayer(
             val tracks = history[historyIndex]
             playHistoryPlaylist(tracks)
         }
-    }
-
-    private fun playHistoryPlaylist(tracks: List<Track>) {
-        val player = controller ?: return
-        currentPlaylist = tracks
-        // We don't change the name for now, or could store it in history
-
-        player.stop()
-        player.clearMediaItems()
-        val mediaItems = tracks.map { track ->
-            val file = track.files.firstOrNull()
-            val uri = if (file != null) {
-                findLocalUri(file.fileName) ?: android.net.Uri.parse(apiService.getStreamUrl(file.fileId))
-            } else { android.net.Uri.EMPTY }
-
-            MediaItem.Builder()
-                .setMediaId(track.trackId.toString())
-                .setUri(uri)
-                .build()
-        }
-        player.addMediaItems(mediaItems)
-        player.prepare()
-        player.play()
-        updateState()
     }
 
     override fun getQueue(): List<Track> = currentPlaylist

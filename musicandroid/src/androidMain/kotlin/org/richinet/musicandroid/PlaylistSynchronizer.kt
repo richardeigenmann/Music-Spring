@@ -7,7 +7,11 @@ import androidx.work.WorkManager
 import java.io.File
 import android.os.Environment
 
-class PlaylistSynchronizer(private val context: Context, private val apiService: ApiService) {
+class PlaylistSynchronizer(
+    private val context: Context,
+    private val apiService: ApiService,
+    private val localFileResolver: LocalFileResolver
+) {
 
     fun syncPlaylist(tagName: String, tracks: List<Track>) {
         val workManager = WorkManager.getInstance(context)
@@ -15,6 +19,7 @@ class PlaylistSynchronizer(private val context: Context, private val apiService:
         tracks.forEach { track ->
             val file = track.files.firstOrNull() ?: return@forEach
             val downloadRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
+                .addTag("track_download")
                 .setInputData(Data.Builder()
                     .putLong("trackId", track.trackId)
                     .putLong("fileId", file.fileId)
@@ -22,8 +27,13 @@ class PlaylistSynchronizer(private val context: Context, private val apiService:
                     .putString("url", apiService.getStreamUrl(file.fileId))
                     .build())
                 .build()
-            
-            workManager.enqueue(downloadRequest)
+
+            // Use unique work to queue them sequentially for the same playlist/tag
+            workManager.enqueueUniqueWork(
+                "download_${file.fileName}",
+                androidx.work.ExistingWorkPolicy.KEEP,
+                downloadRequest
+            )
         }
 
         registerPlaylistInMediaStore(tagName, tracks)
@@ -40,7 +50,7 @@ class PlaylistSynchronizer(private val context: Context, private val apiService:
 
         val fileName = "$tagName.m3u"
         val contentResolver = context.contentResolver
-        
+
         val collection = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             android.provider.MediaStore.Files.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY)
         } else {
@@ -59,7 +69,7 @@ class PlaylistSynchronizer(private val context: Context, private val apiService:
         contentResolver.delete(collection, "${android.provider.MediaStore.Files.FileColumns.DISPLAY_NAME} = ?", arrayOf(fileName))
 
         val uri = contentResolver.insert(collection, details) ?: return
-        
+
         try {
             contentResolver.openOutputStream(uri)?.use { outputStream ->
                 outputStream.write(m3uContent.toString().toByteArray())

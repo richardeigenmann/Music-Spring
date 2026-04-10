@@ -13,7 +13,11 @@ data class PlaybackState(
     val playlistName: String = "",
     val historyIndex: Int = -1,
     val historySize: Int = 0,
-    val cacheProgress: Float = 0f // 0.0 to 1.0
+    val cacheProgress: Float = 0f, // 0.0 to 1.0
+    val cachedTrackIds: Set<Long> = emptySet(),
+    val isDownloading: Boolean = false,
+    val cacheNonce: Int = 0,
+    val cachedFileNames: Set<String> = emptySet()
 )
 
 interface AudioPlayer {
