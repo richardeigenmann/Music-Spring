@@ -13,4 +13,5 @@ fun createAndroidModule(context: Context) = module {
     single<PlaylistSync> { AndroidPlaylistSync(get(), get(), get()) }
     single<AudioPlayer> { AndroidAudioPlayer(get(), get(), get(), get()) }
     single<ImageResolver> { AndroidImageResolver(get(), get(), get()) }
+    single<PictureChecker> { AndroidPictureChecker(get(), get()) }
 }

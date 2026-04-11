@@ -78,6 +78,24 @@ fun App() {
                             },
                             icon = { Icon(Icons.Default.Settings, null) }
                         )
+                        NavigationDrawerItem(
+                            label = { Text("Check Pictures") },
+                            selected = false,
+                            onClick = {
+                                navigator.push(PictureCheckScreen)
+                                scope.launch { drawerState.close() }
+                            },
+                            icon = { Icon(Icons.Default.Image, null) }
+                        )
+                        NavigationDrawerItem(
+                            label = { Text("Download All") },
+                            selected = false,
+                            onClick = {
+                                navigator.push(SyncScreen)
+                                scope.launch { drawerState.close() }
+                            },
+                            icon = { Icon(Icons.Default.Download, null) }
+                        )
                     }
                 }
             ) {

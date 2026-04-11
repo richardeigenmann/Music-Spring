@@ -43,6 +43,11 @@ class ApiService(private val settingsRepository: SettingsRepository) {
 
     suspend fun getTags(): List<Tag> = client.get("${baseUrl}/api/tags").body()
 
+    suspend fun getAllTracks(): List<Track> {
+        val jsonList = client.get("${baseUrl}/api/tracks/dump").body<List<JsonObject>>()
+        return jsonList.map { parseTrack(it) }
+    }
+
     suspend fun getTrack(trackId: Long): Track {
         val jsonObject = client.get("${baseUrl}/api/track/$trackId").body<JsonObject>()
         return parseTrack(jsonObject)
