@@ -13,7 +13,7 @@ import { ApiService } from '../apiservice';
 import { PlaybackService } from '../playback.service';
 
 /**
- * Always-on bottom player component.
+ * player component.
  */
 @Component({
   selector: 'app-track-player',
@@ -26,6 +26,9 @@ export class TrackPlayer implements OnDestroy, AfterViewInit {
   private apiService = inject(ApiService);
   playbackService = inject(PlaybackService);
   private router = inject(Router);
+  private preventPlayOnStartup = true;
+
+  layOnStartup = false;
 
   @ViewChild('audioPlayer') audioPlayer!: ElementRef<HTMLAudioElement>;
 
@@ -34,37 +37,38 @@ export class TrackPlayer implements OnDestroy, AfterViewInit {
   hasNext = this.playbackService.hasNext;
   hasPrevious = this.playbackService.hasPrevious;
 
+  private requestNextTrack = () => this.playbackService.nextTrack();
+
   constructor() {
     effect(() => {
       const track = this.currentTrack();
-      // We still grab the reference, but we don't set the .src here anymore
       const audio = this.audioPlayer?.nativeElement;
 
       if (track && audio) {
-        // The template handles audio.src automatically now.
-        // We just ensure it plays if the track changes while the player is already open.
         audio.load();
-        audio.play().catch((e) => {
-          if (e.name !== 'AbortError') console.warn('Playback error:', e);
-        });
+        if (this.preventPlayOnStartup) {
+          this.preventPlayOnStartup = false;
+        } else {
+          audio.play().catch((e) => {
+            if (e.name !== 'AbortError') console.warn('Playback error:', e);
+          });
+        }
       }
     });
   }
 
   ngAfterViewInit(): void {
     if (this.audioPlayer) {
-      this.audioPlayer.nativeElement.addEventListener('ended', () =>
-        this.playbackService.nextTrack(),
-      );
+      // attach an event listener to the audio element to detect when a track ends and
+      // trigger the next track to play
+      this.audioPlayer.nativeElement.addEventListener('ended', this.requestNextTrack);
     }
   }
 
   ngOnDestroy(): void {
-    // Component is intended to be always-on, but good practice to clean up
     if (this.audioPlayer) {
-      this.audioPlayer.nativeElement.removeEventListener('ended', () =>
-        this.playbackService.nextTrack(),
-      );
+      // remove the event listener when the component is destroyed
+      this.audioPlayer.nativeElement.removeEventListener('ended', this.requestNextTrack);
     }
   }
 
