@@ -258,7 +258,7 @@ The `bootBuildImage` task looks at the `gradle.properties` `native` property to 
 - Increment version number
 - Native build?
 - Run pushDockerContainers
-- cd to directory where the `docker-compose.yml? file is located
+- cd to directory where the `docker-compose.yml` file is located
 - Run `docker compose up -d` to refresh the containers
 
 ## Running in development mode
