@@ -4,9 +4,9 @@ import {
   Component,
   ElementRef,
   OnDestroy,
-  ViewChild,
   effect,
   inject,
+  viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../apiservice';
@@ -27,10 +27,7 @@ export class TrackPlayer implements OnDestroy, AfterViewInit {
   playbackService = inject(PlaybackService);
   private router = inject(Router);
   private preventPlayOnStartup = true;
-
-  layOnStartup = false;
-
-  @ViewChild('audioPlayer') audioPlayer!: ElementRef<HTMLAudioElement>;
+  audioPlayer = viewChild<ElementRef<HTMLAudioElement>>('audioPlayer');
 
   currentTrack = this.playbackService.currentTrack;
   playlistName = this.playbackService.playlistName;
@@ -42,15 +39,17 @@ export class TrackPlayer implements OnDestroy, AfterViewInit {
   constructor() {
     effect(() => {
       const track = this.currentTrack();
-      const audio = this.audioPlayer?.nativeElement;
+      const audio = this.audioPlayer()?.nativeElement;
 
       if (track && audio) {
-        audio.load();
         if (this.preventPlayOnStartup) {
           this.preventPlayOnStartup = false;
         } else {
+          this.updateMediaSession(track);
           audio.play().catch((e) => {
-            if (e.name !== 'AbortError') console.warn('Playback error:', e);
+            // If play() is blocked, it's often because the async effect
+            // lost the "user gesture" context on mobile.
+            if (e.name !== 'AbortError') console.error('Playback failed:', e);
           });
         }
       }
@@ -58,17 +57,45 @@ export class TrackPlayer implements OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    if (this.audioPlayer) {
+    const audio = this.audioPlayer()?.nativeElement;
+    if (audio) {
       // attach an event listener to the audio element to detect when a track ends and
       // trigger the next track to play
-      this.audioPlayer.nativeElement.addEventListener('ended', this.requestNextTrack);
+      audio.addEventListener('ended', this.requestNextTrack);
     }
   }
 
   ngOnDestroy(): void {
-    if (this.audioPlayer) {
+    const audio = this.audioPlayer()?.nativeElement;
+    if (audio) {
       // remove the event listener when the component is destroyed
-      this.audioPlayer.nativeElement.removeEventListener('ended', this.requestNextTrack);
+      audio.removeEventListener('ended', this.requestNextTrack);
+    }
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = null;
+    }
+  }
+
+  private updateMediaSession(track: any) {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.title,
+        artist: track.artist || 'Unknown Artist',
+        album: this.playlistName() || '',
+        artwork: [
+          {
+            src: this.getTrackImageUrl(track.fileId),
+            sizes: '512x512',
+            type: 'image/png',
+          },
+        ],
+      });
+
+      // These handlers allow the lock screen buttons to work
+      navigator.mediaSession.setActionHandler('play', () => this.audioPlayer()?.nativeElement.play());
+      navigator.mediaSession.setActionHandler('pause', () => this.audioPlayer()?.nativeElement.pause());
+      navigator.mediaSession.setActionHandler('nexttrack', () => this.playbackService.nextTrack());
+      navigator.mediaSession.setActionHandler('previoustrack', () => this.playbackService.previousTrack());
     }
   }
 
