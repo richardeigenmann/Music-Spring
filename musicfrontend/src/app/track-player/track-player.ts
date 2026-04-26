@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { ApiService } from '../apiservice';
+import { ApiService, TrackEntry } from '../apiservice';
 import { PlaybackService } from '../playback.service';
 
 @Component({
@@ -73,13 +73,24 @@ export class TrackPlayer implements OnDestroy, AfterViewInit {
       }
     });
 
-    // Effect to manage the 'ended' event listener on the audio element
+    // Effect to manage the 'ended' event listener and other audio events
     effect(() => {
       const audio = this.audioPlayer()?.nativeElement;
       if (audio) {
+        const onPlay = () => this.updatePlaybackState('playing');
+        const onPause = () => this.updatePlaybackState('paused');
+        const onTimeUpdate = () => this.updatePositionState();
+
         audio.addEventListener('ended', this.trackEndedListener);
+        audio.addEventListener('play', onPlay);
+        audio.addEventListener('pause', onPause);
+        audio.addEventListener('timeupdate', onTimeUpdate);
+
         return () => {
           audio.removeEventListener('ended', this.trackEndedListener);
+          audio.removeEventListener('play', onPlay);
+          audio.removeEventListener('pause', onPause);
+          audio.removeEventListener('timeupdate', onTimeUpdate);
         };
       }
       return;
@@ -95,7 +106,30 @@ export class TrackPlayer implements OnDestroy, AfterViewInit {
     }
   }
 
-  private updateMediaSession(track: any) {
+  private updatePlaybackState(state: 'playing' | 'paused' | 'none') {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = state;
+    }
+  }
+
+  private updatePositionState() {
+    if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+      const audio = this.audioPlayer()?.nativeElement;
+      if (audio && audio.duration && !isNaN(audio.duration)) {
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: audio.duration,
+            playbackRate: audio.playbackRate,
+            position: audio.currentTime,
+          });
+        } catch (e) {
+          // Sometimes browsers throw if duration/position is slightly out of sync
+        }
+      }
+    }
+  }
+
+  private updateMediaSession(track: TrackEntry) {
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: track.title,
@@ -115,6 +149,17 @@ export class TrackPlayer implements OnDestroy, AfterViewInit {
       navigator.mediaSession.setActionHandler('pause', () => this.audioPlayer()?.nativeElement.pause());
       navigator.mediaSession.setActionHandler('nexttrack', () => this.playbackService.nextTrack());
       navigator.mediaSession.setActionHandler('previoustrack', () => this.playbackService.previousTrack());
+
+      try {
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+          if (details.seekTime !== undefined && this.audioPlayer()?.nativeElement) {
+            this.audioPlayer()!.nativeElement.currentTime = details.seekTime;
+            this.updatePositionState();
+          }
+        });
+      } catch (error) {
+        // seekto is not supported on all browsers
+      }
     }
   }
 
