@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import {
-  AfterViewInit,
   Component,
   ElementRef,
   OnDestroy,
@@ -19,7 +18,7 @@ import { PlaybackService } from '../playback.service';
   templateUrl: './track-player.html',
   styleUrls: ['./track-player.css'],
 })
-export class TrackPlayer implements OnDestroy, AfterViewInit {
+export class TrackPlayer implements OnDestroy {
   private apiService = inject(ApiService);
   playbackService = inject(PlaybackService);
   private router = inject(Router);
@@ -96,9 +95,6 @@ export class TrackPlayer implements OnDestroy, AfterViewInit {
       return;
     });
   }
-  ngAfterViewInit(): void {
-    // required but not used
-  }
 
   ngOnDestroy(): void {
     if ('mediaSession' in navigator) {
@@ -122,7 +118,7 @@ export class TrackPlayer implements OnDestroy, AfterViewInit {
             playbackRate: audio.playbackRate,
             position: audio.currentTime,
           });
-        } catch (e) {
+        } catch {
           // Sometimes browsers throw if duration/position is slightly out of sync
         }
       }
@@ -157,7 +153,7 @@ export class TrackPlayer implements OnDestroy, AfterViewInit {
             this.updatePositionState();
           }
         });
-      } catch (error) {
+      } catch {
         // seekto is not supported on all browsers
       }
     }
