@@ -12,9 +12,6 @@ import { Router } from '@angular/router';
 import { ApiService } from '../apiservice';
 import { PlaybackService } from '../playback.service';
 
-/**
- * player component.
- */
 @Component({
   selector: 'app-track-player',
   standalone: true,
@@ -27,6 +24,7 @@ export class TrackPlayer implements OnDestroy, AfterViewInit {
   playbackService = inject(PlaybackService);
   private router = inject(Router);
   private preventPlayOnStartup = true;
+  private lastFileId: number | null = null;
   audioPlayer = viewChild<ElementRef<HTMLAudioElement>>('audioPlayer');
 
   currentTrack = this.playbackService.currentTrack;
@@ -34,43 +32,64 @@ export class TrackPlayer implements OnDestroy, AfterViewInit {
   hasNext = this.playbackService.hasNext;
   hasPrevious = this.playbackService.hasPrevious;
 
-  private requestNextTrack = () => this.playbackService.nextTrack();
+  private trackEndedListener = () => {
+    this.requestNextTrack();
+  }
+
+  private requestNextTrack = () => {
+    this.playbackService.nextTrack();
+  }
 
   constructor() {
+    // Effect to handle track changes and playback
     effect(() => {
       const track = this.currentTrack();
       const audio = this.audioPlayer()?.nativeElement;
 
       if (track && audio) {
-        if (this.preventPlayOnStartup) {
-          this.preventPlayOnStartup = false;
-        } else {
+        // Only update src and play if the track has actually changed
+        if (track.fileId !== this.lastFileId) {
+          this.lastFileId = track.fileId;
+          const trackUrl = this.getTrackUrl(track.fileId);
+          audio.src = trackUrl;
           this.updateMediaSession(track);
-          audio.play().catch((e) => {
-            // If play() is blocked, it's often because the async effect
-            // lost the "user gesture" context on mobile.
-            if (e.name !== 'AbortError') console.error('Playback failed:', e);
-          });
+
+          if (this.preventPlayOnStartup) {
+            this.preventPlayOnStartup = false;
+          } else {
+            // We use a small timeout to ensure the browser has processed the src change
+            // before we call play(), which helps avoid AbortError.
+            setTimeout(() => {
+              audio.play().catch((e) => {
+                if (e.name !== 'AbortError') {
+                  console.error('Playback failed:', e);
+                }
+              });
+            });
+          }
         }
+      } else if (!track) {
+        this.lastFileId = null;
       }
     });
-  }
 
+    // Effect to manage the 'ended' event listener on the audio element
+    effect(() => {
+      const audio = this.audioPlayer()?.nativeElement;
+      if (audio) {
+        audio.addEventListener('ended', this.trackEndedListener);
+        return () => {
+          audio.removeEventListener('ended', this.trackEndedListener);
+        };
+      }
+      return;
+    });
+  }
   ngAfterViewInit(): void {
-    const audio = this.audioPlayer()?.nativeElement;
-    if (audio) {
-      // attach an event listener to the audio element to detect when a track ends and
-      // trigger the next track to play
-      audio.addEventListener('ended', this.requestNextTrack);
-    }
+    // required but not used
   }
 
   ngOnDestroy(): void {
-    const audio = this.audioPlayer()?.nativeElement;
-    if (audio) {
-      // remove the event listener when the component is destroyed
-      audio.removeEventListener('ended', this.requestNextTrack);
-    }
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = null;
     }
