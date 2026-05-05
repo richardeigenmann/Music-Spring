@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -124,82 +125,80 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
                             }) {
                                 Icon(Icons.Default.PlayArrow, contentDescription = "Play All (Shuffled)")
                             }
-                            IconButton(onClick = {
-                                if (tracksState is UiState.Success) {
-                                    val originalTracks = (tracksState as UiState.Success<List<Track>>).data
-                                    playlistSync.sync(tagName, originalTracks)
-                                }
-                            }) {
-                                Icon(Icons.Default.Sync, contentDescription = "Sync to Device")
-                            }
                         }
                     }
                 )
             }
         ) { paddingValues ->
             Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                when (val state = tracksState) {
-                    is UiState.Loading -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
-                    }
-                    is UiState.Success -> {
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            itemsIndexed(shuffledTracks) { index, track ->
-                                val isCurrent = track.trackId == playbackState.track?.trackId
-                                ListItem(
-                                    headlineContent = {
-                                        Text(
-                                            track.trackName,
-                                            color = if (isCurrent) MaterialTheme.colorScheme.primary else Color.Unspecified
-                                        )
-                                    },
-                                    supportingContent = { Text("${track.getArtist()} - ${track.getAlbum()}") },
-                                    leadingContent = {
-                                        AsyncImage(
-                                            model = imageResolver.getTrackImageSource(track),
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier.size(56.dp)
-                                        )
-                                    },
-                                    modifier = Modifier.clickable {
-                                        navigator.push(TrackEditScreen(track.trackId))
-                                    },
-                                    trailingContent = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            val isCached = track.files.any { it.fileName in cachedFileNames }
-                                            IconButton(onClick = { audioPlayer.cacheTrack(track) }) {
-                                                Icon(
-                                                    if (isCached) Icons.Default.CheckCircle else Icons.Default.Download,
-                                                    contentDescription = if (isCached) "Cached" else "Cache",
-                                                    tint = if (isCached) Color(0xFF4CAF50) else LocalContentColor.current
+                if (tracksState is UiState.Success || tracksState is UiState.Loading || tracksState is UiState.Error) {
+                    PullToRefreshBox(
+                        isRefreshing = tracksState is UiState.Loading,
+                        onRefresh = { viewModel.loadTracksByTag(tagId) },
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        when (val state = tracksState) {
+                            is UiState.Success -> {
+                                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                    itemsIndexed(shuffledTracks) { index, track ->
+                                        val isCurrent = track.trackId == playbackState.track?.trackId
+                                        ListItem(
+                                            headlineContent = {
+                                                Text(
+                                                    track.trackName,
+                                                    color = if (isCurrent) MaterialTheme.colorScheme.primary else Color.Unspecified
                                                 )
-                                            }
-                                            IconButton(onClick = {
-                                                val playlist = shuffledTracks.drop(index)
-                                                audioPlayer.playPlaylist(playlist, tagName)
-                                            }) {
-                                                Icon(
-                                                    Icons.Default.PlayArrow,
-                                                    contentDescription = "Play",
-                                                    tint = if (isCurrent) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                                            },
+                                            supportingContent = { Text("${track.getArtist()} - ${track.getAlbum()}") },
+                                            leadingContent = {
+                                                AsyncImage(
+                                                    model = imageResolver.getTrackImageSource(track),
+                                                    contentDescription = null,
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier.size(56.dp)
                                                 )
+                                            },
+                                            modifier = Modifier.clickable {
+                                                navigator.push(TrackEditScreen(track.trackId))
+                                            },
+                                            trailingContent = {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    val isCached = track.files.any { it.fileName in cachedFileNames }
+                                                    IconButton(onClick = { audioPlayer.cacheTrack(track) }) {
+                                                        Icon(
+                                                            if (isCached) Icons.Default.CheckCircle else Icons.Default.Download,
+                                                            contentDescription = if (isCached) "Cached" else "Cache",
+                                                            tint = if (isCached) Color(0xFF4CAF50) else LocalContentColor.current
+                                                        )
+                                                    }
+                                                    IconButton(onClick = {
+                                                        val playlist = shuffledTracks.drop(index)
+                                                        audioPlayer.playPlaylist(playlist, tagName)
+                                                    }) {
+                                                        Icon(
+                                                            Icons.Default.PlayArrow,
+                                                            contentDescription = "Play",
+                                                            tint = if (isCurrent) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                                                        )
+                                                    }
+                                                }
                                             }
-                                        }
+                                        )
+                                        HorizontalDivider()
                                     }
-                                )
-                                HorizontalDivider()
+                                }
                             }
-                        }
-                    }
-                    is UiState.Error -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(
-                                text = "Error: ${state.message}",
-                                color = MaterialTheme.colorScheme.error
-                            )
+                            is UiState.Error -> {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = "Error: ${state.message}",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                            is UiState.Loading -> {
+                                Box(modifier = Modifier.fillMaxSize())
+                            }
                         }
                     }
                 }

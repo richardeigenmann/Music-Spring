@@ -4,10 +4,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,43 +62,52 @@ data object SearchScreen : Screen {
                 )
 
                 Box(modifier = Modifier.fillMaxSize()) {
-                    when (val state = searchResults) {
-                        is UiState.Loading -> {
-                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                        }
-                        is UiState.Success -> {
-                            LazyColumn {
-                                items(state.data) { track ->
-                                    ListItem(
-                                        headlineContent = { Text(track.trackName) },
-                                        supportingContent = { Text(track.getArtist()) },
-                                        leadingContent = {
-                                            AsyncImage(
-                                                model = imageResolver.getTrackImageSource(track),
-                                                contentDescription = null,
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier.size(56.dp)
+                    if (searchResults is UiState.Success || searchResults is UiState.Loading || searchResults is UiState.Error) {
+                        PullToRefreshBox(
+                            isRefreshing = searchResults is UiState.Loading,
+                            onRefresh = { if (query.isNotBlank()) viewModel.searchTracks(query) },
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            when (val state = searchResults) {
+                                is UiState.Success -> {
+                                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                        items(state.data) { track ->
+                                            ListItem(
+                                                headlineContent = { Text(track.trackName) },
+                                                supportingContent = { Text(track.getArtist()) },
+                                                leadingContent = {
+                                                    AsyncImage(
+                                                        model = imageResolver.getTrackImageSource(track),
+                                                        contentDescription = null,
+                                                        contentScale = ContentScale.Crop,
+                                                        modifier = Modifier.size(56.dp)
+                                                    )
+                                                },
+                                                modifier = Modifier.clickable {
+                                                    navigator.push(TrackEditScreen(track.trackId))
+                                                },
+                                                trailingContent = {
+                                                    IconButton(onClick = { audioPlayer.playTrack(track) }) {
+                                                        Icon(Icons.Default.PlayArrow, contentDescription = "Play")
+                                                    }
+                                                }
                                             )
-                                        },
-                                        modifier = Modifier.clickable {
-                                            navigator.push(TrackEditScreen(track.trackId))
-                                        },
-                                        trailingContent = {
-                                            IconButton(onClick = { audioPlayer.playTrack(track) }) {
-                                                Icon(Icons.Default.PlayArrow, contentDescription = "Play")
-                                            }
+                                            HorizontalDivider()
                                         }
-                                    )
-                                    HorizontalDivider()
+                                    }
+                                }
+                                is UiState.Error -> {
+                                    Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = state.message,
+                                            color = MaterialTheme.colorScheme.error,
+                                        )
+                                    }
+                                }
+                                is UiState.Loading -> {
+                                    Box(modifier = Modifier.fillMaxSize())
                                 }
                             }
-                        }
-                        is UiState.Error -> {
-                            Text(
-                                text = state.message,
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
                         }
                     }
                 }
