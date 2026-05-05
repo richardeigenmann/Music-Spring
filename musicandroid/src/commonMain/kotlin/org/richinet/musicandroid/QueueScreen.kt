@@ -114,13 +114,15 @@ data object QueueScreen : Screen {
                         trailingContent = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 val isCached = audioPlayer.isCached(track)
-                                IconButton(onClick = { audioPlayer.cacheTrack(track) }) {
-                                    Icon(
-                                        if (isCached) Icons.Default.CheckCircle else Icons.Default.Download,
-                                        contentDescription = if (isCached) "Cached" else "Cache",
-                                        tint = if (isCached) Color(0xFF4CAF50) else LocalContentColor.current
-                                    )
-                                }
+                                val isCurrent = track.trackId == playbackState.track?.trackId
+                                
+                                DownloadProgressButton(
+                                    isCached = isCached,
+                                    progress = if (isCurrent) playbackState.currentDownloadProgress else 0f,
+                                    isDownloading = playbackState.isDownloading,
+                                    onDownloadClick = { audioPlayer.cacheTrack(track) }
+                                )
+
                                 IconButton(onClick = { audioPlayer.jumpToQueueItem(index) }) {
                                     Icon(
                                         Icons.Default.PlayArrow,

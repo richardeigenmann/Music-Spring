@@ -56,10 +56,14 @@ class DownloadWorker(
     }
 
     private suspend fun downloadFile(url: String, fileName: String, trackId: Long) {
+        var lastProgress = -1
         val response = client.get(url) {
             onDownload { bytesSentTotal, contentLength ->
                 val progress = if (contentLength != null && contentLength > 0) (bytesSentTotal * 100 / contentLength).toInt() else 0
-                setProgress(workDataOf("progress" to progress, "trackId" to trackId))
+                if (progress != lastProgress) {
+                    lastProgress = progress
+                    setProgress(workDataOf("progress" to progress, "trackId" to trackId))
+                }
             }
         }
 

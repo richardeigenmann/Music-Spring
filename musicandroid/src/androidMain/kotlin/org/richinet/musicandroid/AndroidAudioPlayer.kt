@@ -60,10 +60,21 @@ class AndroidAudioPlayer(
                     cacheNonce = _playbackState.value.cacheNonce + 1
                 )
                 updateCacheProgress()
+
+                // If we are waiting for a download and it just finished, start playing
+                val currentTrack = _playbackState.value.track
+                if (_playbackState.value.isWaitingForDownload && currentTrack != null && isCached(currentTrack)) {
+                    android.util.Log.d("AndroidAudioPlayer", "Download completed for ${currentTrack.trackName}, starting playback")
+                    _playbackState.value = _playbackState.value.copy(
+                        isWaitingForDownload = false,
+                        currentDownloadProgress = 0f
+                    )
+                    startPlaybackForCurrentTrack()
+                }
             }
         }
 
-        // Observe WorkManager for downloads
+        // Observe WorkManager for downloads and individual progress
         scope.launch {
             workManager.getWorkInfosByTagFlow("track_download").collect { workInfos ->
                 val isDownloading = workInfos.any { it.state == androidx.work.WorkInfo.State.ENQUEUED || it.state == androidx.work.WorkInfo.State.RUNNING }
@@ -71,6 +82,19 @@ class AndroidAudioPlayer(
                 // Refresh local file resolver cache if any download succeeded
                 if (workInfos.any { it.state == androidx.work.WorkInfo.State.SUCCEEDED }) {
                     localFileResolver.refreshCache()
+                }
+
+                // Update progress for the current track if we're waiting for it
+                val currentTrack = _playbackState.value.track
+                if (_playbackState.value.isWaitingForDownload && currentTrack != null) {
+                    val currentWork = workInfos.find { info ->
+                        info.state == androidx.work.WorkInfo.State.RUNNING &&
+                        info.progress.getLong("trackId", -1L) == currentTrack.trackId
+                    }
+                    if (currentWork != null) {
+                        val progressValue = currentWork.progress.getInt("progress", 0) / 100f
+                        _playbackState.value = _playbackState.value.copy(currentDownloadProgress = progressValue)
+                    }
                 }
 
                 _playbackState.value = _playbackState.value.copy(
@@ -96,7 +120,7 @@ class AndroidAudioPlayer(
         val track = currentPlaylist.find { it.trackId == trackId }
 
         _playbackState.value = _playbackState.value.copy(
-            track = track,
+            track = track ?: _playbackState.value.track, // Keep current track if player hasn't transitioned yet
             isPlaying = player.isPlaying,
             isLoading = player.playbackState == Player.STATE_BUFFERING,
             duration = player.duration.coerceAtLeast(0),
@@ -163,63 +187,70 @@ class AndroidAudioPlayer(
         player.stop()
         player.clearMediaItems()
 
-        // Move media item creation to background thread
+        // Start with the first track
+        if (tracks.isNotEmpty()) {
+            val firstTrack = tracks[0]
+            prepareForTrack(firstTrack)
+            
+            // Background cache next few
+            tracks.drop(1).take(3).forEach { cacheTrack(it) }
+        }
+    }
+
+    private fun prepareForTrack(track: Track) {
+        val isTrackCached = isCached(track)
+        _playbackState.value = _playbackState.value.copy(
+            track = track,
+            isWaitingForDownload = !isTrackCached,
+            currentDownloadProgress = 0f
+        )
+
+        if (isTrackCached) {
+            startPlaybackForCurrentTrack()
+        } else {
+            cacheTrack(track)
+        }
+    }
+
+    private fun startPlaybackForCurrentTrack() {
+        val player = controller ?: return
+        val track = _playbackState.value.track ?: return
+
         scope.launch(Dispatchers.Default) {
-            val mediaItems = tracks.map { track ->
-                val file = track.files.firstOrNull()
+            val mediaItems = currentPlaylist.map { t ->
+                val file = t.files.firstOrNull()
                 val metadata = MediaMetadata.Builder()
-                    .setTitle(track.trackName)
-                    .setArtist(track.getArtist())
-                    .setAlbumTitle(track.getAlbum())
+                    .setTitle(t.trackName)
+                    .setArtist(t.getArtist())
+                    .setAlbumTitle(t.getAlbum())
                     .build()
 
                 val uri = if (file != null) {
-                    localFileResolver.findLocalUri(file.fileName) ?: android.net.Uri.parse(apiService.getStreamUrl(file.fileId))
+                    localFileResolver.findLocalUri(file.fileName) ?: android.net.Uri.EMPTY
                 } else {
                     android.net.Uri.EMPTY
                 }
 
                 MediaItem.Builder()
-                    .setMediaId(track.trackId.toString())
+                    .setMediaId(t.trackId.toString())
                     .setUri(uri)
                     .setMediaMetadata(metadata)
                     .build()
             }
 
             launch(Dispatchers.Main) {
-                player.addMediaItems(mediaItems)
+                player.setMediaItems(mediaItems)
+                val startIndex = currentPlaylist.indexOf(track).coerceAtLeast(0)
+                player.seekTo(startIndex, 0)
                 player.prepare()
                 player.play()
                 updateState()
-
-                // Cache the first few tracks
-                tracks.take(3).forEach { cacheTrack(it) }
             }
         }
     }
 
     private fun playHistoryPlaylist(tracks: List<Track>) {
-        val player = controller ?: return
-        currentPlaylist = tracks
-        // We don't change the name for now, or could store it in history
-
-        player.stop()
-        player.clearMediaItems()
-        val mediaItems = tracks.map { track ->
-            val file = track.files.firstOrNull()
-            val uri = if (file != null) {
-                localFileResolver.findLocalUri(file.fileName) ?: android.net.Uri.parse(apiService.getStreamUrl(file.fileId))
-            } else { android.net.Uri.EMPTY }
-
-            MediaItem.Builder()
-                .setMediaId(track.trackId.toString())
-                .setUri(uri)
-                .build()
-        }
-        player.addMediaItems(mediaItems)
-        player.prepare()
-        player.play()
-        updateState()
+        playPlaylist(tracks, "History")
     }
 
     override fun isCached(track: Track): Boolean {
@@ -270,18 +301,25 @@ class AndroidAudioPlayer(
     }
 
     override fun skipNext() {
-        controller?.seekToNext()
+        val currentIndex = currentPlaylist.indexOf(_playbackState.value.track)
+        if (currentIndex != -1 && currentIndex < currentPlaylist.size - 1) {
+            val nextTrack = currentPlaylist[currentIndex + 1]
+            prepareForTrack(nextTrack)
+        }
     }
 
     override fun skipPrevious() {
-        controller?.seekToPrevious()
+        val currentIndex = currentPlaylist.indexOf(_playbackState.value.track)
+        if (currentIndex > 0) {
+            val prevTrack = currentPlaylist[currentIndex - 1]
+            prepareForTrack(prevTrack)
+        }
     }
 
     override fun jumpToQueueItem(index: Int) {
-        val player = controller ?: return
         if (index in 0 until currentPlaylist.size) {
-            player.seekTo(index, 0)
-            player.play()
+            val track = currentPlaylist[index]
+            prepareForTrack(track)
         }
     }
 
@@ -313,10 +351,28 @@ class AndroidAudioPlayer(
     }
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-        updateState()
+        val player = controller ?: return
+        val currentMediaId = mediaItem?.mediaId
+        val currentTrackId = _playbackState.value.track?.trackId?.toString()
+        
+        // If the player transitioned automatically (e.g. track ended), we need to check if it's cached
+        if (currentMediaId != null && currentMediaId != currentTrackId) {
+             val track = currentPlaylist.find { it.trackId.toString() == currentMediaId }
+             if (track != null) {
+                 if (!isCached(track)) {
+                     // Pause and wait for download if not cached
+                     player.pause()
+                     prepareForTrack(track)
+                 } else {
+                     updateState()
+                 }
+             }
+        } else {
+            updateState()
+        }
 
         // Lookahead caching: cache the next 3 tracks
-        val currentIndex = controller?.currentMediaItemIndex ?: return
+        val currentIndex = player.currentMediaItemIndex
         if (currentIndex >= 0) {
             for (i in 1..3) {
                 val nextIndex = currentIndex + i

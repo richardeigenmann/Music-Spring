@@ -156,8 +156,9 @@ fun NowPlayingBar(state: PlaybackState, player: AudioPlayer, navigator: Navigato
     ) {
         Column {
             LinearProgressIndicator(
-                progress = { state.progress },
+                progress = { if (state.isWaitingForDownload) state.currentDownloadProgress else state.progress },
                 modifier = Modifier.fillMaxWidth().height(2.dp),
+                color = if (state.isWaitingForDownload) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
             )
             Row(
                 modifier = Modifier
@@ -199,11 +200,28 @@ fun NowPlayingBar(state: PlaybackState, player: AudioPlayer, navigator: Navigato
                     Icon(Icons.Default.SkipPrevious, contentDescription = "Previous")
                 }
 
-                IconButton(onClick = { player.togglePlayPause() }) {
-                    Icon(
-                        if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = "Play/Pause"
-                    )
+                if (state.isWaitingForDownload) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(48.dp)) {
+                        CircularProgressIndicator(
+                            progress = { state.currentDownloadProgress },
+                            modifier = Modifier.size(32.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                        Icon(
+                            Icons.Default.Download,
+                            contentDescription = "Downloading",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                } else {
+                    IconButton(onClick = { player.togglePlayPause() }) {
+                        Icon(
+                            if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = "Play/Pause"
+                        )
+                    }
                 }
 
                 IconButton(onClick = { player.skipNext() }) {

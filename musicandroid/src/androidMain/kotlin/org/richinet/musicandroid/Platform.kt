@@ -38,7 +38,7 @@ class AndroidPlaylistSync(
     private val apiService: ApiService,
     private val localFileResolver: LocalFileResolver
 ) : PlaylistSync {
-    private val synchronizer = PlaylistSynchronizer(context, apiService, localFileResolver)
+    private val synchronizer = PlaylistSynchronizer(context, apiService)
 
     override fun syncTrack(track: Track) {
         synchronizer.syncTrack(track)

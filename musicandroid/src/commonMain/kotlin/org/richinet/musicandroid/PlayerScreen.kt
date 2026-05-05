@@ -147,15 +147,30 @@ data object PlayerScreen : Screen {
                             Icon(Icons.Default.SkipPrevious, contentDescription = "Previous", modifier = Modifier.size(48.dp))
                         }
 
-                        FilledIconButton(
-                            onClick = { audioPlayer.togglePlayPause() },
-                            modifier = Modifier.size(72.dp)
-                        ) {
-                            Icon(
-                                if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = "Play/Pause",
-                                modifier = Modifier.size(48.dp)
-                            )
+                        if (playbackState.isWaitingForDownload) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(72.dp)) {
+                                CircularProgressIndicator(
+                                    progress = { playbackState.currentDownloadProgress },
+                                    modifier = Modifier.size(64.dp),
+                                    strokeWidth = 4.dp
+                                )
+                                Icon(
+                                    Icons.Default.Download,
+                                    contentDescription = "Downloading",
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        } else {
+                            FilledIconButton(
+                                onClick = { audioPlayer.togglePlayPause() },
+                                modifier = Modifier.size(72.dp)
+                            ) {
+                                Icon(
+                                    if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                    contentDescription = "Play/Pause",
+                                    modifier = Modifier.size(48.dp)
+                                )
+                            }
                         }
 
                         IconButton(
@@ -164,6 +179,16 @@ data object PlayerScreen : Screen {
                         ) {
                             Icon(Icons.Default.SkipNext, contentDescription = "Next", modifier = Modifier.size(48.dp))
                         }
+                    }
+                    
+                    if (track != null && !audioPlayer.isCached(track) && !playbackState.isWaitingForDownload) {
+                        DownloadProgressButton(
+                            isCached = false,
+                            progress = playbackState.currentDownloadProgress,
+                            isDownloading = playbackState.isDownloading,
+                            onDownloadClick = { audioPlayer.cacheTrack(track) },
+                            modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 16.dp)
+                        )
                     }
                 }
             }

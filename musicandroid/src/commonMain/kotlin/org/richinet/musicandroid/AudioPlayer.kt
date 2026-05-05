@@ -6,6 +6,8 @@ data class PlaybackState(
     val track: Track? = null,
     val isPlaying: Boolean = false,
     val isLoading: Boolean = false,
+    val isWaitingForDownload: Boolean = false,
+    val currentDownloadProgress: Float = 0f,
     val progress: Float = 0f,
     val duration: Long = 0,
     val hasNext: Boolean = false,

@@ -4,19 +4,16 @@ import android.content.Context
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import java.io.File
-import android.os.Environment
 
 class PlaylistSynchronizer(
     private val context: Context,
     private val apiService: ApiService,
-    private val localFileResolver: LocalFileResolver
 ) {
 
     fun syncTrack(track: Track) {
         val workManager = WorkManager.getInstance(context)
         val file = track.files.firstOrNull() ?: return
-        
+
         val downloadRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
             .addTag("track_download")
             .setInputData(Data.Builder()
