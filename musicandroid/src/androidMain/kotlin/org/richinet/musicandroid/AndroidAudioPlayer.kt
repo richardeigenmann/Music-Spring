@@ -10,6 +10,7 @@ import androidx.media3.session.SessionToken
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import android.widget.Toast
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.*
@@ -53,11 +54,18 @@ class AndroidAudioPlayer(
         // Observe Network status
         scope.launch {
             networkObserver.isOnline.collect { online ->
+                val wasOffline = !_playbackState.value.isOnline
                 _playbackState.value = _playbackState.value.copy(isOnline = online)
                 
+                // If we went from offline to online, refresh the player's queue
+                if (online && wasOffline && _playbackState.value.isPlaying) {
+                     startPlaybackForCurrentTrack()
+                }
+
                 // If we are waiting for a download and we went offline, we might need to skip
                 if (!online && _playbackState.value.isWaitingForDownload) {
                     android.util.Log.d("AndroidAudioPlayer", "Went offline while waiting for download, skipping")
+                    Toast.makeText(context, "Connection lost, skipping to next local track", Toast.LENGTH_SHORT).show()
                     skipNext()
                 }
             }
@@ -219,12 +227,17 @@ class AndroidAudioPlayer(
     private fun skipToPlayable(startIndex: Int, direction: Int) {
         val isOnline = _playbackState.value.isOnline
         var index = startIndex
+        var skippedCount = 0
         
         while (index in currentPlaylist.indices) {
             val track = currentPlaylist[index]
             val isTrackCached = isCached(track)
             
             if (isTrackCached || isOnline) {
+                if (skippedCount > 0 && !isOnline) {
+                    Toast.makeText(context, "Skipped $skippedCount non-cached tracks", Toast.LENGTH_SHORT).show()
+                }
+
                 // Found a playable track
                 _playbackState.value = _playbackState.value.copy(
                     track = track,
@@ -240,10 +253,15 @@ class AndroidAudioPlayer(
                 return
             }
             index += direction
+            skippedCount++
         }
 
         // No more playable tracks in this direction
         android.util.Log.d("AndroidAudioPlayer", "No playable tracks found in direction $direction from $startIndex")
+        if (skippedCount > 0 && !isOnline) {
+             Toast.makeText(context, "No more local tracks available", Toast.LENGTH_SHORT).show()
+        }
+        
         _playbackState.value = _playbackState.value.copy(
             track = null,
             isWaitingForDownload = false,
@@ -255,9 +273,17 @@ class AndroidAudioPlayer(
     private fun startPlaybackForCurrentTrack() {
         val player = controller ?: return
         val track = _playbackState.value.track ?: return
+        val isOnline = _playbackState.value.isOnline
 
         scope.launch(Dispatchers.Default) {
-            val mediaItems = currentPlaylist.map { t ->
+            // When offline, only provide cached tracks to the player to avoid codec/retry loops
+            val playableTracks = if (!isOnline) {
+                currentPlaylist.filter { isCached(it) }
+            } else {
+                currentPlaylist
+            }
+
+            val mediaItems = playableTracks.map { t ->
                 val file = t.files.firstOrNull()
                 val metadata = MediaMetadata.Builder()
                     .setTitle(t.trackName)
@@ -276,11 +302,12 @@ class AndroidAudioPlayer(
                     .setUri(uri)
                     .setMediaMetadata(metadata)
                     .build()
-            }
+            }.filter { it.localConfiguration?.uri != android.net.Uri.EMPTY }
 
             launch(Dispatchers.Main) {
                 player.setMediaItems(mediaItems)
-                val startIndex = currentPlaylist.indexOf(track).coerceAtLeast(0)
+                // Find correct index in the (potentially filtered) playableTracks list
+                val startIndex = playableTracks.indexOf(track).coerceAtLeast(0)
                 player.seekTo(startIndex, 0)
                 player.prepare()
                 player.play()
