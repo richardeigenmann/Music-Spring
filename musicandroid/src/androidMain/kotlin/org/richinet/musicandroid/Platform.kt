@@ -30,8 +30,36 @@ import androidx.core.content.ContextCompat
 import java.util.concurrent.Executors
 import android.media.MediaMetadataRetriever
 import android.util.Log
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+class AndroidNetworkObserver(context: Context) : NetworkObserver {
+    private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    private val _isOnline = MutableStateFlow(checkOnline())
+    override val isOnline = _isOnline.asStateFlow()
+
+    init {
+        connectivityManager.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                _isOnline.value = true
+            }
+            override fun onLost(network: Network) {
+                _isOnline.value = false
+            }
+        })
+    }
+
+    private fun checkOnline(): Boolean {
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+}
 
 class AndroidPlaylistSync(
     private val context: Context,

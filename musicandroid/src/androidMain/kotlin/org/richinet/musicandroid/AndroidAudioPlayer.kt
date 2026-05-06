@@ -12,25 +12,23 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
 
 class AndroidAudioPlayer(
     private val context: Context,
     private val apiService: ApiService,
     private val localFileResolver: LocalFileResolver,
+    private val networkObserver: NetworkObserver,
     private val queueManager: DownloadQueueManager
-) : AudioPlayer, Player.Listener {
+) : AudioPlayer, Player.Listener, KoinComponent {
 
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
-    private val scope = CoroutineScope(Dispatchers.Main + Job())
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val workManager = WorkManager.getInstance(context)
 
     private val _playbackState = MutableStateFlow(PlaybackState())
@@ -51,6 +49,19 @@ class AndroidAudioPlayer(
             controller?.addListener(this)
             updateState()
         }, MoreExecutors.directExecutor())
+
+        // Observe Network status
+        scope.launch {
+            networkObserver.isOnline.collect { online ->
+                _playbackState.value = _playbackState.value.copy(isOnline = online)
+                
+                // If we are waiting for a download and we went offline, we might need to skip
+                if (!online && _playbackState.value.isWaitingForDownload) {
+                    android.util.Log.d("AndroidAudioPlayer", "Went offline while waiting for download, skipping")
+                    skipNext()
+                }
+            }
+        }
 
         // Observe LocalFileResolver for cache changes
         scope.launch {
@@ -189,27 +200,56 @@ class AndroidAudioPlayer(
 
         // Start with the first track
         if (tracks.isNotEmpty()) {
-            val firstTrack = tracks[0]
-            prepareForTrack(firstTrack)
+            skipToPlayable(0, 1)
             
-            // Background cache next few
-            tracks.drop(1).take(3).forEach { cacheTrack(it) }
+            // Background cache next few if online
+            if (_playbackState.value.isOnline) {
+                tracks.drop(1).take(3).forEach { cacheTrack(it) }
+            }
         }
     }
 
     private fun prepareForTrack(track: Track) {
-        val isTrackCached = isCached(track)
-        _playbackState.value = _playbackState.value.copy(
-            track = track,
-            isWaitingForDownload = !isTrackCached,
-            currentDownloadProgress = 0f
-        )
-
-        if (isTrackCached) {
-            startPlaybackForCurrentTrack()
-        } else {
-            cacheTrack(track)
+        val index = currentPlaylist.indexOf(track)
+        if (index != -1) {
+            skipToPlayable(index, 1)
         }
+    }
+
+    private fun skipToPlayable(startIndex: Int, direction: Int) {
+        val isOnline = _playbackState.value.isOnline
+        var index = startIndex
+        
+        while (index in currentPlaylist.indices) {
+            val track = currentPlaylist[index]
+            val isTrackCached = isCached(track)
+            
+            if (isTrackCached || isOnline) {
+                // Found a playable track
+                _playbackState.value = _playbackState.value.copy(
+                    track = track,
+                    isWaitingForDownload = !isTrackCached,
+                    currentDownloadProgress = 0f
+                )
+
+                if (isTrackCached) {
+                    startPlaybackForCurrentTrack()
+                } else {
+                    cacheTrack(track)
+                }
+                return
+            }
+            index += direction
+        }
+
+        // No more playable tracks in this direction
+        android.util.Log.d("AndroidAudioPlayer", "No playable tracks found in direction $direction from $startIndex")
+        _playbackState.value = _playbackState.value.copy(
+            track = null,
+            isWaitingForDownload = false,
+            isPlaying = false
+        )
+        controller?.stop()
     }
 
     private fun startPlaybackForCurrentTrack() {
@@ -265,8 +305,11 @@ class AndroidAudioPlayer(
             return
         }
 
-        queueManager.enqueue(listOf(track))
-        startWork()
+        // Only enqueue if online
+        if (_playbackState.value.isOnline) {
+            queueManager.enqueue(listOf(track))
+            startWork()
+        }
     }
 
     private fun startWork() {
@@ -288,7 +331,9 @@ class AndroidAudioPlayer(
     }
 
     override fun cacheQueue() {
-        currentPlaylist.forEach { cacheTrack(it) }
+        if (_playbackState.value.isOnline) {
+            currentPlaylist.forEach { cacheTrack(it) }
+        }
     }
 
     override fun togglePlayPause() {
@@ -302,24 +347,21 @@ class AndroidAudioPlayer(
 
     override fun skipNext() {
         val currentIndex = currentPlaylist.indexOf(_playbackState.value.track)
-        if (currentIndex != -1 && currentIndex < currentPlaylist.size - 1) {
-            val nextTrack = currentPlaylist[currentIndex + 1]
-            prepareForTrack(nextTrack)
+        if (currentIndex != -1) {
+            skipToPlayable(currentIndex + 1, 1)
         }
     }
 
     override fun skipPrevious() {
         val currentIndex = currentPlaylist.indexOf(_playbackState.value.track)
-        if (currentIndex > 0) {
-            val prevTrack = currentPlaylist[currentIndex - 1]
-            prepareForTrack(prevTrack)
+        if (currentIndex != -1) {
+            skipToPlayable(currentIndex - 1, -1)
         }
     }
 
     override fun jumpToQueueItem(index: Int) {
         if (index in 0 until currentPlaylist.size) {
-            val track = currentPlaylist[index]
-            prepareForTrack(track)
+            skipToPlayable(index, 1)
         }
     }
 
@@ -359,25 +401,33 @@ class AndroidAudioPlayer(
         if (currentMediaId != null && currentMediaId != currentTrackId) {
              val track = currentPlaylist.find { it.trackId.toString() == currentMediaId }
              if (track != null) {
-                 if (!isCached(track)) {
-                     // Pause and wait for download if not cached
-                     player.pause()
-                     prepareForTrack(track)
-                 } else {
-                     updateState()
+                 val index = currentPlaylist.indexOf(track)
+                 if (!isCached(track) && !_playbackState.value.isOnline) {
+                     android.util.Log.d("AndroidAudioPlayer", "Auto-transitioned to non-cached track while offline, skipping forward")
+                     skipToPlayable(index + 1, 1)
+                     return
                  }
+                 
+                 // If it is playable, just update the state
+                 _playbackState.value = _playbackState.value.copy(
+                     track = track,
+                     isWaitingForDownload = !isCached(track) && _playbackState.value.isOnline
+                 )
+                 updateState()
              }
         } else {
             updateState()
         }
 
-        // Lookahead caching: cache the next 3 tracks
-        val currentIndex = player.currentMediaItemIndex
-        if (currentIndex >= 0) {
-            for (i in 1..3) {
-                val nextIndex = currentIndex + i
-                if (nextIndex < currentPlaylist.size) {
-                    cacheTrack(currentPlaylist[nextIndex])
+        // Lookahead caching: cache the next 3 tracks if online
+        if (_playbackState.value.isOnline) {
+            val currentIndex = player.currentMediaItemIndex
+            if (currentIndex >= 0) {
+                for (i in 1..3) {
+                    val nextIndex = currentIndex + i
+                    if (nextIndex < currentPlaylist.size) {
+                        cacheTrack(currentPlaylist[nextIndex])
+                    }
                 }
             }
         }

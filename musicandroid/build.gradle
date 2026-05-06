@@ -4,6 +4,15 @@ plugins {
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.sqldelight)
+}
+
+sqldelight {
+    databases {
+        create("MusicDatabase") {
+            packageName.set("org.richinet.musicandroid.db")
+        }
+    }
 }
 
 kotlin {
@@ -36,6 +45,7 @@ kotlin {
                 implementation libs.voyager.transitions
                 implementation libs.voyager.koin
                 implementation libs.androidx.datastore.preferences
+                implementation libs.sqldelight.runtime
             }
         }
         androidMain {
@@ -52,6 +62,7 @@ kotlin {
                 implementation libs.androidx.camera.camera2
                 implementation libs.androidx.camera.lifecycle
                 implementation libs.androidx.camera.view
+                implementation libs.sqldelight.android.driver
             }
         }
     }

@@ -24,7 +24,10 @@ data class TrackEditScreen(val trackId: Long) : Screen {
     @Composable
     override fun Content() {
         val apiService = koinInject<ApiService>()
+        val musicRepository = koinInject<MusicRepository>()
         val audioPlayer = koinInject<AudioPlayer>()
+        val playbackState by audioPlayer.playbackState.collectAsState()
+        val isOnline = playbackState.isOnline
         val navigator = LocalNavigator.currentOrThrow
         val scope = rememberCoroutineScope()
 
@@ -36,8 +39,10 @@ data class TrackEditScreen(val trackId: Long) : Screen {
         LaunchedEffect(trackId) {
             isLoading = true
             try {
-                track = apiService.getTrack(trackId)
-                allTags = apiService.getTags()
+                // Local-first loading
+                track = musicRepository.getTrack(trackId) ?: apiService.getTrack(trackId)
+                val tags = musicRepository.getTags()
+                allTags = if (tags.isNotEmpty()) tags else apiService.getTags()
             } catch (e: Exception) {
                 scope.launch { snackbarHostState.showSnackbar("Error loading track: ${e.message}") }
             } finally {
@@ -61,19 +66,26 @@ data class TrackEditScreen(val trackId: Long) : Screen {
                         }) {
                             Icon(Icons.Default.PlayArrow, contentDescription = "Play")
                         }
-                        IconButton(onClick = {
-                            track?.let {
-                                scope.launch {
-                                    try {
-                                        apiService.saveTrack(it)
-                                        snackbarHostState.showSnackbar("Track saved")
-                                    } catch (e: Exception) {
-                                        snackbarHostState.showSnackbar("Save failed: ${e.message}")
+                        IconButton(
+                            onClick = {
+                                track?.let {
+                                    scope.launch {
+                                        try {
+                                            apiService.saveTrack(it)
+                                            snackbarHostState.showSnackbar("Track saved")
+                                        } catch (e: Exception) {
+                                            snackbarHostState.showSnackbar("Save failed: ${e.message}")
+                                        }
                                     }
                                 }
-                            }
-                        }) {
-                            Icon(Icons.Default.Save, contentDescription = "Save")
+                            },
+                            enabled = isOnline
+                        ) {
+                            Icon(
+                                Icons.Default.Save,
+                                contentDescription = "Save",
+                                tint = if (isOnline) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.38f)
+                            )
                         }
                     }
                 )

@@ -13,7 +13,10 @@ sealed class UiState<out T> {
     data class Error(val message: String) : UiState<Nothing>()
 }
 
-class TrackViewModel(private val apiService: ApiService) : ScreenModel {
+class TrackViewModel(
+    private val apiService: ApiService,
+    private val musicRepository: MusicRepository
+) : ScreenModel {
     private val _tags = MutableStateFlow<UiState<List<Tag>>>(UiState.Loading)
     val tags = _tags.asStateFlow()
 
@@ -25,14 +28,37 @@ class TrackViewModel(private val apiService: ApiService) : ScreenModel {
     }
 
     fun refresh() {
-        loadTags()
+        sync()
     }
 
-    fun loadTags() {
+    fun sync() {
         screenModelScope.launch {
             _tags.value = UiState.Loading
             try {
-                _tags.value = UiState.Success(apiService.getTags())
+                musicRepository.syncAll()
+            } catch (e: Exception) {
+                android.util.Log.e("TrackViewModel", "Sync failed: ${e.message}")
+            }
+            // Always try to load whatever we have locally after a sync attempt
+            loadTags(showLoading = false)
+        }
+    }
+
+    fun loadTags(showLoading: Boolean = true) {
+        screenModelScope.launch {
+            if (showLoading) _tags.value = UiState.Loading
+            try {
+                val localTags = musicRepository.getTags()
+                if (localTags.isEmpty()) {
+                    // If empty and we haven't just tried to sync, try one sync
+                    if (showLoading) {
+                        sync()
+                    } else {
+                        _tags.value = UiState.Success(emptyList())
+                    }
+                } else {
+                    _tags.value = UiState.Success(localTags)
+                }
             } catch (e: Exception) {
                 _tags.value = UiState.Error(e.message ?: "Unknown error")
             }
@@ -42,10 +68,20 @@ class TrackViewModel(private val apiService: ApiService) : ScreenModel {
     fun loadTracksByTag(tagId: Long) {
         screenModelScope.launch {
             _tracks.value = UiState.Loading
+            
+            // 1. Best-effort granular sync
             try {
-                _tracks.value = UiState.Success(apiService.getTracksByTag(tagId))
+                musicRepository.syncTracksByTag(tagId)
             } catch (e: Exception) {
-                _tracks.value = UiState.Error(e.message ?: "Unknown error")
+                android.util.Log.e("TrackViewModel", "Granular sync failed for tag $tagId: ${e.message}")
+            }
+            
+            // 2. Always load from local database, regardless of sync success
+            try {
+                val localTracks = musicRepository.getTracksByTag(tagId)
+                _tracks.value = UiState.Success(localTracks)
+            } catch (e: Exception) {
+                _tracks.value = UiState.Error(e.message ?: "Failed to load local tracks")
             }
         }
     }

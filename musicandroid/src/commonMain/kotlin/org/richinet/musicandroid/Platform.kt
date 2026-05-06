@@ -4,6 +4,11 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.flow.StateFlow
+
+interface NetworkObserver {
+    val isOnline: StateFlow<Boolean>
+}
 
 interface PlaylistSync {
     fun syncTrack(track: Track)

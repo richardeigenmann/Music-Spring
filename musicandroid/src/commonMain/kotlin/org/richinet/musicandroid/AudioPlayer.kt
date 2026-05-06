@@ -18,6 +18,7 @@ data class PlaybackState(
     val cacheProgress: Float = 0f, // 0.0 to 1.0
     val cachedTrackIds: Set<Long> = emptySet(),
     val isDownloading: Boolean = false,
+    val isOnline: Boolean = true,
     val cacheNonce: Int = 0,
     val cachedFileNames: Set<String> = emptySet()
 )

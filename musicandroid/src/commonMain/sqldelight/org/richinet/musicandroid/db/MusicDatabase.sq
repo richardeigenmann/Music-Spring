@@ -1,0 +1,84 @@
+CREATE TABLE TrackEntity (
+    trackId INTEGER NOT NULL PRIMARY KEY,
+    trackName TEXT NOT NULL,
+    metadataJson TEXT NOT NULL
+);
+
+CREATE TABLE TagEntity (
+    tagId INTEGER NOT NULL PRIMARY KEY,
+    tagName TEXT NOT NULL,
+    tagTypeId INTEGER NOT NULL,
+    tagTypeName TEXT NOT NULL,
+    tagTypeEdit TEXT
+);
+
+CREATE TABLE TrackFileEntity (
+    fileId INTEGER NOT NULL PRIMARY KEY,
+    trackId INTEGER NOT NULL,
+    fileName TEXT NOT NULL,
+    fileLocation TEXT,
+    duration REAL NOT NULL,
+    FOREIGN KEY(trackId) REFERENCES TrackEntity(trackId) ON DELETE CASCADE
+);
+
+CREATE TABLE TrackTagEntity (
+    trackId INTEGER NOT NULL,
+    tagId INTEGER NOT NULL,
+    PRIMARY KEY(trackId, tagId),
+    FOREIGN KEY(trackId) REFERENCES TrackEntity(trackId) ON DELETE CASCADE,
+    FOREIGN KEY(tagId) REFERENCES TagEntity(tagId) ON DELETE CASCADE
+);
+
+selectAllTracks:
+SELECT * FROM TrackEntity;
+
+selectTrackById:
+SELECT * FROM TrackEntity WHERE trackId = ?;
+
+selectTracksByTag:
+SELECT T.* FROM TrackEntity T
+JOIN TrackTagEntity TT ON T.trackId = TT.trackId
+WHERE TT.tagId = ?;
+
+selectAllTags:
+SELECT * FROM TagEntity;
+
+selectFilesForTrack:
+SELECT * FROM TrackFileEntity WHERE trackId = ?;
+
+insertTrack:
+INSERT OR REPLACE INTO TrackEntity(trackId, trackName, metadataJson)
+VALUES (?, ?, ?);
+
+insertTag:
+INSERT OR REPLACE INTO TagEntity(tagId, tagName, tagTypeId, tagTypeName, tagTypeEdit)
+VALUES (?, ?, ?, ?, ?);
+
+insertTrackFile:
+INSERT OR REPLACE INTO TrackFileEntity(fileId, trackId, fileName, fileLocation, duration)
+VALUES (?, ?, ?, ?, ?);
+
+insertTrackTag:
+INSERT OR REPLACE INTO TrackTagEntity(trackId, tagId)
+VALUES (?, ?);
+
+clearTracks:
+DELETE FROM TrackEntity;
+
+clearTags:
+DELETE FROM TagEntity;
+
+clearTrackFiles:
+DELETE FROM TrackFileEntity;
+
+clearTrackTags:
+DELETE FROM TrackTagEntity;
+
+deleteTrackTagsByTrackId:
+DELETE FROM TrackTagEntity WHERE trackId = ?;
+
+deleteTrackTagsByTagId:
+DELETE FROM TrackTagEntity WHERE tagId = ?;
+
+deleteTrackFilesByTrackId:
+DELETE FROM TrackFileEntity WHERE trackId = ?;
