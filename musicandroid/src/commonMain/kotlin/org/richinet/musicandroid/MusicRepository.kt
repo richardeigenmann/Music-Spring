@@ -1,5 +1,6 @@
 package org.richinet.musicandroid
 
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import org.richinet.musicandroid.db.MusicDatabase
@@ -45,7 +46,7 @@ class MusicRepository(
      * Synchronizes only the list of tags. This is lightweight.
      */
     suspend fun syncTags() {
-        val tags = apiService.getTags()
+        val tags = withTimeout(5000) { apiService.getTags() }
         database.transaction {
             // We don't clear everything, just update the tags table
             // But to keep it clean and handle deletions on server:
