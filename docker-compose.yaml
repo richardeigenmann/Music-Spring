@@ -34,7 +34,7 @@ services:
       - SPRING_CONFIG_IMPORT_EXTRA=optional:file:/config/initial-data.yml
     volumes:
       - /richi/mp3:/mp3
-      - /richi/ToDo:/admin
+      #- /richi/ToDo:/admin
       - ./config:/config
     depends_on:
       db:
