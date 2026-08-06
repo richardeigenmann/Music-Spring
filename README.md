@@ -212,7 +212,7 @@ Queries you can run:
 
 ```sql
 # Check the predefined classification types
-select * from public.tag_type
+select * from musicdatabase.tag_type
   
 # Check the available classifications:
 select * from musicdatabase.tag
