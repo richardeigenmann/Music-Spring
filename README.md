@@ -528,9 +528,79 @@ oc exec rsync-helper -- ls /richi/mp3
 oc delete pod rsync-helper --force --grace-period=0
 ```
 
+## NFS volumes for OpenShift/K8S
+
+In the above I used the rsync-helper pod to copy all the mp3 files into the PVC of the 
+OpenShift cluster. We can avoid this by exporting the mp3 directory using nfs. You need
+to set up the `/etc/exports` file for the nfs server as follows:
+
+```nfs
+/richi/mp3     192.168.1.0/16(rw,sync,no_subtree_check,all_squash,anonuid=1000,anongid=1000)
+```
+
+The first argument is the directory on the host to export. The next argument is the most important
+as nfs validates the incoming IP address and only serves to hosts in that range. We also need to
+fiddle with the firewall. On my OpenSuSE server I had to 
+
+```bash
+firewall-cmd --permanent --add-service=nfs
+firewall-cmd --permanent --zone=internal --add-service=nfs
+firewall-cmd --reload
+```
+
+If this all works we can spin up a busybox container and connect it to the nfs volume. 
+
+Create `nfs-inline-test-pod.yaml`:
+
+```K8S
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nfs-inline-test-pod
+spec:
+  containers:
+  - name: busybox
+    image: busybox:stable
+    command: ["sh", "-c", "sleep 3600"]
+    volumeMounts:
+    - name: nfs-volume
+      mountPath: /mnt/mp3
+  volumes:
+  - name: nfs-volume
+    nfs:
+      server: 192.168.1.103
+      path: /richi/mp3
+```
+
+Be sure to have oc set up correctly and log in as kubeadmin:
+
+```bash
+eval $(crc oc-env)
+crc console --credentials
+```
+
+Then you can apply the pod and see if it came up:
+
+```bash
+oc apply -f nfs-inline-test-pod.yaml
+oc get pod nfs-inline-test-pod        # is it running or "Creating"?
+oc describe pod nfs-inline-test-pod   # was there an error?
+oc delete pod nfs-inline-test-pod     # clean up afterwards
+```
+
+If all is well you can interact with the files in the nfs mount:
+
+```bash
+oc exec nfs-inline-test-pod -- ls -la /mnt/mp3
+```
+
+
+
+
+
 ## Database Notes
 
-By default, the application uses an H2 in-memory database. 
+By default, the application uses an H2 in-memory database.
 
 **Security Warning:** In production or public-facing deployments, the H2 console should be disabled to prevent unauthorized database access.
 
