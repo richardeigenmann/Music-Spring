@@ -280,6 +280,7 @@ The `bootBuildImage` task looks at the `gradle.properties` `native` property to 
 - Run `docker compose up -d` to refresh the containers
 - It should have generated a new Helm chart in `helm/build/`. Check out the repo branch gh-pages and commit the
   new helm chart to the repo.
+- Then run `helm repo index . --url https://richardeigenmann.github.io/Music-Spring/`
 
 ## Running in development mode
 
@@ -424,6 +425,8 @@ crc config set network-mode system
 # Re-run setup to apply the network changes
 sudo mkdir -p /etc/NetworkManager/dnsmasq.d/
 crc setup
+crc config set memory 14336  # or there won't be enough for ArgoCD
+crc config set cpus 6 # or ArgoCD won't be happy
 ```
 
 ## Basic admin tasks for OpenShift
@@ -437,6 +440,10 @@ export PATH=$PATH:/usr/sbin # adds the getcap visibility
 crc console --credentials # lists the commands to login
 oc login -u developer -p developer https://api.crc.testing:6443 --insecure-skip-tls-verify=true
 oc login -u kubeadmin -p <<a jumble of letters>> https://api.crc.testing:6443'
+
+
+# Run this command in your terminal to allow OpenShift GitOps to manage the music-database namespace:
+oc label namespace music-database argocd.argoproj.io/managed-by=openshift-gitops
 ```
 
 ## To set up a PVC inside the cluster for the mp3 files
@@ -654,6 +661,90 @@ oc get pods # should show the music-frontend and the music-backend pods running
 ```
 
 Open http://music-frontend-music-database.apps-crc.testing/status
+
+## Using ArgoCD
+
+Set up ArgoCD:
+
+```bash
+oc apply -f - <<EOF
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-gitops-operator
+  namespace: openshift-operators
+spec:
+  channel: latest
+  installPlanApproval: Automatic
+  name: openshift-gitops-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+EOF
+
+# check it installed:
+oc get csv -n openshift-operators -w
+
+# open up the GUI
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+
+# get the password:
+oc get secret openshift-gitops-cluster -n openshift-gitops -o jsonpath='{.data.admin\.password}' | base64 -d; echo
+
+# optional forward the port:
+oc port-forward svc/openshift-gitops-server -n openshift-gitops 8015:443
+```
+
+Open http://openshift-gitops-server-openshift-gitops.apps-crc.testing  (Required to be listed in `/etc/hosts`)
+Open https://localhost:8015
+
+Get the Argo CD Login Credentials:
+
+```bash
+oc get secret openshift-gitops-cluster -n openshift-gitops -o jsonpath='{.data.admin\.password}' | base64 -d; echo
+```
+
+Log in with admin and the password that came back.
+
+Step 1: Add the Helm Repository in Argo CD Settings
+
+  1. Log in to the Argo CD GUI.
+  2. Click on Settings (the gear icon ⚙ on the left-side menu).
+  3. Click on Repositories.
+  4. Click "+ CONNECT REPO" at the top.
+  5. In the form, enter:
+      • Choose connection method: VIA HTTPS
+      • Type: helm (This is the most important part!)
+      • Project: default
+      • Repository URL: https://richardeigenmann.github.io/Music-Spring/
+      • Name: music-spring
+  6. Click CONNECT at the top.
+      • It should now show a green checkmark next to the repository indicating it is successfully connected.
+
+ Once logged in, follow these steps to connect your Git repo and deploy the application:
+
+  1. Click "+ NEW APP" in the top left corner of the dashboard.
+  2. Application Properties:
+      • Application Name: music-spring
+      • Project Name: default
+      • Sync Policy: Manual (or Automatic if you want it to sync on every Git commit).
+  3. Source:
+      • Repository URL: pick the HELM repository you just created https://richardeigenmann.github.io/Music-Spring/
+      • Chart: music-spring
+  4. Destination:
+      • Cluster URL: https://kubernetes.default.svc
+      • Namespace: music-database (the namespace you want the application to deploy to, which already exists in your cluster).
+  5. Helm Parameter Overrides (Optional):
+      • Argo CD will automatically read the values.yaml and list all parameters at the bottom. You can override values directly in the GUI (e.g., if you need to
+      change database passwords or hostnames).
+  6. Click "Create" at the top.
+  7. Sync the App:
+      • You will see the app card appear on the dashboard. Click it, then click the Sync button at the top to trigger the deployment. Argo CD will start
+      deploying your frontend, backend, and OpenShift routes!
+
+When it all works it looks like this:
+
+![Argo CD](doc/Argocd.png)
+
 
 ## Database Notes
 
