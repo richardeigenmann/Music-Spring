@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: music-frontend
+  labels:
+    app: music-frontend
+spec:
+  type: {{ .Values.frontend.service.type }}
+  ports:
+    - port: {{ .Values.frontend.service.port }}
+      targetPort: {{ .Values.frontend.env.port }}
+      protocol: TCP
+      name: http
+  selector:
+    app: music-frontend

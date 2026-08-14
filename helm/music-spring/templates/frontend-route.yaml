@@ -1,0 +1,17 @@
+{{- if .Values.route.enabled }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: music-frontend
+  labels:
+    app: music-frontend
+spec:
+  {{- if .Values.route.frontend.host }}
+  host: {{ .Values.route.frontend.host | quote }}
+  {{- end }}
+  to:
+    kind: Service
+    name: music-frontend
+  port:
+    targetPort: http
+{{- end }}

@@ -1,0 +1,54 @@
+# Default values for music-spring.
+# This is a YAML-formatted file.
+
+backend:
+  replicaCount: 1
+  image:
+    repository: richardeigenmann/musicbackend
+    pullPolicy: IfNotPresent
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 8002
+  env:
+    springDatasourceUrl: "jdbc:postgresql://octan:5432/musicdb?currentSchema=musicdatabase,public"
+    springDatasourceUsername: "musicuser"
+    springDatasourcePassword: "musicpass"
+    springJpaHibernateDdlAuto: "update"
+    springJpaPropertiesHibernateDefaultSchema: "musicdatabase"
+    appCorsAllowedOrigins: "*"
+    springConfigImportExtra: "optional:file:/config/initial-data.yml"
+  persistence:
+    mp3:
+      enabled: true
+      type: nfs
+      server: "192.168.1.103"
+      path: "/richi/mp3"
+      mountPath: "/mp3"
+    config:
+      enabled: false
+      type: hostPath
+      hostPath: "/richi/Src/Music-Spring/config"
+      mountPath: "/config"
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: richardeigenmann/musicfrontend
+    pullPolicy: IfNotPresent
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 8010
+  env:
+    backendUrl: "http://music-backend-music-database.apps-crc.testing"
+    port: 8002
+
+# OpenShift Routes configuration
+route:
+  enabled: true
+  # If left empty, OpenShift router will generate a host automatically
+  frontend:
+    host: ""
+  backend:
+    host: ""

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: music-spring
+description: A Helm chart for deploying Music-Spring on local CRC OpenShift
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

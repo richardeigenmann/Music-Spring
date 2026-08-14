@@ -595,7 +595,7 @@ spec:
     command: ["sh", "-c", "sleep 3600"]
     volumeMounts:
     - name: nfs-volume
-      mountPath: /mnt/mp3
+      mountPath: /mp3
   volumes:
   - name: nfs-volume
     nfs:
@@ -622,9 +622,31 @@ oc delete pod nfs-inline-test-pod     # clean up afterwards
 If all is well you can interact with the files in the nfs mount:
 
 ```bash
-oc exec nfs-inline-test-pod -- ls -la /mnt/mp3
+oc exec nfs-inline-test-pod -- ls -la /mp3
 ```
 
+## Deploying with Helm
+
+There is a Helm Chart in the subdirectory `/helm/`. It is for a locally running OpenShift CRC cluster.
+This is hooked into the Gradle build so that a Helm Tarball is created as part of the build with the
+version number of the containers. These are created in the `/helm/build/` directory.
+
+### OpenShift Security Prerequisites
+Because the backend container mounts host volumes or NFS shares, you must grant the default service account permission to use the `hostmount-anyuid` Security Context Constraint (SCC). This requires cluster-admin privileges (e.g., logged in as `kubeadmin`):
+
+```bash
+oc adm policy add-scc-to-user hostmount-anyuid -z default -n music-database
+```
+
+### To deploy:
+
+```bash
+cd [...]/Music-Spring
+helm upgrade --install music-spring helm/build/music-spring-0.1.15-SNAPSHOT.tgz -n music-database
+oc get pods # should show the music-frontend and the music-backend pods running
+```
+
+Open http://music-frontend-music-database.apps-crc.testing/status
 
 
 

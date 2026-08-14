@@ -1,0 +1,28 @@
+plugins {
+    id 'base'
+}
+
+def buildDirFile = project.layout.buildDirectory.get().asFile
+def projectVersion = project.version.toString()
+def projectDirFile = project.projectDir
+
+tasks.register('packageHelm', Exec) {
+    group = 'helm'
+    description = 'Packages the Helm chart into a tarball with the project version'
+
+    workingDir projectDirFile
+
+    // Ensure the output build directory exists
+    doFirst {
+        buildDirFile.mkdirs()
+    }
+
+    // Run helm package to generate the tarball
+    commandLine 'helm', 'package', 'music-spring',
+        '--version', projectVersion,
+        '--app-version', projectVersion,
+        '-d', buildDirFile
+}
+
+// Hook the packaging task into the standard Gradle lifecycle
+assemble.dependsOn packageHelm
