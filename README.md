@@ -25,8 +25,8 @@ could be a cheap solution to have the Android client connect back to your home V
 
 Kubernetes clusters will also work nicely. The thing to think through is the storage for the MP3 files.
 If you are on Docker Compose, you can mount a local directory as a volume into the backend container. 
-If you are on K8S, you can copy your MP3 files into the container or mount some sort of network shared
-drive as a PVC into the container.
+If you are on K8S, you can **copy** your MP3 files into the container or mount some sort of network shared
+drive (**nfs**) as a PVC into the container.
 
 ## Architecture Diagram
 
@@ -88,6 +88,11 @@ Architecture Notes
 - The **Backend** (port 8011) handles music file scanning, metadata extraction, and provides the REST API.
 - The **PostgreSQL** database stores track metadata and playlist information.
 
+**Note:** The frontend server does **not** conect to the backend or the database! It's easy to imagine that
+it would. But it serves the Angular code to the browser. The code runs in the browser and it is the 
+browser that makes REST requests to the backend. The backend connects to the database and expects
+to find the music files in the `/mp3` mountpoint.
+
 ## Future enhancement ideas
 
 Implemented (for now)
@@ -98,12 +103,21 @@ To get the application up and running quickly using Docker Compose, follow these
 
 ### Prerequisites
 - Docker needs to be installed on your host machine
-- Think through the network connectivity from your browser to the containers.
-  Will you use `localhost` as the server name (which you can only reach from a browser 
-  running on itself), or does the host have a name associated with its address? Which 
-  ports are free, and can the browser reach them (firewalls)?
+
+### Think
+- Network connectivity: it's straight forward to run the containers on `localhost` and run the browser
+  on the same machine. If you want to reach the container from another machine, how does it reach it?
+  Does it have a network name? Is it `<<hostname>>.local`? Does your Android app need to connect
+  through a VPN to your home network to see the server? How does the remote machine resolve the
+  network address? (`/etc/hosts`, DNS). What about TLS and the certificates? Firewalls?
+
 - Where are the MP3 files? How much storage do they consume? They will need to be visible 
   on the `/mp3/` path in the backend container.
+
+- Database: The below `docker-compose.yml` file spins up it's own Postgresql database container.
+  Maybe you already have a DB server you would prefer to use or you would like to use MySQL or 
+  something else? The backend will happily create the tables in the DB connection you provide.
+  However, you will need to modify the `docker-compose.yml` file.
 
 ### Get the `docker-compose.yml file`
 
@@ -118,23 +132,23 @@ wget https://raw.githubusercontent.com/richardeigenmann/Music-Spring/main/docker
 Before running the application, you **must** update the `docker-compose.yaml` file with your specific configuration:
 
 - **BACKEND_URL:** Where will the frontend container or the Android client find the backend container?
-  You need to correct the `BACKEND_URL` in the `environment` section of the frontend.
+  You need to correct the `frontend.environment.BACKEND_URL` entry.
 
-- **Backend PORT:** On which port will the backend container be listening? This is declared in the line
-  `- "8011:8002"` in the backend section. It means that whilst the Spring Boot Kotlin application is listening 
-  on port 8002, Docker is exposing that as port 8011 on the host machine. The browser will be connecting to 
-  this port to retrieve the playlists and the track data, so it has to be reachable throughout the network.
-  If you want to use a different port, change it here and be sure to change it in the BACKEND_URL variable 
-  discussed above.
+- **Backend PORT:** On which port will the backend container be listening? This is declared in the
+  line `- "8011:8002"` in the `backend.ports` section. The syntac reads that whilst the Spring Boot Kotlin 
+  application is **listening on port 8002**, Docker is **exposing that as port 8011** on the host machine. 
+  The browser will connect to this port to retrieve the playlists and the audio data with the REST calls,
+  so it has to be reachable throughout the network. If you want to use a different port, change it here
+  and be sure to change it in the `frontend.environment.BACKEND_URL` variable discussed above.
 
-- **APP_CORS_ALLOWED_ORIGINS:** The browser is started off by connecting to the frontend webserver, but will quickly switch to 
-  making REST requests from the backend container. The browser and Spring Boot will conspire to disallow this
-  for security reasons unless you tell the backend container that requests that came from the Angular app
-  running on the frontend URL are OK. That's what goes into the `APP_CORS_ALLOWED_ORIGINS` environment variable.
+- **APP_CORS_ALLOWED_ORIGINS:** The browser is started off by connecting to the frontend webserver, but 
+  will quickly switch to  making REST requests from the backend container. The browser and Spring Boot
+  will conspire to disallow this for security reasons unless you tell the backend container that requests
+  that came from the Angular app running on the frontend URL are OK. That's what goes into the
+   `backend.environment.APP_CORS_ALLOWED_ORIGINS` environment variable.
 
-- **Paths:** Ensure the host paths that map to `/mp3` and `/admin` inside the backend container exist on your machine.
-  Whatever directory you put to the left of the backend volume for `:/mp3` should have readable MP3 files.
-  The directory to the left of the `:/admin` is where database backups will be stored.
+- **Paths:** Ensure the host paths that map to `/mp3` inside the backend container exist on your machine.
+  Whatever directory you put to the left of the backend volume for `:/mp3` should have readable MP3 files.  
 
 - **Initial configuration** The `./config` path is for a `initial-data.yml` file that populates criteria in a blank
   database.
@@ -144,12 +158,16 @@ Before running the application, you **must** update the `docker-compose.yaml` fi
 
 ### Start up the containers
 
-In the root directory of the project, run:
+In the root directory of the project (i.e. `musicdatabase`), run:
 ```bash
 docker compose up -d
 ```
 
-If you do a `docker ps` you should see 3 containers: `music-frontend`, `music-backend`, `music-db`.
+If you do a `docker ps` you should see 3 containers:
+- `music-frontend`
+- `music-backend`
+- `music-db`
+- `music-pgadmin`
 
 To kill them all and clean up everything, do:
 
@@ -390,10 +408,9 @@ ng lint
 
 # Notes from setting up the frontend on a local OpenShift Kubernetes cluster
 
-
 ```bash
 # nuke the cluster like when not having spun it up for 30 days and the certificates expire:
-# needs the "pull-secret" which I have in my home directory
+# needs the `pull-secret.txt` file  which I have in my home directory
 crc delete -f && crc cleanup && crc setup && crc start
 
 # crc does some "interesting" things with the network stack, binding to port 80 and 443 on localhost. 
@@ -405,7 +422,11 @@ crc config set network-mode system
 # Re-run setup to apply the network changes
 sudo mkdir -p /etc/NetworkManager/dnsmasq.d/
 crc setup
+```
 
+## Basic admin tasks for OpenShift
+
+```bash
 crc start # boots the virtual machine with the OpenShift cluster
 crc status
 crc oc-env # shows the command to source the oc CLI set-up
@@ -413,7 +434,14 @@ eval $(crc oc-env) # sets up the PATH to oc
 export PATH=$PATH:/usr/sbin # adds the getcap visibility 
 crc console --credentials # lists the commands to login
 oc login -u developer -p developer https://api.crc.testing:6443 --insecure-skip-tls-verify=true
+oc login -u kubeadmin -p <<a jumble of letters>> https://api.crc.testing:6443'
+```
 
+## To set up a PVC inside the cluster for the mp3 files
+
+Don't do this if you are setting up a nfs mount
+
+```bash
 # Create a new namespace/project
 oc new-project music-database
 
@@ -456,14 +484,17 @@ oc run rsync-helper --image=quay.io/openshift/origin-cli --overrides='
 
 # Then 
 oc rsync /richi/mp3/ rsync-helper:/mp3/
+```
 
+## Set up the frontend and backend pods
+
+```bash
 # Create a service for the frontend Pod to reach the backend Pod on http://music-backend:8002
 oc create service clusterip music-backend --tcp=8002:8002
 # Create a route to the backend from outside the container
 oc expose svc/music-backend --port=8002
 # Force the selectors to match the exact 'deployment' label and nothing else
 oc patch svc music-backend -p '{"spec":{"selector":{"deployment":"music-backend","app":null}}}'
-
 
 # Get the routes to the new endpoint:
 oc get routes
