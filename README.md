@@ -278,6 +278,8 @@ The `bootBuildImage` task looks at the `gradle.properties` `native` property to 
 - Run pushDockerContainers
 - cd to directory where the `docker-compose.yml` file is located
 - Run `docker compose up -d` to refresh the containers
+- It should have generated a new Helm chart in `helm/build/`. Check out the repo branch gh-pages and commit the
+  new helm chart to the repo.
 
 ## Running in development mode
 
@@ -638,18 +640,20 @@ Because the backend container mounts host volumes or NFS shares, you must grant 
 oc adm policy add-scc-to-user hostmount-anyuid -z default -n music-database
 ```
 
-### To deploy:
+### To deploy
 
 ```bash
+# From GitHub
+helm upgrade --install music-spring https://richardeigenmann.github.io/Music-Spring/music-spring-0.1.15-SNAPSHOT.tgz -n music-database
+oc get pods # should show the music-frontend and the music-backend pods running
+
+# From local:
 cd [...]/Music-Spring
 helm upgrade --install music-spring helm/build/music-spring-0.1.15-SNAPSHOT.tgz -n music-database
 oc get pods # should show the music-frontend and the music-backend pods running
 ```
 
 Open http://music-frontend-music-database.apps-crc.testing/status
-
-
-
 
 ## Database Notes
 
