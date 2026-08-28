@@ -5,6 +5,10 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.media.MediaMetadataRetriever
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -81,5 +85,62 @@ class LocalFileResolver(private val context: Context) {
         uriCache.clear()
         _foundFileNames.value = emptySet()
         lastScanTime = 0
+    }
+
+    fun getEmbeddedPicture(uri: Uri): ByteArray? {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(context, uri)
+            val picture = retriever.embeddedPicture ?: return null
+
+            android.util.Log.d("LocalFileResolver", "Extracted artwork from $uri: ${picture.size} bytes")
+
+            // Downscale if over 500KB to avoid TransactionTooLargeException
+            if (picture.size > 500 * 1024) {
+                downscaleImage(picture)
+            } else {
+                picture
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("LocalFileResolver", "Failed to extract artwork from $uri: ${e.message}")
+            null
+        } finally {
+            retriever.release()
+        }
+    }
+
+    private fun downscaleImage(data: ByteArray): ByteArray {
+        return try {
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            BitmapFactory.decodeByteArray(data, 0, data.size, options)
+
+            // Target max dimension of 800px for lock screen
+            var inSampleSize = 1
+            val targetSize = 800
+            if (options.outHeight > targetSize || options.outWidth > targetSize) {
+                val halfHeight = options.outHeight / 2
+                val halfWidth = options.outWidth / 2
+                while (halfHeight / inSampleSize >= targetSize && halfWidth / inSampleSize >= targetSize) {
+                    inSampleSize *= 2
+                }
+            }
+
+            options.inJustDecodeBounds = false
+            options.inSampleSize = inSampleSize
+            val bitmap = BitmapFactory.decodeByteArray(data, 0, data.size, options) ?: return data
+
+            val outputStream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+            val result = outputStream.toByteArray()
+            bitmap.recycle()
+
+            android.util.Log.d("LocalFileResolver", "Downscaled artwork from ${data.size} to ${result.size} bytes (sampleSize=$inSampleSize)")
+            result
+        } catch (e: Exception) {
+            android.util.Log.e("LocalFileResolver", "Failed to downscale artwork: ${e.message}")
+            data
+        }
     }
 }

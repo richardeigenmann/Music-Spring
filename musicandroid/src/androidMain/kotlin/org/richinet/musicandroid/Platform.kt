@@ -89,9 +89,14 @@ class AndroidImageResolver(
     override fun getTrackImageSource(track: Track): Any? {
         val file = track.files.firstOrNull() ?: return null
 
-        // We prefer the network URL for images to ensure high quality and consistency.
-        // Coil handles caching this URL locally, so it works offline if previously loaded.
-        // Using the local audio file URI often fails to provide artwork if not embedded.
+        // Local-First: Try to extract artwork from local file if it exists
+        val localUri = localFileResolver.findLocalUri(file.fileName)
+        if (localUri != null) {
+            val localArt = localFileResolver.getEmbeddedPicture(localUri)
+            if (localArt != null) return localArt
+        }
+
+        // Fallback to network URL (backend provides a placeholder if missing)
         return apiService.getTrackImageUrl(file.fileId)
     }
 }
@@ -131,17 +136,17 @@ class AndroidPictureChecker(
 
         for (i in startIndex until total) {
             val fileName = fileNames[i]
-            
+
             if (consecutiveSystemFailures >= 10) {
                 Log.e("PictureChecker", "Aborting: Native media service has failed to recover after multiple attempts.")
                 break
             }
 
             onProgress(i + 1, total, fileName)
-            
+
             // Standard pacing
             kotlinx.coroutines.delay(100)
-            
+
             // Batch pause: Every 20 files, take a longer break for the system to catch up
             if (i > startIndex && (i - startIndex) % 20 == 0) {
                 Log.d("PictureChecker", "Batch limit reached. Pausing 1s for system cleanup...")
@@ -159,7 +164,7 @@ class AndroidPictureChecker(
             while (!dataSourceSet && attempt < 2) {
                 if (attempt > 0) {
                     Log.w("PictureChecker", "System service stall suspected. Attempting service reset and 5s cooldown...")
-                    
+
                     // Attempt to 'poke' the MediaStore to re-establish binder health
                     try {
                         context.contentResolver.query(uri, arrayOf(MediaStore.Audio.Media._ID), null, null, null)?.close()
@@ -167,7 +172,7 @@ class AndroidPictureChecker(
                     } catch (e: Exception) {
                         Log.d("PictureChecker", "Service poke failed: ${e.message}")
                     }
-                    
+
                     kotlinx.coroutines.delay(5000)
                 }
                 attempt++
@@ -190,7 +195,7 @@ class AndroidPictureChecker(
                         val title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
                         val artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
                         val album = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
-                        
+
                         metadataRead = title != null || artist != null || album != null
                         Log.d("PictureChecker", "Checking $fileName: Title='$title', Artist='$artist', Album='$album'")
 
@@ -226,7 +231,7 @@ class AndroidPictureChecker(
         Log.i("PictureChecker", "--- PICTURE CHECK SUMMARY ---")
         missingPictures.forEach { Log.i("PictureChecker", "MISSING_PICTURE: $it") }
         Log.i("PictureChecker", "Total missing/unreadable: ${missingPictures.size} out of $total files checked.")
-        
+
         missingPictures
     }
 }

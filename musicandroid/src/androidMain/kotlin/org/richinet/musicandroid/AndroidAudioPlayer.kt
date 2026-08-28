@@ -56,7 +56,7 @@ class AndroidAudioPlayer(
             networkObserver.isOnline.collect { online ->
                 val wasOffline = !_playbackState.value.isOnline
                 _playbackState.value = _playbackState.value.copy(isOnline = online)
-                
+
                 // If we went from offline to online, refresh the player's queue
                 if (online && wasOffline && _playbackState.value.isPlaying) {
                      startPlaybackForCurrentTrack()
@@ -209,7 +209,7 @@ class AndroidAudioPlayer(
         // Start with the first track
         if (tracks.isNotEmpty()) {
             skipToPlayable(0, 1)
-            
+
             // Background cache next few if online
             if (_playbackState.value.isOnline) {
                 tracks.drop(1).take(3).forEach { cacheTrack(it) }
@@ -228,11 +228,11 @@ class AndroidAudioPlayer(
         val isOnline = _playbackState.value.isOnline
         var index = startIndex
         var skippedCount = 0
-        
+
         while (index in currentPlaylist.indices) {
             val track = currentPlaylist[index]
             val isTrackCached = isCached(track)
-            
+
             if (isTrackCached || isOnline) {
                 if (skippedCount > 0 && !isOnline) {
                     Toast.makeText(context, "Skipped $skippedCount non-cached tracks", Toast.LENGTH_SHORT).show()
@@ -261,7 +261,7 @@ class AndroidAudioPlayer(
         if (skippedCount > 0 && !isOnline) {
              Toast.makeText(context, "No more local tracks available", Toast.LENGTH_SHORT).show()
         }
-        
+
         _playbackState.value = _playbackState.value.copy(
             track = null,
             isWaitingForDownload = false,
@@ -285,17 +285,30 @@ class AndroidAudioPlayer(
 
             val mediaItems = playableTracks.map { t ->
                 val file = t.files.firstOrNull()
-                val metadata = MediaMetadata.Builder()
-                    .setTitle(t.trackName)
-                    .setArtist(t.getArtist())
-                    .setAlbumTitle(t.getAlbum())
-                    .build()
-
                 val uri = if (file != null) {
                     localFileResolver.findLocalUri(file.fileName) ?: android.net.Uri.EMPTY
                 } else {
                     android.net.Uri.EMPTY
                 }
+
+                val artworkData = if (uri != android.net.Uri.EMPTY) {
+                    localFileResolver.getEmbeddedPicture(uri)
+                } else {
+                    null
+                }
+
+                val metadataBuilder = MediaMetadata.Builder()
+                    .setTitle(t.trackName)
+                    .setArtist(t.getArtist())
+                    .setAlbumTitle(t.getAlbum())
+
+                if (artworkData != null) {
+                    metadataBuilder.setArtworkData(artworkData, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                } else if (file != null) {
+                    metadataBuilder.setArtworkUri(android.net.Uri.parse(apiService.getTrackImageUrl(file.fileId)))
+                }
+
+                val metadata = metadataBuilder.build()
 
                 MediaItem.Builder()
                     .setMediaId(t.trackId.toString())
@@ -423,7 +436,7 @@ class AndroidAudioPlayer(
         val player = controller ?: return
         val currentMediaId = mediaItem?.mediaId
         val currentTrackId = _playbackState.value.track?.trackId?.toString()
-        
+
         // If the player transitioned automatically (e.g. track ended), we need to check if it's cached
         if (currentMediaId != null && currentMediaId != currentTrackId) {
              val track = currentPlaylist.find { it.trackId.toString() == currentMediaId }
@@ -434,7 +447,7 @@ class AndroidAudioPlayer(
                      skipToPlayable(index + 1, 1)
                      return
                  }
-                 
+
                  // If it is playable, just update the state
                  _playbackState.value = _playbackState.value.copy(
                      track = track,
