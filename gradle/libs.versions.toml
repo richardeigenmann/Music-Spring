@@ -7,7 +7,7 @@ android-targetSdk = "36"
 # Plugins & Kotlin
 kotlin = "2.3.21"
 compose-plugin = "1.10.3"
-agp = "9.3.2"
+agp = "9.4.0"
 
 # Libraries
 androidx-activity-compose = "1.13.0"
