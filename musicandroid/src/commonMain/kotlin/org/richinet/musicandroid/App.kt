@@ -26,11 +26,16 @@ fun App() {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var forceShowPlayer by remember { mutableStateOf(true) }
+    val connectionManager = koinInject<ConnectionManager>()
+    val platformActions = koinInject<PlatformActions>()
+    val connectionState by connectionManager.connectionState.collectAsState()
+    var showConnectionMenu by remember { mutableStateOf(false) }
 
     MaterialTheme(
         colorScheme = darkColorScheme()
     ) {
         Navigator(HomeScreen) { navigator ->
+            val isLocalMode = connectionState == ConnectionState.LOCAL_MODE
             ModalNavigationDrawer(
                 drawerState = drawerState,
                 drawerContent = {
@@ -88,13 +93,26 @@ fun App() {
                             icon = { Icon(Icons.Default.Image, null) }
                         )
                         NavigationDrawerItem(
-                            label = { Text("Download All") },
+                            label = {
+                                Text(
+                                    if (isLocalMode) "Download All (Disabled in Local Mode)" else "Download All",
+                                    color = if (isLocalMode) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else MaterialTheme.colorScheme.onSurface
+                                )
+                            },
                             selected = false,
                             onClick = {
-                                navigator.push(SyncScreen)
-                                scope.launch { drawerState.close() }
+                                if (!isLocalMode) {
+                                    navigator.push(SyncScreen)
+                                    scope.launch { drawerState.close() }
+                                }
                             },
-                            icon = { Icon(Icons.Default.Download, null) }
+                            icon = {
+                                Icon(
+                                    Icons.Default.Download,
+                                    null,
+                                    tint = if (isLocalMode) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else LocalContentColor.current
+                                )
+                            }
                         )
                     }
                 }
@@ -107,6 +125,80 @@ fun App() {
                                 navigationIcon = {
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
                                         Icon(Icons.Default.Menu, contentDescription = "Menu")
+                                    }
+                                },
+                                actions = {
+                                    Box {
+                                        IconButton(onClick = { showConnectionMenu = true }) {
+                                            when (connectionState) {
+                                                ConnectionState.CONNECTED -> {
+                                                    Icon(
+                                                        imageVector = Icons.Default.CloudDone,
+                                                        contentDescription = "Connected",
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                                ConnectionState.CONNECTING -> {
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier.size(20.dp),
+                                                        strokeWidth = 2.dp,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                                ConnectionState.LOCAL_MODE -> {
+                                                    Icon(
+                                                        imageVector = Icons.Default.CloudOff,
+                                                        contentDescription = "Local Mode",
+                                                        tint = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        DropdownMenu(
+                                            expanded = showConnectionMenu,
+                                            onDismissRequest = { showConnectionMenu = false }
+                                        ) {
+                                            if (connectionState == ConnectionState.CONNECTED) {
+                                                DropdownMenuItem(
+                                                    text = { Text("Disconnect now") },
+                                                    leadingIcon = { Icon(Icons.Default.CloudOff, contentDescription = null) },
+                                                    onClick = {
+                                                        showConnectionMenu = false
+                                                        scope.launch {
+                                                            connectionManager.disconnectNow()
+                                                        }
+                                                    }
+                                                )
+                                            } else {
+                                                DropdownMenuItem(
+                                                    text = { Text("Connect now") },
+                                                    leadingIcon = { Icon(Icons.Default.CloudDone, contentDescription = null) },
+                                                    onClick = {
+                                                        showConnectionMenu = false
+                                                        scope.launch {
+                                                            connectionManager.connectNow()
+                                                        }
+                                                    }
+                                                )
+                                                DropdownMenuItem(
+                                                    text = { Text("Open VPN Panel") },
+                                                    leadingIcon = { Icon(Icons.Default.VpnKey, contentDescription = null) },
+                                                    onClick = {
+                                                        showConnectionMenu = false
+                                                        platformActions.openVpnSettings()
+                                                    }
+                                                )
+                                                DropdownMenuItem(
+                                                    text = { Text("Open Connection Settings") },
+                                                    leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                                                    onClick = {
+                                                        showConnectionMenu = false
+                                                        navigator.push(SettingsScreen)
+                                                    }
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             )

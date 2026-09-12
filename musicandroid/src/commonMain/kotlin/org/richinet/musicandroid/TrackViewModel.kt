@@ -15,7 +15,8 @@ sealed class UiState<out T> {
 
 class TrackViewModel(
     private val apiService: ApiService,
-    private val musicRepository: MusicRepository
+    private val musicRepository: MusicRepository,
+    val connectionManager: ConnectionManager
 ) : ScreenModel {
     private val _tags = MutableStateFlow<UiState<List<Tag>>>(UiState.Loading)
     val tags = _tags.asStateFlow()
@@ -25,19 +26,35 @@ class TrackViewModel(
 
     init {
         loadTags()
+        screenModelScope.launch {
+            connectionManager.connectionState.collect { state ->
+                if (state == ConnectionState.CONNECTED) {
+                    refresh()
+                }
+            }
+        }
     }
 
     fun refresh() {
-        sync()
+        if (connectionManager.isLocalMode) {
+            loadTags(showLoading = false)
+        } else {
+            sync()
+        }
     }
 
     fun sync() {
         screenModelScope.launch {
+            if (connectionManager.isLocalMode) {
+                loadTags(showLoading = false)
+                return@launch
+            }
             _tags.value = UiState.Loading
             try {
                 musicRepository.syncAll()
             } catch (e: Exception) {
                 android.util.Log.e("TrackViewModel", "Sync failed: ${e.message}")
+                connectionManager.markCallFailed()
             }
             // Always try to load whatever we have locally after a sync attempt
             loadTags(showLoading = false)
@@ -50,8 +67,8 @@ class TrackViewModel(
             try {
                 val localTags = musicRepository.getTags()
                 if (localTags.isEmpty()) {
-                    // If empty and we haven't just tried to sync, try one sync
-                    if (showLoading) {
+                    // If empty and we haven't just tried to sync, try one sync only if connected
+                    if (showLoading && !connectionManager.isLocalMode) {
                         sync()
                     } else {
                         _tags.value = UiState.Success(emptyList())
@@ -69,11 +86,14 @@ class TrackViewModel(
         screenModelScope.launch {
             _tracks.value = UiState.Loading
             
-            // 1. Best-effort granular sync
-            try {
-                musicRepository.syncTracksByTag(tagId)
-            } catch (e: Exception) {
-                android.util.Log.e("TrackViewModel", "Granular sync failed for tag $tagId: ${e.message}")
+            // 1. Best-effort granular sync only if connected
+            if (!connectionManager.isLocalMode) {
+                try {
+                    musicRepository.syncTracksByTag(tagId)
+                } catch (e: Exception) {
+                    android.util.Log.e("TrackViewModel", "Granular sync failed for tag $tagId: ${e.message}")
+                    connectionManager.markCallFailed()
+                }
             }
             
             // 2. Always load from local database, regardless of sync success
@@ -97,12 +117,17 @@ class TrackViewModel(
             _searchResults.value = UiState.Success(emptyList())
             return
         }
+        if (connectionManager.isLocalMode) {
+            _searchResults.value = UiState.Error("Search is unavailable in local mode")
+            return
+        }
         screenModelScope.launch {
             _searchResults.value = UiState.Loading
             try {
                 _searchResults.value = UiState.Success(apiService.searchTracks(query))
             } catch (e: Exception) {
                 _searchResults.value = UiState.Error(e.message ?: "Unknown error")
+                connectionManager.markCallFailed()
             }
         }
     }
@@ -112,12 +137,17 @@ class TrackViewModel(
             _filteredTracks.value = UiState.Success(emptyList())
             return
         }
+        if (connectionManager.isLocalMode) {
+            _filteredTracks.value = UiState.Error("Mixing board is unavailable in local mode")
+            return
+        }
         screenModelScope.launch {
             _filteredTracks.value = UiState.Loading
             try {
                 _filteredTracks.value = UiState.Success(apiService.filterTracks(must, can, not))
             } catch (e: Exception) {
                 _filteredTracks.value = UiState.Error(e.message ?: "Unknown error")
+                connectionManager.markCallFailed()
             }
         }
     }

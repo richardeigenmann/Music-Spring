@@ -21,6 +21,9 @@ data object SyncScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val apiService = koinInject<ApiService>()
         val playlistSync = koinInject<PlaylistSync>()
+        val connectionManager = koinInject<ConnectionManager>()
+        val connectionState by connectionManager.connectionState.collectAsState()
+        val isLocalMode = connectionState == ConnectionState.LOCAL_MODE
         val scope = rememberCoroutineScope()
 
         var isSyncing by remember { mutableStateOf(false) }
@@ -119,17 +122,18 @@ data object SyncScreen : Screen {
                 } else {
                     Button(
                         onClick = { runSyncAll() },
+                        enabled = !isLocalMode,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Start Download All")
+                        Text(if (isLocalMode) "Download Disabled in Local Mode" else "Start Download All")
                     }
                 }
 
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = statusMessage,
+                    text = if (isLocalMode) "Connect to backend to enable downloading playlists." else statusMessage,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (isLocalMode) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
                 Spacer(Modifier.height(32.dp))

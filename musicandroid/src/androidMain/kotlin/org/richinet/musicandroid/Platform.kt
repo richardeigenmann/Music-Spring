@@ -61,6 +61,35 @@ class AndroidNetworkObserver(context: Context) : NetworkObserver {
     }
 }
 
+class AndroidPlatformActions(private val context: Context) : PlatformActions {
+    override fun openVpnSettings() {
+        val vpnIntent = android.content.Intent(android.provider.Settings.ACTION_VPN_SETTINGS).apply {
+            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        try {
+            context.startActivity(vpnIntent)
+        } catch (e: android.content.ActivityNotFoundException) {
+            Log.w("PlatformActions", "VPN settings not found, falling back to WIRELESS_SETTINGS", e)
+            try {
+                val wirelessIntent = android.content.Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS).apply {
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(wirelessIntent)
+            } catch (e2: Exception) {
+                Log.e("PlatformActions", "Failed to open wireless settings", e2)
+                try {
+                    val generalIntent = android.content.Intent(android.provider.Settings.ACTION_SETTINGS).apply {
+                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(generalIntent)
+                } catch (e3: Exception) {
+                    Log.e("PlatformActions", "Failed to open general settings", e3)
+                }
+            }
+        }
+    }
+}
+
 class AndroidPlaylistSync(
     private val context: Context,
     private val apiService: ApiService,

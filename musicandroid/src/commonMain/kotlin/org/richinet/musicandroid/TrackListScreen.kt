@@ -34,6 +34,9 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
         val audioPlayer = koinInject<AudioPlayer>()
         val imageResolver = koinInject<ImageResolver>()
         val apiService = koinInject<ApiService>()
+        val connectionManager = koinInject<ConnectionManager>()
+        val connectionState by connectionManager.connectionState.collectAsState()
+        val isLocalMode = connectionState == ConnectionState.LOCAL_MODE
         val tracksState by viewModel.tracks.collectAsState()
         val currentBaseUrl by apiService.baseUrlFlow.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
@@ -106,16 +109,25 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
                                         trackColor = MaterialTheme.colorScheme.surfaceVariant,
                                     )
                                 }
-                                IconButton(onClick = {
-                                    shuffledTracks
-                                        .filter { it.trackId !in playbackState.cachedTrackIds }
-                                        .forEach { audioPlayer.cacheTrack(it) }
-                                }) {
+                                IconButton(
+                                    enabled = !isLocalMode,
+                                    onClick = {
+                                        shuffledTracks
+                                            .filter { it.trackId !in playbackState.cachedTrackIds }
+                                            .forEach { audioPlayer.cacheTrack(it) }
+                                    }
+                                ) {
                                     Icon(
                                         Icons.Default.DownloadForOffline,
-                                        contentDescription = "Cache All",
+                                        contentDescription = if (isLocalMode) "Caching disabled in Local Mode" else "Cache All",
                                         modifier = Modifier.size(20.dp),
-                                        tint = if (isDownloading) Color(0xFF4CAF50) else LocalContentColor.current
+                                        tint = if (isLocalMode) {
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                        } else if (isDownloading) {
+                                            Color(0xFF4CAF50)
+                                        } else {
+                                            LocalContentColor.current
+                                        }
                                     )
                                 }
                             }
@@ -164,11 +176,22 @@ data class TrackListScreen(val tagId: Long, val tagName: String) : Screen {
                                             trailingContent = {
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                                     val isCached = track.files.any { it.fileName in cachedFileNames }
-                                                    IconButton(onClick = { audioPlayer.cacheTrack(track) }) {
+                                                    IconButton(
+                                                        enabled = !isLocalMode || isCached,
+                                                        onClick = {
+                                                            if (!isLocalMode) audioPlayer.cacheTrack(track)
+                                                        }
+                                                    ) {
                                                         Icon(
                                                             if (isCached) Icons.Default.CheckCircle else Icons.Default.Download,
-                                                            contentDescription = if (isCached) "Cached" else "Cache",
-                                                            tint = if (isCached) Color(0xFF4CAF50) else LocalContentColor.current
+                                                            contentDescription = if (isCached) "Cached" else if (isLocalMode) "Download disabled in Local Mode" else "Cache",
+                                                            tint = if (isCached) {
+                                                                Color(0xFF4CAF50)
+                                                            } else if (isLocalMode) {
+                                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                                            } else {
+                                                                LocalContentColor.current
+                                                            }
                                                         )
                                                     }
                                                     IconButton(onClick = {

@@ -17,8 +17,10 @@ fun createAndroidModule(context: Context) = module {
     single { DownloadQueueManager() }
     single<SettingsRepository> { SettingsRepository(createDataStore(context)) }
     single<ApiService> { ApiService(get()) }
+    single { ConnectionManager(get(), get(), get()) }
     single<PlaylistSync> { AndroidPlaylistSync(get(), get(), get()) }
     single<AudioPlayer> { AndroidAudioPlayer(get(), get(), get(), get(), get()) }
     single<ImageResolver> { AndroidImageResolver(get(), get(), get()) }
     single<PictureChecker> { AndroidPictureChecker(get(), get()) }
+    single<PlatformActions> { AndroidPlatformActions(context) }
 }

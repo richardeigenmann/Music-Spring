@@ -10,6 +10,10 @@ interface NetworkObserver {
     val isOnline: StateFlow<Boolean>
 }
 
+interface PlatformActions {
+    fun openVpnSettings()
+}
+
 interface PlaylistSync {
     fun syncTrack(track: Track)
     fun registerPlaylist(tagName: String, tracks: List<Track>)
