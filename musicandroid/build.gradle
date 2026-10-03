@@ -20,6 +20,8 @@ kotlin {
         namespace = "org.richinet.musicandroid.shared"
         compileSdk = libs.versions.android.compileSdk.get().toInteger()
         minSdk = libs.versions.android.minSdk.get().toInteger()
+        withHostTest {
+        }
     }
 
     sourceSets {

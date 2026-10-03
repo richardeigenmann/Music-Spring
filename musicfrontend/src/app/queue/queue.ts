@@ -1,4 +1,4 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PlaybackService } from '../playback.service';
 import { ApiService } from '../apiservice';
@@ -9,6 +9,7 @@ import { TrackList } from '../shared/track-list/track-list.component';
   standalone: true,
   imports: [CommonModule, TrackList],
   templateUrl: './queue.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./queue.css']
 })
 export class Queue {

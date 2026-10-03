@@ -1,4 +1,4 @@
-import { Component, effect, inject, input, computed, signal, OnDestroy } from '@angular/core';
+import { Component, effect, inject, input, computed, signal, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService } from '../apiservice';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -13,6 +13,7 @@ import { TrackList } from '../shared/track-list/track-list.component';
   standalone: true,
   imports: [CommonModule, TrackList],
   templateUrl: './tracks-by-tag.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./tracks-by-tag.css']
 })
 export class TracksByTag implements OnDestroy {

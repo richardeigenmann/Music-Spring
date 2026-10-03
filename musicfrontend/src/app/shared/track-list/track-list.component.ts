@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, inject, input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService, TrackEntry } from '../../apiservice';
@@ -9,6 +9,7 @@ import { PlaybackService } from '../../playback.service';
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './track-list.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./track-list.component.css']
 })
 export class TrackList {

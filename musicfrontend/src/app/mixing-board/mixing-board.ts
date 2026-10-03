@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService, Tag, TrackEntry } from '../apiservice';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -11,6 +11,7 @@ import { PlaybackService } from '../playback.service';
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule, DragDropModule],
   templateUrl: './mixing-board.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./mixing-board.css']
 })
 export class MixingBoard implements OnInit {

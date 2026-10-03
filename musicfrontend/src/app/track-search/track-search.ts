@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService, TrackEntry } from '../apiservice';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -10,6 +10,7 @@ import { TrackList } from '../shared/track-list/track-list.component';
   standalone: true,
   imports: [CommonModule, TrackList],
   templateUrl: './track-search.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./track-search.css']
 })
 export class TrackSearch implements OnInit {

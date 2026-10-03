@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, ViewEncapsulation, VERSION as ANGULAR_VERSION } from '@angular/core';
+import { Component, inject, signal, OnInit, ViewEncapsulation, VERSION as ANGULAR_VERSION, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService, BackendVersionInfo, IntegrityCheckResult } from '../apiservice';
 import { CommonModule } from '@angular/common';
 import { VERSION as PROJECT_VERSION, BUILD_DATE } from '../version';
@@ -10,6 +10,7 @@ import { QRCodeComponent } from 'angularx-qrcode';
   imports: [CommonModule, QRCodeComponent],
   templateUrl: './status.html',
   styleUrl: './status.css',
+  changeDetection: ChangeDetectionStrategy.Eager,
   encapsulation: ViewEncapsulation.None
 })
 export class Status implements OnInit {

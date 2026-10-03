@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService, Tag, Track } from '../apiservice';
 import { CommonModule } from '@angular/common';
@@ -13,6 +13,7 @@ import { PlaybackService } from '../playback.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './track-edit.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './track-edit.css'
 })
 export class TrackEdit {

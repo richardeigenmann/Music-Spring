@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   viewChild,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService, TrackEntry } from '../apiservice';
@@ -16,6 +17,7 @@ import { PlaybackService } from '../playback.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './track-player.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./track-player.css'],
 })
 export class TrackPlayer implements OnDestroy {

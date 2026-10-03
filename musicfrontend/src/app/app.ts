@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterOutlet, RouterLink } from '@angular/router';
 import { ApiService, ScanProgress } from './apiservice';
 import { CommonModule } from '@angular/common';
@@ -9,6 +9,7 @@ import { TrackPlayer } from './track-player/track-player';
   standalone: true,
   imports: [RouterOutlet, RouterLink, CommonModule, TrackPlayer],
   templateUrl: './app.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.css',
 })
 export class App {

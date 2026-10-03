@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, Tag } from '../apiservice';
@@ -8,6 +8,7 @@ import { ApiService, Tag } from '../apiservice';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './tags.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./tags.css']
 })
 export class Tags {

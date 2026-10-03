@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../apiservice';
 import { BaseChartDirective } from 'ng2-charts';
@@ -16,6 +16,7 @@ interface TagTypeChart {
   standalone: true,
   imports: [CommonModule, BaseChartDirective],
   templateUrl: './stats.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './stats.css'
 })
 export class Stats implements OnInit {
