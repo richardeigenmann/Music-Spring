@@ -2,8 +2,18 @@ apiVersion: v1
 entries:
   music-spring:
   - apiVersion: v2
+    appVersion: 0.1.16-SNAPSHOT
+    created: "2026-10-03T17:38:47.357193517+02:00"
+    description: A Helm chart for deploying Music-Spring on local CRC OpenShift
+    digest: b7237acabe0b21a19ceebceb9b00d31b35f996f37d52a64b50b2410b69395637
+    name: music-spring
+    type: application
+    urls:
+    - https://richardeigenmann.github.io/Music-Spring/music-spring-0.1.16-SNAPSHOT.tgz
+    version: 0.1.16-SNAPSHOT
+  - apiVersion: v2
     appVersion: 0.1.15-SNAPSHOT
-    created: "2026-08-14T21:54:55.565727638+02:00"
+    created: "2026-10-03T17:38:47.35674429+02:00"
     description: A Helm chart for deploying Music-Spring on local CRC OpenShift
     digest: c7ea950eec0e9b07c4d1ad701b3dc072df8fd66a6ee199b50ae390d051159942
     name: music-spring
@@ -11,4 +21,4 @@ entries:
     urls:
     - https://richardeigenmann.github.io/Music-Spring/music-spring-0.1.15-SNAPSHOT.tgz
     version: 0.1.15-SNAPSHOT
-generated: "2026-08-14T21:54:55.56522044+02:00"
+generated: "2026-10-03T17:38:47.356214276+02:00"
