@@ -270,6 +270,8 @@ If you are Richard, use the `pushDockerContainers` Gradle task in the `docker` g
 This will call the `pushDockerFrontend` task and the `pushDockerBackend` tasks. These tasks will run other tasks
 that read the `gradle.properties` file from where the `version` variable propagates.
 
+Run the helm:helm:packageHelm task
+
 The `bootBuildImage` task looks at the `gradle.properties` `native` property to decide if a slow GraalVM or faster Java build should be done. The GraalVM build is much faster at runtime.
 
 - Check `gradle.properties`
