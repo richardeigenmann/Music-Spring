@@ -39,22 +39,24 @@ project(':musicfrontend') {
     }
 
     tasks.register('generateVersionFile') {
+        def frontendDir = project.projectDir
+        def projectVersion = project.version
         doLast {
-            def versionFile = file("${project.projectDir}/src/app/version.ts")
+            def versionFile = new File(frontendDir, "src/app/version.ts")
             versionFile.text = """
-export const VERSION = '${version}';
+export const VERSION = '${projectVersion}';
 export const BUILD_DATE = '${new Date().toLocaleString()}';
 """
-            def packageJsonFile = file("${project.projectDir}/package.json")
+            def packageJsonFile = new File(frontendDir, "package.json")
             def packageJson = new groovy.json.JsonSlurper().parseText(packageJsonFile.text)
-            packageJson.version = version
+            packageJson.version = projectVersion
             packageJsonFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(packageJson))
         }
     }
 
     tasks.register('buildFrontendDocker', Exec) {
         dependsOn 'generateVersionFile'
-        dependsOn 'npmInstall'
+        dependsOn 'pnpmInstall'
         group = 'docker'
         workingDir project.projectDir
         doFirst {

@@ -1,18 +1,20 @@
 # Stage 1: Build the Angular application
-FROM node:20 AS build
+FROM node:22 AS build
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml* ./
+RUN pnpm install --frozen-lockfile
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 # Stage 2: Serve the application with Express
-FROM node:20-slim
+FROM node:22-slim
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 COPY --from=build /app/dist ./dist
 COPY server.js ./
-COPY package*.json ./
-RUN npm install --omit=dev
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml* ./
+RUN pnpm install --prod --frozen-lockfile
 
 # Environment variable for the backend URL (overridable at runtime)
 ENV BACKEND_URL=http://localhost:8002

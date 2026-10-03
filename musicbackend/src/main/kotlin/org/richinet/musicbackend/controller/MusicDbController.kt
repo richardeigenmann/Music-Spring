@@ -680,4 +680,16 @@ class MusicDbController(
 
     return ResponseEntity.ok().headers(headers).body(streamingResponseBody)
   }
+
+  @Operation(summary = "Asynchronously trigger file hash update and integrity check for all track files")
+  @ApiResponses(
+    value = [
+      ApiResponse(responseCode = "202", description = "File hash update and integrity check process started in background")
+    ]
+  )
+  @PostMapping("/updateFileHashes")
+  fun updateFileHashes(): ResponseEntity<Unit> {
+    musicImportService.updateAllFileHashes()
+    return ResponseEntity.accepted().build()
+  }
 }

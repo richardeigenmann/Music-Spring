@@ -52,4 +52,17 @@ class MusicImportServiceTest {
         verify(trackRepository, times(1)).save(any(Track::class.java))
         verify(trackFileRepository, times(1)).save(any(TrackFile::class.java))
     }
+
+    @Test
+    fun `computeFileHash should return size and md5 for temporary file`() {
+        val tempFile = java.io.File.createTempFile("test_audio", ".mp3")
+        try {
+            tempFile.writeBytes("Test audio content for MD5 and size calculation".toByteArray())
+            val hash = musicImportService.computeFileHash(tempFile)
+            org.junit.jupiter.api.Assertions.assertNotNull(hash)
+            org.junit.jupiter.api.Assertions.assertTrue(hash!!.startsWith("${tempFile.length()}:"))
+        } finally {
+            tempFile.delete()
+        }
+    }
 }

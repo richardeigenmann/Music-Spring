@@ -5,7 +5,10 @@ import jakarta.persistence.*
 import java.math.BigDecimal
 
 @Entity
-@Table(name = "track_file")
+@Table(
+    name = "track_file",
+    indexes = [Index(name = "idx_track_file_hash", columnList = "file_hash")]
+)
 @Schema(description = "Represents a physical file for a track")
 class TrackFile {
     @Id
@@ -29,6 +32,10 @@ class TrackFile {
     @Column(name = "duration")
     @Schema(description = "Duration of the track in seconds")
     var duration: BigDecimal? = null
+
+    @Column(name = "file_hash", length = 64)
+    @Schema(description = "Audio fingerprint (file size + MD5 of first 64KB) used for duplicate detection")
+    var fileHash: String? = null
 
     @ManyToOne
     @JoinColumn(name = "track_id", insertable = false, updatable = false)

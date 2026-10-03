@@ -11,7 +11,9 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.io.File
+import java.io.FileInputStream
 import java.math.BigDecimal
+import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicReference
 
 data class ScanProgress(
@@ -243,13 +245,59 @@ class MusicImportService(
             if (startNormalized.endsWith("/")) startNormalized else "$startNormalized/"
         }
 
+        val calculatedHash = computeFileHash(file)
+
+        // Check for existing records with matching hash
+        val existingFilesWithHash = if (calculatedHash != null) {
+            trackFileRepository.findByFileHash(calculatedHash)
+        } else {
+            emptyList()
+        }
+
+        if (existingFilesWithHash.isNotEmpty()) {
+            var handled = false
+            for (existingRecord in existingFilesWithHash) {
+                val expectedOldPath = File(musicDirectory, "${existingRecord.fileLocation}/${existingRecord.fileName}".replace("//", "/"))
+                if (!expectedOldPath.exists()) {
+                    // Case A: The old file does not exist on disk anymore -> Relocated / Renamed!
+                    logger.info("File relocated/renamed: updating TrackFile ID ${existingRecord.id} from '${existingRecord.fileLocation}${existingRecord.fileName}' to '$finalLocation$fileName' (Hash: $calculatedHash)")
+                    existingRecord.fileName = fileName
+                    existingRecord.fileLocation = finalLocation
+                    trackFileRepository.save(existingRecord)
+                    handled = true
+                    break
+                } else {
+                    // Case B: Old file still exists on disk -> True duplicate!
+                    if (existingRecord.fileName != fileName) {
+                        logger.warn("Duplicate audio file detected with different name: '$fileName' matches existing track file '${existingRecord.fileName}' (ID: ${existingRecord.id}, Location: ${existingRecord.fileLocation}, Hash: $calculatedHash). Skipping import.")
+                    } else {
+                        logger.debug("Duplicate audio file detected with same name: '$fileName'. Skipping import.")
+                    }
+                    handled = true
+                    break
+                }
+            }
+            if (handled) {
+                return
+            }
+        }
+
+        // Secondary fallback for records that might not have a hash computed yet
         val existingFiles = trackFileRepository.findByFileNameAndFileLocation(fileName, finalLocation)
         if (existingFiles.isNotEmpty()) {
+            if (calculatedHash != null) {
+                existingFiles.forEach {
+                    if (it.fileHash == null) {
+                        it.fileHash = calculatedHash
+                        trackFileRepository.save(it)
+                    }
+                }
+            }
             return
         }
 
         // It's a new file
-        logger.info("Processing new MP3 file: ${canonicalFile.absolutePath} (Location: $finalLocation)")
+        logger.info("Processing new MP3 file: ${canonicalFile.absolutePath} (Location: $finalLocation, Hash: $calculatedHash)")
         val mp3file = Mp3File(file)
         var artist = ""
         var title = ""
@@ -307,6 +355,7 @@ class MusicImportService(
         trackFile.fileName = fileName
         trackFile.fileLocation = finalLocation
         trackFile.duration = duration
+        trackFile.fileHash = calculatedHash
         trackFileRepository.save(trackFile)
 
         scanProgress.updateAndGet { it.copy(added = it.added + 1) }
@@ -351,5 +400,72 @@ class MusicImportService(
             }
         }
         return true
+    }
+
+    /**
+     * Fast audio file fingerprint: <file_size_in_bytes>:<md5_hex_of_first_64kb>
+     */
+    fun computeFileHash(file: File): String? {
+        if (!file.exists() || !file.isFile) return null
+        return try {
+            val length = file.length()
+            val md5Digest = MessageDigest.getInstance("MD5")
+            val buffer = ByteArray(64 * 1024)
+            FileInputStream(file).use { input ->
+                val bytesRead = input.read(buffer)
+                if (bytesRead > 0) {
+                    md5Digest.update(buffer, 0, bytesRead)
+                }
+            }
+            val md5Hex = md5Digest.digest().joinToString("") { "%02x".format(it) }
+            "$length:$md5Hex"
+        } catch (e: Exception) {
+            logger.error("Failed to compute hash for file: ${file.absolutePath}", e)
+            null
+        }
+    }
+
+    /**
+     * Asynchronous integrity repair: reviews ALL TrackFile records, verifies
+     * physical file existence, updates missing or changed file hashes, and logs
+     * warnings for missing files on disk.
+     */
+    fun updateAllFileHashes() {
+        Thread {
+            try {
+                logger.info("Starting integrity repair and file hash update for all track files...")
+                val allTrackFiles = trackFileRepository.findAll()
+                var updatedCount = 0
+                var missingCount = 0
+                var verifiedCount = 0
+
+                allTrackFiles.forEachIndexed { index, trackFile ->
+                    val relativeLocation = trackFile.fileLocation ?: ""
+                    val fileName = trackFile.fileName ?: ""
+                    val expectedPath = File(musicDirectory, "$relativeLocation/$fileName".replace("//", "/"))
+
+                    if (!expectedPath.exists()) {
+                        missingCount++
+                        logger.warn("Integrity violation: TrackFile ID ${trackFile.id} (Track ID: ${trackFile.trackId}, File: '$relativeLocation$fileName') does not exist at expected disk path: ${expectedPath.absolutePath}")
+                    } else {
+                        verifiedCount++
+                        val computedHash = computeFileHash(expectedPath)
+                        if (computedHash != null && computedHash != trackFile.fileHash) {
+                            trackFile.fileHash = computedHash
+                            trackFileRepository.save(trackFile)
+                            updatedCount++
+                        }
+                    }
+
+                    if ((index + 1) % 500 == 0 || index + 1 == allTrackFiles.size) {
+                        logger.info("Integrity check progress: evaluated ${index + 1}/${allTrackFiles.size} records (Updated: $updatedCount, Missing on disk: $missingCount)")
+                    }
+                }
+
+                logger.info("Integrity repair and hash update completed. Evaluated: ${allTrackFiles.size}, Verified on disk: $verifiedCount, Updated hashes: $updatedCount, Missing on disk: $missingCount.")
+            } catch (e: Exception) {
+                logger.error("Error during integrity repair and file hash update", e)
+            }
+        }.start()
     }
 }
