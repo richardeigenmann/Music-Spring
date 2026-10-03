@@ -1,0 +1,28 @@
+# Implementation Tasks
+
+- [ ] Task 1: Update `TrackFile` entity
+  - Add `fileHash: String?` mapped to `@Column(name = "file_hash", length = 64)`
+  - Add `@Table(indexes = [Index(name = "idx_track_file_hash", columnList = "file_hash")])`
+- [ ] Task 2: Update `TrackFileRepository`
+  - Add `fun findByFileHash(fileHash: String): List<TrackFile>`
+- [ ] Task 3: Implement fingerprint computation and import logic in `MusicImportService`
+  - Add helper function `computeFileHash(file: File): String` (file size + MD5 of first 64KB)
+  - Update `processNewMp3File(file: File)`:
+    - Compute fingerprint
+    - Check for matching `file_hash` in `TrackFileRepository`
+    - Check if existing record's file still exists on disk
+    - If moved/renamed (file on disk missing): update location/fileName on existing `TrackFile` and save
+    - If duplicate (file on disk exists): log WARN if names differ, skip import
+    - If new: save `TrackFile` with `fileHash` populated
+  - Add `updateAllFileHashes()` method:
+    - Runs asynchronously in background
+    - Reviews **ALL** `TrackFile` records
+    - Checks physical file existence on disk; logs WARN for missing files (integrity violation)
+    - Computes and saves updated fingerprint
+    - Logs completion and summary
+- [ ] Task 4: Add `POST /updateFileHashes` endpoint in `MusicDbController`
+  - Returns `ResponseEntity.accepted().build()`
+  - Triggers `musicImportService.updateAllFileHashes()` in background
+- [ ] Task 5: Testing and Verification
+  - Unit tests for fingerprint calculation and deduplication / relocation logic
+  - Verify Gradle build passes
