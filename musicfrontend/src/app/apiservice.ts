@@ -16,6 +16,7 @@ export interface TrackFile {
   fileName: string;
   fileLocation: string;
   duration: number;
+  fileHash: string;
 }
 
 export interface Track {

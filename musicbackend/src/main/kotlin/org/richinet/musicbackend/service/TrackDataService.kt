@@ -18,7 +18,8 @@ class TrackDataService {
                 fileId = file.id,
                 fileName = file.fileName,
                 fileLocation = file.fileLocation,
-                duration = file.duration
+                duration = file.duration,
+                fileHash = file.fileHash
             )
         } ?: emptyList()
 

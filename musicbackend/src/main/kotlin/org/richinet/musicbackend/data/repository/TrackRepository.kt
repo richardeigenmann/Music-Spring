@@ -38,13 +38,18 @@ interface TrackRepository : JpaRepository<Track, Long> {
     )
     fun searchTracks(@Param("query") query: String): List<Track>
 
+    // The S tags are the group select tags. Tracks with less than 3 group
+    // tags are deemed to be unclassified.
     @Query(
         value = """
-        SELECT * FROM track t WHERE t.id NOT IN (
-            SELECT tt.track_id FROM track_tag tt
-            JOIN tag tag ON tt.tag_id = tag.id
-            JOIN tag_type tt_type ON tag.tag_type_id = tt_type.id
+        SELECT * FROM musicdatabase.track t WHERE t.id IN (
+            SELECT tt.track_id
+			      FROM musicdatabase.track_tag tt
+            JOIN musicdatabase.tag tag ON tt.tag_id = tag.id
+            JOIN musicdatabase.tag_type tt_type ON tag.tag_type_id = tt_type.id
             WHERE tt_type.edit = 'S'
+			      group by tt.track_id
+			      having count(tt.tag_id) < 3
         )
         """,
         nativeQuery = true

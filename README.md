@@ -266,6 +266,8 @@ editor window and can assign the Mood, Genre and Rating
 
 ## Publishing a new version
 
+Fist log in to dockerhub with docker login - paste the challenge and wait for the browser to hand the auth back to the cli
+
 If you are Richard, use the `pushDockerContainers` Gradle task in the `docker` group to publish new versions.
 This will call the `pushDockerFrontend` task and the `pushDockerBackend` tasks. These tasks will run other tasks
 that read the `gradle.properties` file from where the `version` variable propagates.
@@ -283,6 +285,11 @@ The `bootBuildImage` task looks at the `gradle.properties` `native` property to 
 - It should have generated a new Helm chart in `helm/build/`. Check out the repo branch gh-pages and commit the
   new helm chart to the repo.
 - Then run `helm repo index . --url https://richardeigenmann.github.io/Music-Spring/`
+
+switch to gh-pages and commit the new index.yaml file and the .tgz file to the gh-pages branch
+
+Check the helm index here:
+https://github.com/richardeigenmann/Music-Spring/blob/gh-pages/index.yaml
 
 ## Running in development mode
 
