@@ -44,12 +44,12 @@ interface TrackRepository : JpaRepository<Track, Long> {
         value = """
         SELECT * FROM musicdatabase.track t WHERE t.id IN (
             SELECT tt.track_id
-			      FROM musicdatabase.track_tag tt
+            FROM musicdatabase.track_tag tt
             JOIN musicdatabase.tag tag ON tt.tag_id = tag.id
             JOIN musicdatabase.tag_type tt_type ON tag.tag_type_id = tt_type.id
             WHERE tt_type.edit = 'S'
-			      group by tt.track_id
-			      having count(tt.tag_id) < 3
+            GROUP BY tt.track_id
+            HAVING count(tt.tag_id) < 3
         )
         """,
         nativeQuery = true
