@@ -14,8 +14,8 @@
                     <input type="text" [id]="'fileName_' + file.fileId" [(ngModel)]="file.fileName" [name]="'fileName_' + file.fileId" class="form-control file-name-input">
                     <label [for]="'fileLocation_' + file.fileId">Location:</label>
                     <input type="text" [id]="'fileLocation_' + file.fileId" [(ngModel)]="file.fileLocation" [name]="'fileLocation_' + file.fileId" class="form-control file-location-input">
-                    <div class="file-duration">{{ formatDuration(file.duration) }}</div>
-                    <div class="file-hash">{{ file.fileHash }}</div>
+                    <div class="file-duration">Duration: {{ formatDuration(file.duration) }}</div>
+                    <div class="file-hash">File Hash: {{ file.fileHash }}</div>
                 </div>
               </div>
             }
