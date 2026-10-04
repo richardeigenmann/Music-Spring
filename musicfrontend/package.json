@@ -1,6 +1,6 @@
 {
     "name": "musicfrontend",
-    "version": "0.1.17-SNAPSHOT",
+    "version": "0.1.18-SNAPSHOT",
     "scripts": {
         "prestart": "node update-version.js",
         "prebuild": "node update-version.js",
