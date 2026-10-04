@@ -12,5 +12,7 @@ data class TrackFileDto(
     @Schema(description = "Relative path location of the file")
     val fileLocation: String?,
     @Schema(description = "Duration of the track in seconds")
-    val duration: BigDecimal?
+    val duration: BigDecimal?,
+    @Schema(description = "Hash Code of the file")
+    val fileHash: String?
 )

@@ -4,6 +4,8 @@ plugins {
     id 'org.springframework.boot'
     id 'io.spring.dependency-management'
     id 'org.graalvm.buildtools.native'
+  id "org.jetbrains.kotlin.kapt"
+  id "org.jetbrains.kotlin.plugin.lombok"
 }
 
 description = 'musicbackend'
@@ -21,27 +23,29 @@ configurations {
 }
 
 dependencies {
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.jetbrains.kotlin:kotlin-reflect'
-    implementation 'tools.jackson.module:jackson-module-kotlin'
-    implementation 'com.mpatric:mp3agic:0.9.1'
-    compileOnly 'org.projectlombok:lombok'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
-    implementation 'com.h2database:h2'
-    implementation("org.springframework.boot:spring-boot-h2console:4.0.4")
-    runtimeOnly 'org.postgresql:postgresql'
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-    annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.boot:spring-boot-starter-web'
-    testImplementation 'org.springframework.boot:spring-boot-webmvc-test'
-    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
+  implementation 'org.springframework.boot:spring-boot-starter-actuator'
+  implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+  implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+  implementation 'org.jetbrains.kotlin:kotlin-reflect'
+  implementation 'tools.jackson.module:jackson-module-kotlin'
+  implementation 'com.mpatric:mp3agic:0.9.1'
+  compileOnly 'org.projectlombok:lombok'
+  developmentOnly 'org.springframework.boot:spring-boot-devtools'
+  developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+  implementation 'com.h2database:h2'
+  implementation("org.springframework.boot:spring-boot-h2console:4.0.4")
+  runtimeOnly 'org.postgresql:postgresql'
+  kapt 'org.springframework.boot:spring-boot-configuration-processor'
+
+  annotationProcessor 'org.projectlombok:lombok'
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  testImplementation 'org.springframework.boot:spring-boot-starter-web'
+  testImplementation 'org.springframework.boot:spring-boot-webmvc-test'
+  testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+  testImplementation 'org.jetbrains.kotlin:kotlin-test'
 }
 
 tasks.named('test') {
@@ -109,5 +113,8 @@ tasks.register ("bootRunPg", org.springframework.boot.gradle.tasks.run.BootRun) 
     mainClass.set("org.richinet.musicbackend.MusicbackendApplicationKt")
     classpath = sourceSets.main.runtimeClasspath
     args = ["--spring.profiles.active=dev-pg"]
+}
+kapt {
+  keepJavacAnnotationProcessors = true
 }
 
